@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "/api/v1";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
 const client = axios.create({
   baseURL: BASE_URL,
@@ -59,7 +59,7 @@ client.interceptors.response.use(
       }
 
       try {
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {
+        const { data } = await axios.post(`${BASE_URL}/api/v1/auth/refresh`, {
           refresh_token: refreshToken,
         });
         localStorage.setItem("access_token", data.access_token);

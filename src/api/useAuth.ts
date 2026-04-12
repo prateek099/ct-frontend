@@ -8,7 +8,7 @@ export function useMe() {
   return useQuery<AuthUser>({
     queryKey: AUTH_ME_KEY,
     queryFn: async () => {
-      const { data } = await client.get<AuthUser>("/auth/me");
+      const { data } = await client.get<AuthUser>("/api/v1/auth/me");
       return data;
     },
     retry: false,
@@ -23,7 +23,7 @@ export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: LoginRequest) => {
-      const { data } = await client.post<TokenResponse>("/auth/login", payload);
+      const { data } = await client.post<TokenResponse>("/api/v1/auth/login", payload);
       return data;
     },
     onSuccess: (data) => {
@@ -38,7 +38,7 @@ export function useWorkflowLogin() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: WorkflowLoginRequest) => {
-      const { data } = await client.post<TokenResponse>("/login", payload);
+      const { data } = await client.post<TokenResponse>("/api/v1/login", payload);
       return data;
     },
     onSuccess: (data) => {
@@ -53,7 +53,7 @@ export function useWorkflowLogin() {
 export function useRegister() {
   return useMutation({
     mutationFn: async (payload: RegisterRequest) => {
-      const { data } = await client.post<AuthUser>("/auth/register", payload);
+      const { data } = await client.post<AuthUser>("/api/v1/auth/register", payload);
       return data;
     },
   });
