@@ -21,3 +21,8 @@ export interface AuthUser {
   email: string;
   is_active: boolean;
 }
+
+export interface WorkflowLoginRequest {
+  username: string; // base64-encoded
+  password: string; // base64-encoded
+}

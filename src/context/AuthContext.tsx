@@ -11,16 +11,29 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const DEMO_USER: AuthUser = {
+  id: 0,
+  name: "Creator",
+  email: "demo",
+  is_active: true,
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const isDemoUser = localStorage.getItem("login_type") === "demo";
   const { data: user, isLoading } = useMe();
   const logout = useLogout();
+
+  // For demo logins there is no DB user — provide a synthetic user object
+  const effectiveUser = isDemoUser ? DEMO_USER : user;
+  const effectiveLoading = isDemoUser ? false : isLoading;
+  const isAuthenticated = isDemoUser || !!user;
 
   return (
     <AuthContext.Provider
       value={{
-        user,
-        isLoading,
-        isAuthenticated: !!user,
+        user: effectiveUser,
+        isLoading: effectiveLoading,
+        isAuthenticated,
         logout,
       }}
     >

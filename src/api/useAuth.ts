@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "./client";
-import type { AuthUser, LoginRequest, RegisterRequest, TokenResponse } from "../types/auth";
+import type { AuthUser, LoginRequest, RegisterRequest, TokenResponse, WorkflowLoginRequest } from "../types/auth";
 
 export const AUTH_ME_KEY = ["auth", "me"];
 
@@ -12,7 +12,10 @@ export function useMe() {
       return data;
     },
     retry: false,
-    enabled: !!localStorage.getItem("access_token"),
+    // Skip /auth/me entirely for demo users — they have no DB record
+    enabled:
+      !!localStorage.getItem("access_token") &&
+      localStorage.getItem("login_type") !== "demo",
   });
 }
 
@@ -26,6 +29,22 @@ export function useLogin() {
     onSuccess: (data) => {
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
+      queryClient.invalidateQueries({ queryKey: AUTH_ME_KEY });
+    },
+  });
+}
+
+export function useWorkflowLogin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: WorkflowLoginRequest) => {
+      const { data } = await client.post<TokenResponse>("/login", payload);
+      return data;
+    },
+    onSuccess: (data) => {
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
+      localStorage.setItem("login_type", "demo");
       queryClient.invalidateQueries({ queryKey: AUTH_ME_KEY });
     },
   });
@@ -45,6 +64,7 @@ export function useLogout() {
   return () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    localStorage.removeItem("login_type");
     queryClient.clear();
     window.location.href = "/login";
   };
