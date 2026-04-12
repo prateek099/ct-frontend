@@ -8,7 +8,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://backend:8000",  // Docker service name
+        // Use VITE_API_TARGET env var in Docker (http://backend:8000),
+        // falls back to localhost for local dev without Docker
+        target: process.env.VITE_API_TARGET ?? "http://localhost:8000",
         changeOrigin: true,
       },
     },

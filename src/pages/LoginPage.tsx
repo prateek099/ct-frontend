@@ -1,5 +1,4 @@
 import { useState, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { useWorkflowLogin } from "../api/useAuth";
 
 export default function LoginPage() {
@@ -7,7 +6,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const navigate = useNavigate();
   const login = useWorkflowLogin();
 
   const handleSubmit = async (e: FormEvent) => {
@@ -18,7 +16,7 @@ export default function LoginPage() {
         username: btoa(username),
         password: btoa(password),
       });
-      navigate("/", { replace: true });
+      window.location.replace("/");
     } catch (err: any) {
       const detail = err?.response?.data?.error?.detail;
       setError(typeof detail === "string" ? detail : "Invalid username or password.");
