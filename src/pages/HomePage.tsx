@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
+import { useAuth } from "../context/AuthContext";
 
 const tools = [
   {
@@ -165,6 +167,8 @@ const tools = [
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const displayName = user?.name ?? Cookies.get("user_name") ?? "";
 
   return (
     <div className="text-gray-800 font-sans bg-gray-50 min-h-screen">
@@ -177,9 +181,17 @@ export default function HomePage() {
             <a href="#testimonials" className="text-gray-600 hover:text-gray-900 transition-colors">Testimonials</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
           </nav>
-          <a href="#pricing" className="hidden md:inline-block bg-gray-900 text-white font-semibold py-2 px-5 rounded-lg hover:bg-gray-700 transition-colors">
-            Get All Tools
-          </a>
+          <div className="hidden md:flex items-center gap-3">
+            {displayName && (
+              <span className="text-sm font-medium text-gray-600">{displayName}</span>
+            )}
+            <button
+              onClick={logout}
+              className="bg-gray-900 hover:bg-red-600 text-white font-semibold py-2 px-5 rounded-lg transition-colors text-sm"
+            >
+              Logout
+            </button>
+          </div>
           <button
             className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
             onClick={() => setMobileMenuOpen((o) => !o)}
@@ -195,6 +207,12 @@ export default function HomePage() {
             <a href="#tools" className="block text-gray-600 hover:text-gray-900 py-2" onClick={() => setMobileMenuOpen(false)}>Tools</a>
             <a href="#testimonials" className="block text-gray-600 hover:text-gray-900 py-2" onClick={() => setMobileMenuOpen(false)}>Testimonials</a>
             <a href="#pricing" className="block text-gray-600 hover:text-gray-900 py-2" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+            <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+              {displayName && <span className="text-sm text-gray-500">{displayName}</span>}
+              <button onClick={logout} className="text-sm font-semibold text-red-600 hover:text-red-800 transition-colors">
+                Logout
+              </button>
+            </div>
           </div>
         )}
       </header>

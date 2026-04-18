@@ -2,8 +2,8 @@ import { useState, FormEvent } from "react";
 import { useWorkflowLogin } from "../api/useAuth";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("testemail@a.com");
+  const [password, setPassword] = useState("string");
   const [error, setError] = useState("");
 
   const login = useWorkflowLogin();

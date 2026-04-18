@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import Cookies from "js-cookie";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
@@ -9,7 +10,7 @@ const client = axios.create({
 
 // ── Request interceptor — attach access token ─────────────────────────────────
 client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = localStorage.getItem("access_token");
+  const token = Cookies.get("access_token");
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -49,27 +50,33 @@ client.interceptors.response.use(
       original._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem("refresh_token");
+      const refreshToken = Cookies.get("refresh_token");
       if (!refreshToken) {
         processQueue(error);
         isRefreshing = false;
-        localStorage.clear();
+        Cookies.remove("access_token");
+        Cookies.remove("refresh_token");
+        Cookies.remove("login_type");
+        Cookies.remove("user_name");
         window.location.href = "/login";
         return Promise.reject(error);
       }
 
       try {
-        const { data } = await axios.post(`${BASE_URL}/api/v1/auth/refresh`, {
+        const { data } = await client.post("/auth/refresh", {
           refresh_token: refreshToken,
         });
-        localStorage.setItem("access_token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh_token);
+        Cookies.set("access_token", data.access_token, { expires: 1 / 48 });
+        Cookies.set("refresh_token", data.refresh_token, { expires: 7 });
         processQueue(null, data.access_token);
         original.headers.Authorization = `Bearer ${data.access_token}`;
         return client(original);
       } catch (refreshError) {
         processQueue(refreshError);
-        localStorage.clear();
+        Cookies.remove("access_token");
+        Cookies.remove("refresh_token");
+        Cookies.remove("login_type");
+        Cookies.remove("user_name");
         window.location.href = "/login";
         return Promise.reject(refreshError);
       } finally {

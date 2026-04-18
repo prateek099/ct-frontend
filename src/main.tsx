@@ -9,6 +9,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { WorkflowProvider } from "./context/WorkflowContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import UserWidget from "./components/UserWidget";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import VideoIdeaGenerator from "./pages/VideoIdeaGenerator";
@@ -41,6 +42,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
+          <UserWidget />
           <WorkflowProvider>
             <Routes>
               {/* Public */}

@@ -11,7 +11,7 @@ interface FetchChannelPayload {
 export function useFetchChannel() {
   return useMutation({
     mutationFn: async (payload: FetchChannelPayload): Promise<ChannelData> => {
-      const { data } = await client.post<ChannelData>("/api/v1/yt/channel", payload);
+      const { data } = await client.post<ChannelData>("/yt/channel", payload);
       return data;
     },
   });
@@ -41,7 +41,7 @@ interface VideoIdeasResponse {
 export function useGenerateIdeas() {
   return useMutation({
     mutationFn: async (payload: GenerateIdeasPayload): Promise<VideoIdea[]> => {
-      const { data } = await client.post<VideoIdeasResponse>("/api/v1/video-idea-gen", payload);
+      const { data } = await client.post<VideoIdeasResponse>("/video-idea-gen", payload);
       return data.response?.videoIdeas || [];
     },
   });
@@ -67,7 +67,7 @@ interface GenerateScriptPayload {
 export function useGenerateScript() {
   return useMutation({
     mutationFn: async (payload: GenerateScriptPayload): Promise<GeneratedScript> => {
-      const { data } = await client.post<GeneratedScript>("/api/v1/script-generator", payload);
+      const { data } = await client.post<GeneratedScript>("/script-generator", payload);
       return data;
     },
   });
@@ -98,7 +98,7 @@ interface TitleResponse {
 export function useGenerateTitles() {
   return useMutation({
     mutationFn: async (payload: GenerateTitlesPayload): Promise<TitleItem[]> => {
-      const { data } = await client.post<TitleResponse>("/api/v1/title-suggestor", payload);
+      const { data } = await client.post<TitleResponse>("/title-suggestor", payload);
       return data.titles || [];
     },
   });
@@ -123,7 +123,7 @@ interface GenerateSeoPayload {
 export function useGenerateSeoDescription() {
   return useMutation({
     mutationFn: async (payload: GenerateSeoPayload): Promise<SeoData> => {
-      const { data } = await client.post<SeoData>("/api/v1/seo-description", payload);
+      const { data } = await client.post<SeoData>("/seo-description", payload);
       return data;
     },
   });
