@@ -5,19 +5,19 @@ export default function WorkInProgress() {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center text-center p-8">
-      <div className="inline-flex items-center justify-center bg-yellow-500/10 text-yellow-400 rounded-full p-4 mb-6">
-        <Wrench size={40} />
+    <div className="flex flex-col items-center justify-center text-center p-8 min-h-[60vh]">
+      <div className="w-16 h-16 bg-amber-50 border border-amber-100 rounded-2xl flex items-center justify-center mb-5">
+        <Wrench size={28} className="text-amber-500" />
       </div>
-      <h1 className="text-2xl font-bold text-white mb-2">Coming Soon</h1>
-      <p className="text-gray-400 mt-1 text-sm max-w-xs">
-        This tool is currently under construction. Check back soon!
+      <h1 className="text-xl font-bold text-stone-900 mb-2">Coming Soon</h1>
+      <p className="text-stone-500 text-sm max-w-xs leading-relaxed">
+        This tool is currently under development. Check back soon!
       </p>
       <button
         onClick={() => navigate("/")}
-        className="mt-8 flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 px-6 rounded-lg text-sm transition-colors"
+        className="mt-8 flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white font-semibold py-2.5 px-5 rounded-xl text-sm transition-colors"
       >
-        <ArrowLeft size={15} /> Back to Dashboard
+        <ArrowLeft size={14} /> Back to Dashboard
       </button>
     </div>
   );

@@ -8,10 +8,10 @@ import "./index.css";
 import { AuthProvider } from "./context/AuthContext";
 import { WorkflowProvider } from "./context/WorkflowContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Navbar from "./components/Navbar";
-import UserWidget from "./components/UserWidget";
+import AppShell from "./components/layout/AppShell";
+
 import LoginPage from "./pages/LoginPage";
-import HomePage from "./pages/HomePage";
+import DashboardPage from "./pages/DashboardPage";
 import VideoIdeaGenerator from "./pages/VideoIdeaGenerator";
 import ScriptGenerator from "./pages/ScriptGenerator";
 import TitleSuggestor from "./pages/TitleSuggestor";
@@ -28,12 +28,11 @@ const queryClient = new QueryClient({
   },
 });
 
-function AppLayout({ children }: { children: React.ReactNode }) {
+function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <Navbar />
-      <main style={{ padding: "1.5rem 2rem" }}>{children}</main>
-    </>
+    <ProtectedRoute>
+      <AppShell>{children}</AppShell>
+    </ProtectedRoute>
   );
 }
 
@@ -42,71 +41,66 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <UserWidget />
           <WorkflowProvider>
             <Routes>
               {/* Public */}
               <Route path="/login" element={<LoginPage />} />
 
-              {/* Protected — tool pages (no AppLayout, each has its own header/nav) */}
+              {/* Protected — all inside AppShell (sidebar layout) */}
               <Route
                 path="/"
                 element={
-                  <ProtectedRoute>
-                    <HomePage />
-                  </ProtectedRoute>
+                  <Shell>
+                    <DashboardPage />
+                  </Shell>
                 }
               />
               <Route
                 path="/video-idea-generator"
                 element={
-                  <ProtectedRoute>
+                  <Shell>
                     <VideoIdeaGenerator />
-                  </ProtectedRoute>
+                  </Shell>
                 }
               />
               <Route
                 path="/script-generator"
                 element={
-                  <ProtectedRoute>
+                  <Shell>
                     <ScriptGenerator />
-                  </ProtectedRoute>
+                  </Shell>
                 }
               />
               <Route
                 path="/title-suggestor"
                 element={
-                  <ProtectedRoute>
+                  <Shell>
                     <TitleSuggestor />
-                  </ProtectedRoute>
+                  </Shell>
                 }
               />
               <Route
                 path="/seo-description"
                 element={
-                  <ProtectedRoute>
+                  <Shell>
                     <SeoDescription />
-                  </ProtectedRoute>
+                  </Shell>
                 }
               />
               <Route
                 path="/work-in-progress"
                 element={
-                  <ProtectedRoute>
+                  <Shell>
                     <WorkInProgress />
-                  </ProtectedRoute>
+                  </Shell>
                 }
               />
-
-              {/* Protected — admin pages (with AppLayout + Navbar) */}
               <Route
                 path="/users"
                 element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <UsersPage />
-                    </AppLayout>
-                  </ProtectedRoute>
+                  <Shell>
+                    <UsersPage />
+                  </Shell>
                 }
               />
 
