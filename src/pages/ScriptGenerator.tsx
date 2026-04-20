@@ -1,33 +1,22 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FileText,
-  Sparkles,
-  Copy,
-  Check,
-  RefreshCw,
-  Clock,
-  BookOpen,
-  ChevronDown,
-  ChevronUp,
-  AlertCircle,
-  Loader,
-  ArrowLeft,
-  ArrowRight,
+  FileText, Sparkles, Copy, Check, RefreshCw,
+  Clock, BookOpen, ChevronDown, ChevronUp,
+  AlertCircle, Loader, ArrowLeft, ArrowRight,
 } from "lucide-react";
 import { useWorkflow } from "../context/WorkflowContext";
 import { useGenerateScript } from "../api/useWorkflow";
-import PipelineStepper from "../components/PipelineStepper";
 import type { ScriptSection as ScriptSectionType } from "../types/workflow";
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
 const FLAVORS = [
-  { id: "educational", label: "Educational", emoji: "📚", desc: "Structured & step-by-step" },
+  { id: "educational",  label: "Educational",  emoji: "📚", desc: "Structured & step-by-step" },
   { id: "entertaining", label: "Entertaining", emoji: "🎉", desc: "Energetic & humour-driven" },
-  { id: "storytelling", label: "Storytelling", emoji: "🎭", desc: "Narrative arc & emotion" },
-  { id: "documentary", label: "Documentary", emoji: "🎬", desc: "Research-heavy & authoritative" },
-] as const;
+  { id: "storytelling", label: "Storytelling",  emoji: "🎭", desc: "Narrative arc & emotion" },
+  { id: "documentary",  label: "Documentary",  emoji: "🎬", desc: "Research-heavy & authoritative" },
+];
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -35,7 +24,9 @@ function formatDuration(seconds: number): string {
   if (!seconds) return "—";
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m ${s.toString().padStart(2, "0")}s`;
+  return m >= 60
+    ? `${Math.floor(m / 60)}h ${m % 60}m`
+    : `${m}m ${s.toString().padStart(2, "0")}s`;
 }
 
 function copyToClipboard(text: string) {
@@ -52,68 +43,45 @@ function copyToClipboard(text: string) {
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
-function IdeaSummary({
-  idea,
-}: {
-  idea: NonNullable<ReturnType<typeof useWorkflow>["selectedIdea"]>;
-}) {
+function IdeaSummary({ idea }: { idea: NonNullable<ReturnType<typeof useWorkflow>["selectedIdea"]> }) {
   return (
-    <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
-      <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider mb-1">
-        Selected Idea
-      </p>
-      <h2 className="text-sm font-bold text-stone-900 leading-snug mb-2">{idea.title}</h2>
-      <p className="text-xs text-stone-600 mb-2">
-        <span className="font-semibold">Hook: </span>
-        {idea.hook}
+    <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6">
+      <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Selected Idea</p>
+      <h2 className="text-base font-bold text-white leading-snug mb-2">{idea.title}</h2>
+      <p className="text-xs text-gray-300 mb-2">
+        <span className="text-gray-100 font-medium">Hook: </span>{idea.hook}
       </p>
       <div className="flex flex-wrap gap-2">
-        <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full">
-          {idea.angle}
-        </span>
-        <span className="bg-violet-100 text-violet-700 text-xs px-2 py-0.5 rounded-full">
-          {idea.format}
-        </span>
+        <span className="bg-blue-900/50 text-blue-300 text-xs px-2 py-0.5 rounded-full">{idea.angle}</span>
+        <span className="bg-purple-900/50 text-purple-300 text-xs px-2 py-0.5 rounded-full">{idea.format}</span>
       </div>
     </div>
   );
 }
 
-function FlavorPicker({
-  selected,
-  onChange,
-}: {
-  selected: string;
-  onChange: (id: string) => void;
-}) {
+function FlavorPicker({ selected, onChange }: { selected: string; onChange: (id: string) => void }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
       {FLAVORS.map((f) => (
         <button
           key={f.id}
           onClick={() => onChange(f.id)}
-          className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition-all ${
+          className={`flex flex-col items-start p-3 rounded-lg border text-left transition-all ${
             selected === f.id
-              ? "border-indigo-400 bg-indigo-50 shadow-sm"
-              : "border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50"
+              ? "border-blue-500 bg-blue-900/30"
+              : "border-gray-700 bg-gray-800 hover:border-gray-500"
           }`}
         >
-          <span className="text-xl mb-1.5">{f.emoji}</span>
-          <span className="text-sm font-semibold text-stone-900">{f.label}</span>
-          <span className="text-xs text-stone-500 mt-0.5 leading-tight">{f.desc}</span>
+          <span className="text-xl mb-1">{f.emoji}</span>
+          <span className="text-sm font-semibold text-white">{f.label}</span>
+          <span className="text-xs text-gray-400 mt-0.5">{f.desc}</span>
         </button>
       ))}
     </div>
   );
 }
 
-function ScriptSectionCard({
-  section,
-  index,
-}: {
-  section: ScriptSectionType;
-  index: number;
-}) {
+function ScriptSectionCard({ section, index }: { section: ScriptSectionType; index: number }) {
   const [expanded, setExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -124,39 +92,30 @@ function ScriptSectionCard({
   };
 
   return (
-    <div className="border border-stone-200 rounded-xl mb-2.5 overflow-hidden shadow-sm">
+    <div className="border border-gray-700 rounded-lg mb-3 overflow-hidden">
       <div
-        className="flex items-center justify-between px-4 py-3 bg-white cursor-pointer hover:bg-stone-50 select-none"
+        className="flex items-center justify-between px-4 py-2.5 bg-gray-800 cursor-pointer hover:bg-gray-750 select-none"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-2.5">
-          <span className="w-5 h-5 rounded-md bg-violet-600 text-white text-[10px] flex items-center justify-center font-bold flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="w-5 h-5 rounded bg-blue-700 text-white text-xs flex items-center justify-center font-bold flex-shrink-0">
             {index + 1}
           </span>
-          <span className="text-sm font-semibold text-stone-900">{section.name}</span>
+          <span className="text-sm font-semibold text-white">{section.name}</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCopy();
-            }}
-            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition-colors"
+            onClick={(e) => { e.stopPropagation(); handleCopy(); }}
+            className="p-1 text-gray-400 hover:text-white transition-colors"
           >
-            {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+            {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
           </button>
-          {expanded ? (
-            <ChevronUp size={14} className="text-stone-400" />
-          ) : (
-            <ChevronDown size={14} className="text-stone-400" />
-          )}
+          {expanded ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
         </div>
       </div>
       {expanded && (
-        <div className="px-4 py-4 bg-stone-50 border-t border-stone-100">
-          <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">
-            {section.content}
-          </p>
+        <div className="px-4 py-3 bg-gray-900">
+          <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">{section.content}</p>
         </div>
       )}
     </div>
@@ -177,21 +136,16 @@ export default function ScriptGenerator() {
 
   if (!selectedIdea) {
     return (
-      <div className="p-6 md:p-8 max-w-4xl mx-auto">
-        <PipelineStepper current={2} />
-        <div className="flex flex-col items-center justify-center text-center py-24">
-          <div className="w-14 h-14 bg-violet-50 rounded-2xl flex items-center justify-center mb-4">
-            <FileText size={24} className="text-violet-400" />
-          </div>
-          <h2 className="text-lg font-bold text-stone-900 mb-2">No idea selected</h2>
-          <p className="text-stone-500 text-sm mb-6">Go back and pick a video idea first.</p>
-          <button
-            onClick={() => navigate("/video-idea-generator")}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-          >
-            <ArrowLeft size={14} /> Back to Ideas
-          </button>
-        </div>
+      <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center text-center p-8">
+        <FileText size={48} className="text-gray-600 mb-4" />
+        <h2 className="text-xl font-bold text-white mb-2">No idea selected</h2>
+        <p className="text-gray-400 mb-6 text-sm">Go back and pick a video idea first.</p>
+        <button
+          onClick={() => navigate("/video-idea-generator")}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+        >
+          <ArrowLeft size={15} /> Back to Ideas
+        </button>
       </div>
     );
   }
@@ -228,173 +182,130 @@ export default function ScriptGenerator() {
   };
 
   const script = generatedScript?.script;
-  const error = generateScript.error as { response?: { data?: { error?: { detail?: string } } }; message?: string } | null;
+  const error = generateScript.error as any;
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto">
-      {/* Stepper */}
-      <PipelineStepper current={2} />
-
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-7">
-        <button
-          onClick={() => navigate("/video-idea-generator")}
-          className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
-        >
-          <ArrowLeft size={16} />
+    <div className="bg-gray-900 text-gray-200 min-h-screen font-sans">
+      <div className="max-w-4xl mx-auto p-4 md:p-8">
+        <button onClick={() => navigate("/video-idea-generator")} className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm mb-6 transition-colors">
+          <ArrowLeft size={14} /> Back to Ideas
         </button>
-        <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center border border-violet-100">
-          <FileText size={18} className="text-violet-600" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-stone-900">Script Writer</h1>
-          <p className="text-stone-500 text-xs">
-            Full script calibrated to your channel's average video length
-          </p>
-        </div>
-      </div>
 
-      <IdeaSummary idea={selectedIdea} />
+        <header className="mb-8">
+          <div className="inline-flex items-center justify-center bg-purple-500/10 text-purple-400 rounded-full p-3 mb-3">
+            <FileText size={28} />
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">Script Generator</h1>
+          <p className="text-gray-400 mt-1 text-sm">Generates a full script calibrated to your channel's average video length.</p>
+        </header>
 
-      {/* Flavor picker */}
-      <div className="mb-6">
-        <h2 className="text-xs font-semibold text-stone-600 uppercase tracking-wider mb-3">
-          Script Style
-        </h2>
-        <FlavorPicker selected={flavor} onChange={setFlavor} />
-      </div>
+        <IdeaSummary idea={selectedIdea} />
 
-      {/* Target duration notice */}
-      {channelData && channelData.average_duration_seconds > 0 && (
-        <div className="flex items-center gap-2 text-xs text-stone-600 mb-5 bg-white border border-stone-200 rounded-xl px-4 py-3 shadow-sm">
-          <Clock size={13} className="text-indigo-500 flex-shrink-0" />
-          Script will target&nbsp;
-          <span className="text-stone-900 font-semibold">
-            ~{Math.round((channelData.average_duration_seconds / 60) * 130).toLocaleString()} words
-          </span>
-          &nbsp;to match your channel average of&nbsp;
-          <span className="text-stone-900 font-semibold">
-            {formatDuration(channelData.average_duration_seconds)}
-          </span>
-        </div>
-      )}
+        <section className="mb-6">
+          <h2 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
+            Choose Script Flavor
+          </h2>
+          <FlavorPicker selected={flavor} onChange={setFlavor} />
+        </section>
 
-      {/* Generate button */}
-      <button
-        onClick={handleGenerate}
-        disabled={generateScript.isPending}
-        className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2.5 px-5 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed mb-6"
-      >
-        {generateScript.isPending ? (
-          <>
-            <Loader size={14} className="animate-spin" /> Writing Script…
-          </>
-        ) : generatedScript ? (
-          <>
-            <RefreshCw size={14} /> Regenerate
-          </>
-        ) : (
-          <>
-            <Sparkles size={14} /> Generate Script
-          </>
+        {channelData && channelData.average_duration_seconds > 0 && (
+          <div className="flex items-center gap-2 text-xs text-gray-400 mb-6 bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5">
+            <Clock size={14} className="text-blue-400 flex-shrink-0" />
+            Script will target&nbsp;
+            <span className="text-white font-medium">
+              ~{Math.round((channelData.average_duration_seconds / 60) * 130).toLocaleString()} words
+            </span>
+            &nbsp;to match your channel average of&nbsp;
+            <span className="text-white font-medium">{formatDuration(channelData.average_duration_seconds)}</span>
+          </div>
         )}
-      </button>
 
-      {error && (
-        <div className="flex items-center gap-2 text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-6">
-          <AlertCircle size={13} />
-          {error?.response?.data?.error?.detail || error?.message}
-        </div>
-      )}
+        <button
+          onClick={handleGenerate}
+          disabled={generateScript.isPending}
+          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 px-6 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+        >
+          {generateScript.isPending ? (
+            <><Loader size={15} className="animate-spin" /> Writing Script…</>
+          ) : generatedScript ? (
+            <><RefreshCw size={15} /> Regenerate</>
+          ) : (
+            <><Sparkles size={15} /> Generate Script</>
+          )}
+        </button>
 
-      {/* Script output */}
-      {script && (
-        <div>
-          {/* Stats row */}
-          <div className="flex flex-wrap gap-4 mb-5 p-4 bg-white border border-stone-200 rounded-xl shadow-sm">
-            <div className="flex items-center gap-2 text-sm">
-              <BookOpen size={13} className="text-violet-500" />
-              <span className="text-stone-500">Words:</span>
-              <span className="text-stone-900 font-semibold">
-                {script.word_count?.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Clock size={13} className="text-indigo-500" />
-              <span className="text-stone-500">Est. duration:</span>
-              <span className="text-stone-900 font-semibold">
-                {formatDuration(script.estimated_duration_seconds)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <FileText size={13} className="text-emerald-500" />
-              <span className="text-stone-500">Sections:</span>
-              <span className="text-stone-900 font-semibold">{script.sections?.length}</span>
-            </div>
+        {error && (
+          <div className="flex items-center gap-2 text-red-400 text-sm mb-6">
+            <AlertCircle size={15} /> {error?.response?.data?.error?.detail || error?.message}
           </div>
+        )}
 
-          {/* Sections */}
-          <div className="mb-4">
-            {script.sections?.map((section, i) => (
-              <ScriptSectionCard key={i} section={section} index={i} />
-            ))}
-          </div>
-
-          {/* Full script expandable */}
-          <div className="border border-stone-200 rounded-xl overflow-hidden mb-8 shadow-sm">
-            <div
-              className="flex items-center justify-between px-4 py-3 bg-white cursor-pointer hover:bg-stone-50"
-              onClick={() => setShowFullScript(!showFullScript)}
-            >
-              <span className="text-sm font-semibold text-stone-900 flex items-center gap-2">
-                <FileText size={14} className="text-stone-400" />
-                Full Script (copy-ready)
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCopyFull();
-                  }}
-                  className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  {fullCopied ? (
-                    <Check size={12} className="text-emerald-500" />
-                  ) : (
-                    <Copy size={12} />
-                  )}
-                  {fullCopied ? "Copied!" : "Copy all"}
-                </button>
-                {showFullScript ? (
-                  <ChevronUp size={14} className="text-stone-400" />
-                ) : (
-                  <ChevronDown size={14} className="text-stone-400" />
-                )}
+        {script && (
+          <section>
+            <div className="flex flex-wrap gap-4 mb-4">
+              <div className="flex items-center gap-2 text-sm">
+                <BookOpen size={14} className="text-purple-400" />
+                <span className="text-gray-400">Words:</span>
+                <span className="text-white font-semibold">{script.word_count?.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Clock size={14} className="text-blue-400" />
+                <span className="text-gray-400">Est. duration:</span>
+                <span className="text-white font-semibold">{formatDuration(script.estimated_duration_seconds)}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <FileText size={14} className="text-green-400" />
+                <span className="text-gray-400">Sections:</span>
+                <span className="text-white font-semibold">{script.sections?.length}</span>
               </div>
             </div>
-            {showFullScript && (
-              <div className="p-4 bg-stone-50 border-t border-stone-100 max-h-96 overflow-y-auto">
-                <pre className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed font-sans">
-                  {script.full_script}
-                </pre>
-              </div>
-            )}
-          </div>
 
-          {/* Next step CTA */}
-          <div className="bg-white border border-stone-200 rounded-xl p-5 text-center shadow-sm">
-            <p className="text-sm text-stone-500 mb-4">
-              Happy with the script? Generate title variations next.
-            </p>
-            <button
-              onClick={() => navigate("/title-suggestor")}
-              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 px-6 rounded-xl text-sm transition-colors"
-            >
-              Title Suggestor <ArrowRight size={14} />
-            </button>
-          </div>
-        </div>
-      )}
+            <div className="mb-4">
+              {script.sections?.map((section, i) => (
+                <ScriptSectionCard key={i} section={section} index={i} />
+              ))}
+            </div>
+
+            <div className="border border-gray-700 rounded-xl overflow-hidden mb-8">
+              <div
+                className="flex items-center justify-between px-4 py-3 bg-gray-800 cursor-pointer"
+                onClick={() => setShowFullScript(!showFullScript)}
+              >
+                <span className="text-sm font-semibold text-white flex items-center gap-2">
+                  <FileText size={15} className="text-gray-400" />
+                  Full Script (copy-ready)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleCopyFull(); }}
+                    className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-md transition-colors"
+                  >
+                    {fullCopied ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
+                    {fullCopied ? "Copied!" : "Copy all"}
+                  </button>
+                  {showFullScript ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
+                </div>
+              </div>
+              {showFullScript && (
+                <div className="p-4 bg-gray-900 max-h-96 overflow-y-auto">
+                  <pre className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed font-sans">{script.full_script}</pre>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center">
+              <p className="text-sm text-gray-400 mb-3">Happy with the script? Generate 10 title variations next.</p>
+              <button
+                onClick={() => navigate("/title-suggestor")}
+                className="inline-flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2.5 px-6 rounded-lg text-sm transition-colors"
+              >
+                Title Suggestor <ArrowRight size={14} />
+              </button>
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
