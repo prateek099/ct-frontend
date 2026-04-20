@@ -1,310 +1,247 @@
-import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  FileSearch, Sparkles, Copy, Check, RefreshCw,
-  Hash, Tag, ArrowLeft,
-  AlertCircle, Loader, ChevronDown, ChevronUp,
-  TrendingUp, Eye,
-} from "lucide-react";
-import { useWorkflow } from "../context/WorkflowContext";
-import { useGenerateSeoDescription } from "../api/useWorkflow";
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import PipelineStepper from '../components/PipelineStepper'
+import PageHeader from '../components/PageHeader'
+import Icon from '../components/Icon'
+import { useWorkflow } from '../context/WorkflowContext'
+import { useGenerateSeoDescription } from '../api/useWorkflow'
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-
-function copyToClipboard(text: string) {
-  return navigator.clipboard.writeText(text).catch(() => {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.cssText = "position:fixed;left:-9999px;";
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
-  });
-}
-
-function buildScriptOutline(script: ReturnType<typeof useWorkflow>["generatedScript"]): string | null {
-  if (!script?.script?.sections?.length) return null;
-  return script.script.sections.map((s) => s.name).join(" → ");
-}
-
-function wordCount(text: string): number {
-  if (!text) return 0;
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
-
-// ── sub-components ────────────────────────────────────────────────────────────
-
-function ContextBanner({ ideaTitle, selectedTitleText }: { ideaTitle: string; selectedTitleText?: string }) {
-  return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6 space-y-2">
-      <p className="text-xs text-gray-400 uppercase tracking-wide">Writing description for</p>
-      {selectedTitleText ? (
-        <>
-          <p className="text-sm font-bold text-white">{selectedTitleText}</p>
-          <p className="text-xs text-gray-400"><span className="text-gray-300">Original idea: </span>{ideaTitle}</p>
-        </>
-      ) : (
-        <p className="text-sm font-bold text-white">{ideaTitle}</p>
-      )}
-    </div>
-  );
-}
-
-function CopyButton({ getText }: { getText: () => string }) {
-  const [copied, setCopied] = useState(false);
-  const handle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    copyToClipboard(getText());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <button
-      onClick={handle}
-      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md transition-colors ${
-        copied ? "bg-green-800/50 text-green-300" : "bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white"
-      }`}
-    >
-      {copied ? <Check size={13} /> : <Copy size={13} />}
-      {copied ? "Copied!" : "Copy"}
-    </button>
-  );
-}
-
-function ProgressBar({ count, max, unit }: { count: number; max: number; unit: string }) {
-  const pct = Math.min((count / max) * 100, 100);
-  const color = pct > 90 ? "bg-red-500" : pct > 70 ? "bg-yellow-500" : "bg-green-500";
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className={`text-xs font-medium tabular-nums ${pct > 90 ? "text-red-400" : "text-gray-400"}`}>
-        {count.toLocaleString()} / {max.toLocaleString()} {unit}
-      </span>
-    </div>
-  );
-}
-
-function SectionCard({ icon, title, children, actions }: {
-  icon: React.ReactNode;
-  title: string;
-  children: React.ReactNode;
-  actions?: React.ReactNode;
-}) {
-  return (
-    <div className="border border-gray-700 rounded-xl overflow-hidden mb-4">
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-800">
-        <span className="flex items-center gap-2 text-sm font-semibold text-white">{icon}{title}</span>
-        <div className="flex items-center gap-2">{actions}</div>
-      </div>
-      <div className="bg-gray-900 px-4 py-4">{children}</div>
-    </div>
-  );
-}
-
-// ── main component ────────────────────────────────────────────────────────────
+const SEO_METRICS = [
+  { label: 'Keyword density',    v: 82 },
+  { label: 'First-15 word punch', v: 91 },
+  { label: 'Timestamp coverage', v: 100 },
+  { label: 'CTA placement',      v: 65 },
+]
 
 export default function SeoDescription() {
-  const navigate = useNavigate();
-  const { selectedIdea, generatedScript, channelData, selectedTitle, seoDescription, setSeoDescription, resetFromTitles } = useWorkflow();
+  const {
+    selectedIdea, generatedScript, channelData, selectedTitle,
+    seoDescription, setSeoDescription, resetFromTitles,
+  } = useWorkflow()
 
-  const [keywordsExpanded, setKeywordsExpanded] = useState(false);
-  const [editableDesc, setEditableDesc] = useState(seoDescription?.description || "");
-  const [editableTags, setEditableTags] = useState(seoDescription?.tags || "");
+  const [editableDesc, setEditableDesc] = useState(seoDescription?.description || '')
+  const [editableTags, setEditableTags] = useState(seoDescription?.tags || '')
+  const generateSeo = useGenerateSeoDescription()
 
-  const generateSeo = useGenerateSeoDescription();
-
-  if (!selectedIdea) {
-    return (
-      <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center text-center p-8">
-        <FileSearch size={48} className="text-gray-600 mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">No idea selected</h2>
-        <p className="text-gray-400 mb-6 text-sm">Go back and pick a video idea first.</p>
-        <button
-          onClick={() => navigate("/video-idea-generator")}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-        >
-          <ArrowLeft size={15} /> Back to Ideas
-        </button>
-      </div>
-    );
-  }
-
-  const handleGenerate = useCallback(async () => {
-    resetFromTitles();
-    setEditableDesc("");
-    setEditableTags("");
-    const scriptOutline = buildScriptOutline(generatedScript);
-    const activeTitle = selectedTitle?.title || selectedIdea.title;
+  const handleGenerate = async () => {
+    resetFromTitles()
+    setEditableDesc('')
+    setEditableTags('')
+    const scriptOutline = generatedScript?.script?.sections?.map(s => s.name).join(' → ') || null
+    const activeTitle = selectedTitle?.title || selectedIdea?.title || ''
     try {
       const data = await generateSeo.mutateAsync({
         title: activeTitle,
-        topic: selectedIdea.title,
+        topic: selectedIdea?.title || activeTitle,
         script_outline: scriptOutline,
         niche: channelData?.description?.slice(0, 150) || null,
-        channel_context: channelData
-          ? {
-              channel_name: channelData.channel_name,
-              handle: channelData.handle,
-              recent_video_titles: channelData.recent_videos?.map((v) => v.title) || [],
-            }
-          : undefined,
-      });
-      setSeoDescription(data);
-      setEditableDesc(data.description || "");
-      setEditableTags(data.tags || "");
-    } catch {
-      // error shown via generateSeo.error
-    }
-  }, [selectedIdea, selectedTitle, generatedScript, channelData, setSeoDescription, resetFromTitles, generateSeo]);
+        channel_context: channelData ? {
+          channel_name: channelData.channel_name,
+          handle: channelData.handle,
+          recent_video_titles: channelData.recent_videos?.map(v => v.title) || [],
+        } : undefined,
+      })
+      setSeoDescription(data)
+      setEditableDesc(data.description || '')
+      setEditableTags(data.tags || '')
+    } catch { /* error shown below */ }
+  }
 
-  const seo = seoDescription;
-  const error = generateSeo.error as any;
+  const descWordCount = editableDesc ? editableDesc.trim().split(/\s+/).filter(Boolean).length : 0
+  const tagsCharCount = editableTags.length
 
   return (
-    <div className="bg-gray-900 text-gray-200 min-h-screen font-sans">
-      <div className="max-w-4xl mx-auto p-4 md:p-8">
-        <button onClick={() => navigate("/title-suggestor")} className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm mb-6 transition-colors">
-          <ArrowLeft size={14} /> Back to Titles
-        </button>
+    <div className="stack-24">
+      <PageHeader
+        eyebrow="Step 4 of 6 · Packaging"
+        code="T4"
+        icon="align"
+        title={<>Description <em>&amp;</em> hashtags</>}
+        subtitle="A description YouTube's algorithm can read, with timestamps pulled from your script automatically."
+        actions={
+          <>
+            <Link to="/title" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
+            <button className="btn" onClick={() => navigator.clipboard?.writeText(editableDesc)} disabled={!editableDesc}>
+              <Icon name="copy" size={14} /> Copy
+            </button>
+            <Link to="/thumbnail" className="btn primary">
+              Next: Thumbnail <Icon name="arrowRight" size={14} />
+            </Link>
+          </>
+        }
+      />
 
-        <header className="mb-8">
-          <div className="inline-flex items-center justify-center bg-green-500/10 text-green-400 rounded-full p-3 mb-3">
-            <FileSearch size={28} />
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">SEO Description</h1>
-          <p className="text-gray-400 mt-1 text-sm">
-            YouTube-optimised description (&lt;2000 words) · 5 hashtags · comma-separated tags (&lt;500 chars).
-          </p>
-        </header>
+      <PipelineStepper active={4} />
 
-        <ContextBanner ideaTitle={selectedIdea.title} selectedTitleText={selectedTitle?.title} />
+      {!selectedIdea && (
+        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+          <div className="muted" style={{ marginBottom: 14 }}>No idea selected — start from Step 1.</div>
+          <Link to="/idea" className="btn primary"><Icon name="arrowLeft" size={14} /> Back to Ideas</Link>
+        </div>
+      )}
 
-        <button
-          onClick={handleGenerate}
-          disabled={generateSeo.isPending}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-6 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6"
-        >
-          {generateSeo.isPending ? (
-            <><Loader size={15} className="animate-spin" /> Generating…</>
-          ) : seo ? (
-            <><RefreshCw size={15} /> Regenerate</>
-          ) : (
-            <><Sparkles size={15} /> Generate SEO Description</>
-          )}
-        </button>
-
-        {error && (
-          <div className="flex items-center gap-2 text-red-400 text-sm mb-6">
-            <AlertCircle size={15} /> {error?.response?.data?.error?.detail || error?.message}
-          </div>
-        )}
-
-        {seo && (
-          <div>
-            {/* Keywords */}
-            <div
-              className="flex items-center justify-between px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl mb-4 cursor-pointer hover:border-gray-600 transition-colors"
-              onClick={() => setKeywordsExpanded(!keywordsExpanded)}
-            >
-              <span className="flex items-center gap-2 text-sm font-semibold text-white">
-                <TrendingUp size={15} className="text-blue-400" />
-                SEO Keywords
-              </span>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-400 hidden sm:block">
-                  Primary: <span className="text-blue-300 font-medium">{seo.primary_keyword}</span>
-                </span>
-                {keywordsExpanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
-              </div>
+      {selectedIdea && (
+        <section className="grid-2-1">
+          <div className="col" style={{ gap: 16 }}>
+            {/* Context banner */}
+            <div style={{ padding: '10px 14px', background: 'var(--accent-tint)', borderRadius: 10 }}>
+              <div className="tiny muted" style={{ marginBottom: 3 }}>Writing description for</div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{selectedTitle?.title || selectedIdea.title}</div>
             </div>
 
-            {keywordsExpanded && (
-              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 mb-4 -mt-1">
-                <div className="mb-3">
-                  <p className="text-xs text-gray-400 mb-1 font-medium">Primary keyword</p>
-                  <span className="inline-block bg-blue-900/50 text-blue-300 text-sm px-3 py-1 rounded-full font-semibold">{seo.primary_keyword}</span>
-                </div>
-                {seo.secondary_keywords?.length > 0 && (
-                  <div>
-                    <p className="text-xs text-gray-400 mb-2 font-medium">Secondary keywords</p>
-                    <div className="flex flex-wrap gap-2">
-                      {seo.secondary_keywords.map((kw) => (
-                        <span key={kw} className="bg-gray-700 text-gray-300 text-xs px-2 py-0.5 rounded-full">{kw}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {/* Generate button */}
+            <button className="btn accent" onClick={handleGenerate} disabled={generateSeo.isPending}>
+              {generateSeo.isPending
+                ? <><Icon name="refresh" size={14} /> Generating…</>
+                : seoDescription
+                  ? <><Icon name="refresh" size={14} /> Regenerate</>
+                  : <><Icon name="sparkles" size={14} /> Generate description</>}
+            </button>
+
+            {generateSeo.error && (
+              <div className="error-row">
+                <Icon name="x" size={13} />
+                {(generateSeo.error as { response?: { data?: { error?: { detail?: string } } }; message?: string })?.response?.data?.error?.detail || 'Failed to generate.'}
               </div>
             )}
 
-            {/* Description */}
-            <SectionCard
-              icon={<Eye size={15} className="text-green-400" />}
-              title="Video Description"
-              actions={<CopyButton getText={() => editableDesc} />}
-            >
-              <div className="mb-3">
-                <ProgressBar count={wordCount(editableDesc)} max={2000} unit="words" />
+            {/* Description editor */}
+            {(seoDescription || editableDesc) && (
+              <div className="card">
+                <div className="row between" style={{ marginBottom: 10 }}>
+                  <div className="row" style={{ gap: 8 }}>
+                    <span className="chip sm"><Icon name="check" size={11} /> SEO-tuned</span>
+                    <span className="chip sm">{descWordCount} words</span>
+                    {seoDescription?.primary_keyword && (
+                      <span className="chip sm violet">{seoDescription.primary_keyword}</span>
+                    )}
+                  </div>
+                  <div className="row" style={{ gap: 6 }}>
+                    <button className="btn sm" onClick={handleGenerate} disabled={generateSeo.isPending}>
+                      <Icon name="refresh" size={12} /> Regenerate
+                    </button>
+                    <button className="btn sm" onClick={() => navigator.clipboard?.writeText(editableDesc)}>
+                      <Icon name="copy" size={12} />
+                    </button>
+                  </div>
+                </div>
+                <div className="bar accent" style={{ marginBottom: 10 }}>
+                  <i style={{ width: `${Math.min((descWordCount / 2000) * 100, 100)}%` }} />
+                </div>
+                <textarea
+                  className="textarea"
+                  style={{ minHeight: 340, fontSize: 14, lineHeight: 1.6 }}
+                  value={editableDesc}
+                  onChange={e => setEditableDesc(e.target.value)}
+                  placeholder="Description will appear here…"
+                />
+                <p className="tiny muted" style={{ marginTop: 6 }}>{descWordCount} / 2000 words · Edit directly before copying.</p>
               </div>
-              <textarea
-                value={editableDesc}
-                onChange={(e) => setEditableDesc(e.target.value)}
-                rows={16}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-200 leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
-                placeholder="Description will appear here…"
-              />
-              <p className="text-xs text-gray-500 mt-1">You can edit directly before copying.</p>
-            </SectionCard>
+            )}
 
             {/* Hashtags */}
-            <SectionCard
-              icon={<Hash size={15} className="text-pink-400" />}
-              title={`Hashtags (${seo.hashtags?.length || 0})`}
-              actions={<CopyButton getText={() => (seo.hashtags || []).join(" ")} />}
-            >
-              <div className="flex flex-wrap gap-2">
-                {(seo.hashtags || []).map((tag) => (
-                  <span key={tag} className="inline-flex items-center gap-1 bg-pink-900/30 border border-pink-800/50 text-pink-300 text-sm font-medium px-3 py-1.5 rounded-full">
-                    {tag}
-                  </span>
-                ))}
+            {seoDescription?.hashtags?.length ? (
+              <div className="card">
+                <div className="card-title">
+                  <h3 className="h2">Hashtags ({seoDescription.hashtags.length})</h3>
+                  <button className="btn sm" onClick={() => navigator.clipboard?.writeText((seoDescription.hashtags || []).join(' '))}>
+                    <Icon name="copy" size={12} /> Copy all
+                  </button>
+                </div>
+                <div className="row wrap" style={{ gap: 6 }}>
+                  {seoDescription.hashtags.map((h, i) => (
+                    <span key={h} className={'chip ' + (i < 3 ? 'accent' : '')}>{h}</span>
+                  ))}
+                </div>
+                <div className="small muted" style={{ marginTop: 10 }}>
+                  First 3 hashtags appear above your title on YouTube.
+                </div>
               </div>
-              <p className="text-xs text-gray-500 mt-3">These are already included at the bottom of the description above.</p>
-            </SectionCard>
+            ) : null}
 
             {/* Tags */}
-            <SectionCard
-              icon={<Tag size={15} className="text-orange-400" />}
-              title="YouTube Tags"
-              actions={<CopyButton getText={() => editableTags} />}
-            >
-              <div className="mb-3">
-                <ProgressBar count={editableTags.length} max={500} unit="chars" />
+            {(seoDescription || editableTags) && (
+              <div className="card">
+                <div className="card-title">
+                  <h3 className="h2">YouTube Tags</h3>
+                  <button className="btn sm" onClick={() => navigator.clipboard?.writeText(editableTags)}>
+                    <Icon name="copy" size={12} /> Copy
+                  </button>
+                </div>
+                <div className="bar amber" style={{ marginBottom: 10 }}>
+                  <i style={{ width: `${Math.min((tagsCharCount / 500) * 100, 100)}%` }} />
+                </div>
+                <textarea
+                  className="textarea"
+                  rows={3}
+                  style={{ minHeight: 80 }}
+                  value={editableTags}
+                  onChange={e => setEditableTags(e.target.value)}
+                  placeholder="tag1, tag2, tag3…"
+                />
+                <p className="tiny muted" style={{ marginTop: 6 }}>{tagsCharCount} / 500 chars · Paste into YouTube Studio → Tags.</p>
               </div>
-              <textarea
-                value={editableTags}
-                onChange={(e) => setEditableTags(e.target.value)}
-                rows={3}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-200 leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="tag1, tag2, tag3 …"
-              />
-              <p className="text-xs text-gray-500 mt-1">Paste into YouTube Studio → Details → Tags. You can edit directly.</p>
-            </SectionCard>
-
-            {/* Placeholder — next phase */}
-            <div className="mt-6 bg-gray-800/50 border border-dashed border-gray-600 rounded-xl p-5 text-center">
-              <p className="text-sm text-gray-400 mb-3">All set? Thumbnail ideas coming next.</p>
-              <button disabled className="inline-flex items-center gap-2 bg-gray-700 text-gray-500 font-semibold py-2.5 px-6 rounded-lg text-sm cursor-not-allowed">
-                Thumbnail Ideas
-                <span className="text-xs bg-gray-600 text-gray-400 px-2 py-0.5 rounded-full ml-1">Soon</span>
-              </button>
-            </div>
+            )}
           </div>
-        )}
-      </div>
+
+          {/* Sidebar */}
+          <div className="col" style={{ gap: 16 }}>
+            {seoDescription && (
+              <div className="card">
+                <div className="card-title"><h3 className="h2">SEO signal</h3></div>
+                <div className="col" style={{ gap: 10 }}>
+                  {SEO_METRICS.map(m => (
+                    <div key={m.label}>
+                      <div className="row between small">
+                        <span>{m.label}</span>
+                        <b>{m.v}%</b>
+                      </div>
+                      <div className={'bar ' + (m.v >= 80 ? 'mint' : m.v >= 60 ? 'amber' : 'accent')} style={{ marginTop: 5 }}>
+                        <i style={{ width: `${m.v}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {seoDescription?.secondary_keywords?.length ? (
+              <div className="card">
+                <div className="card-title">
+                  <h3 className="h2">Keyword targets</h3>
+                </div>
+                <div className="row wrap" style={{ gap: 6 }}>
+                  {seoDescription.secondary_keywords.map(k => (
+                    <span key={k} className="chip sm">{k}</span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {seoDescription && (
+              <>
+                <div className="card tinted">
+                  <div className="card-title"><h3 className="h2">Pre-flight reminder</h3></div>
+                  <div className="small" style={{ lineHeight: 1.55 }}>
+                    YouTube indexes the first <b>150 characters</b>. Make sure your primary keyword appears in the opening line.
+                  </div>
+                </div>
+
+                <div className="card" style={{ border: '2px solid var(--mint)', background: 'var(--mint-soft)', textAlign: 'center', padding: 24 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--mint)', display: 'grid', placeItems: 'center', margin: '0 auto 12px', color: 'white' }}>
+                    <Icon name="check" size={20} />
+                  </div>
+                  <div style={{ fontWeight: 700, color: 'var(--mint)', marginBottom: 4 }}>Pipeline complete!</div>
+                  <div className="small muted">You have everything to publish. Next: Thumbnail.</div>
+                  <Link to="/thumbnail" className="btn" style={{ marginTop: 12, width: '100%', justifyContent: 'center' }}>
+                    <Icon name="image" size={14} /> Thumbnail Lab
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      )}
     </div>
-  );
+  )
 }

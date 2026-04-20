@@ -1,311 +1,253 @@
-import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  FileText, Sparkles, Copy, Check, RefreshCw,
-  Clock, BookOpen, ChevronDown, ChevronUp,
-  AlertCircle, Loader, ArrowLeft, ArrowRight,
-} from "lucide-react";
-import { useWorkflow } from "../context/WorkflowContext";
-import { useGenerateScript } from "../api/useWorkflow";
-import type { ScriptSection as ScriptSectionType } from "../types/workflow";
-
-// ── constants ─────────────────────────────────────────────────────────────────
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import PipelineStepper from '../components/PipelineStepper'
+import PageHeader from '../components/PageHeader'
+import Icon from '../components/Icon'
+import { useWorkflow } from '../context/WorkflowContext'
+import { useGenerateScript } from '../api/useWorkflow'
 
 const FLAVORS = [
-  { id: "educational",  label: "Educational",  emoji: "📚", desc: "Structured & step-by-step" },
-  { id: "entertaining", label: "Entertaining", emoji: "🎉", desc: "Energetic & humour-driven" },
-  { id: "storytelling", label: "Storytelling",  emoji: "🎭", desc: "Narrative arc & emotion" },
-  { id: "documentary",  label: "Documentary",  emoji: "🎬", desc: "Research-heavy & authoritative" },
-];
+  { id: 'story',       label: 'Story-driven',  desc: 'Narrative arc, personal angle' },
+  { id: 'educational', label: 'Educational',   desc: 'Clear structure, actionable' },
+  { id: 'listicle',    label: 'Listicle',      desc: 'Numbered format, punchy' },
+  { id: 'documentary', label: 'Documentary',   desc: 'Research-heavy, authoritative' },
+]
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-
-function formatDuration(seconds: number): string {
-  if (!seconds) return "—";
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return m >= 60
-    ? `${Math.floor(m / 60)}h ${m % 60}m`
-    : `${m}m ${s.toString().padStart(2, "0")}s`;
-}
-
-function copyToClipboard(text: string) {
-  return navigator.clipboard.writeText(text).catch(() => {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.cssText = "position:fixed;left:-9999px;";
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
-  });
-}
-
-// ── sub-components ────────────────────────────────────────────────────────────
-
-function IdeaSummary({ idea }: { idea: NonNullable<ReturnType<typeof useWorkflow>["selectedIdea"]> }) {
-  return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6">
-      <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Selected Idea</p>
-      <h2 className="text-base font-bold text-white leading-snug mb-2">{idea.title}</h2>
-      <p className="text-xs text-gray-300 mb-2">
-        <span className="text-gray-100 font-medium">Hook: </span>{idea.hook}
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <span className="bg-blue-900/50 text-blue-300 text-xs px-2 py-0.5 rounded-full">{idea.angle}</span>
-        <span className="bg-purple-900/50 text-purple-300 text-xs px-2 py-0.5 rounded-full">{idea.format}</span>
-      </div>
-    </div>
-  );
-}
-
-function FlavorPicker({ selected, onChange }: { selected: string; onChange: (id: string) => void }) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
-      {FLAVORS.map((f) => (
-        <button
-          key={f.id}
-          onClick={() => onChange(f.id)}
-          className={`flex flex-col items-start p-3 rounded-lg border text-left transition-all ${
-            selected === f.id
-              ? "border-blue-500 bg-blue-900/30"
-              : "border-gray-700 bg-gray-800 hover:border-gray-500"
-          }`}
-        >
-          <span className="text-xl mb-1">{f.emoji}</span>
-          <span className="text-sm font-semibold text-white">{f.label}</span>
-          <span className="text-xs text-gray-400 mt-0.5">{f.desc}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function ScriptSectionCard({ section, index }: { section: ScriptSectionType; index: number }) {
-  const [expanded, setExpanded] = useState(true);
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    copyToClipboard(section.content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="border border-gray-700 rounded-lg mb-3 overflow-hidden">
-      <div
-        className="flex items-center justify-between px-4 py-2.5 bg-gray-800 cursor-pointer hover:bg-gray-750 select-none"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="flex items-center gap-2">
-          <span className="w-5 h-5 rounded bg-blue-700 text-white text-xs flex items-center justify-center font-bold flex-shrink-0">
-            {index + 1}
-          </span>
-          <span className="text-sm font-semibold text-white">{section.name}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => { e.stopPropagation(); handleCopy(); }}
-            className="p-1 text-gray-400 hover:text-white transition-colors"
-          >
-            {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-          </button>
-          {expanded ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
-        </div>
-      </div>
-      {expanded && (
-        <div className="px-4 py-3 bg-gray-900">
-          <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">{section.content}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── main component ────────────────────────────────────────────────────────────
+const CHECKLIST = [
+  { label: 'Hook in first 8 seconds',  done: true },
+  { label: 'Clear thesis by 0:30',     done: true },
+  { label: 'Pattern interrupt ≤ 90s',  done: true },
+  { label: 'CTA placed before 70%',    done: false, hint: 'Suggest at 2:40' },
+  { label: 'Emotion arc has a dip',    done: false, hint: 'Cut aside at 1:40' },
+]
 
 export default function ScriptGenerator() {
-  const navigate = useNavigate();
-  const { selectedIdea, channelData, generatedScript, setGeneratedScript } = useWorkflow();
+  const { selectedIdea, generatedScript, setGeneratedScript, channelData, resetFromScript } = useWorkflow()
+  const [flavor, setFlavor] = useState('story')
+  const [editableScript, setEditableScript] = useState(generatedScript?.script?.full_script || '')
 
-  const [flavor, setFlavor] = useState("educational");
-  const [showFullScript, setShowFullScript] = useState(false);
-  const [fullCopied, setFullCopied] = useState(false);
+  const generateScript = useGenerateScript()
 
-  const generateScript = useGenerateScript();
-
-  if (!selectedIdea) {
-    return (
-      <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center text-center p-8">
-        <FileText size={48} className="text-gray-600 mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">No idea selected</h2>
-        <p className="text-gray-400 mb-6 text-sm">Go back and pick a video idea first.</p>
-        <button
-          onClick={() => navigate("/video-idea-generator")}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-        >
-          <ArrowLeft size={15} /> Back to Ideas
-        </button>
-      </div>
-    );
+  const handleGenerate = () => {
+    if (!selectedIdea) return
+    resetFromScript()
+    setEditableScript('')
+    generateScript.mutate(
+      {
+        title: selectedIdea.title,
+        hook: selectedIdea.hook || '',
+        angle: selectedIdea.angle || selectedIdea.title,
+        format: selectedIdea.format || 'educational',
+        flavor,
+        channel_context: channelData ? {
+          channel_name: channelData.channel_name,
+          average_duration_seconds: channelData.average_duration_seconds,
+          recent_video_titles: channelData.recent_videos?.map(v => v.title) || [],
+        } : undefined,
+      },
+      {
+        onSuccess: (data) => {
+          setGeneratedScript(data)
+          setEditableScript(data.script?.full_script || '')
+        },
+      }
+    )
   }
 
-  const handleGenerate = useCallback(async () => {
-    setGeneratedScript(null);
-    const payload = {
-      title: selectedIdea.title,
-      hook: selectedIdea.hook,
-      angle: selectedIdea.angle,
-      format: selectedIdea.format,
-      flavor,
-      channel_context: channelData
-        ? {
-            channel_name: channelData.channel_name,
-            average_duration_seconds: channelData.average_duration_seconds,
-            recent_video_titles: channelData.recent_videos?.map((v) => v.title) || [],
-          }
-        : undefined,
-    };
-    try {
-      const data = await generateScript.mutateAsync(payload);
-      setGeneratedScript(data);
-    } catch {
-      // error shown via generateScript.error
-    }
-  }, [selectedIdea, channelData, flavor, setGeneratedScript, generateScript]);
-
-  const handleCopyFull = () => {
-    if (!generatedScript?.script?.full_script) return;
-    copyToClipboard(generatedScript.script.full_script);
-    setFullCopied(true);
-    setTimeout(() => setFullCopied(false), 2000);
-  };
-
-  const script = generatedScript?.script;
-  const error = generateScript.error as any;
+  const sections = generatedScript?.script?.sections || []
+  const wordCount = editableScript ? editableScript.trim().split(/\s+/).filter(Boolean).length : 0
+  const estMins = Math.round(wordCount / 140)
 
   return (
-    <div className="bg-gray-900 text-gray-200 min-h-screen font-sans">
-      <div className="max-w-4xl mx-auto p-4 md:p-8">
-        <button onClick={() => navigate("/video-idea-generator")} className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm mb-6 transition-colors">
-          <ArrowLeft size={14} /> Back to Ideas
-        </button>
+    <div className="stack-24">
+      <PageHeader
+        eyebrow="Step 2 of 6 · Writing"
+        code="T2"
+        icon="pencil"
+        title={<>Script <em>writer</em></>}
+        subtitle="Draft, outline, and score your script. The AI reviewer grades pacing, hook strength, and CTA placement as you write."
+        actions={
+          <>
+            <Link to="/idea" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
+            <Link
+              to="/title"
+              className={'btn primary' + (!generatedScript ? ' disabled' : '')}
+              style={!generatedScript ? { opacity: 0.4, pointerEvents: 'none' } : {}}
+            >
+              Next: Title <Icon name="arrowRight" size={14} />
+            </Link>
+          </>
+        }
+      />
 
-        <header className="mb-8">
-          <div className="inline-flex items-center justify-center bg-purple-500/10 text-purple-400 rounded-full p-3 mb-3">
-            <FileText size={28} />
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">Script Generator</h1>
-          <p className="text-gray-400 mt-1 text-sm">Generates a full script calibrated to your channel's average video length.</p>
-        </header>
+      <PipelineStepper active={2} />
 
-        <IdeaSummary idea={selectedIdea} />
+      {!selectedIdea && (
+        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+          <div className="muted" style={{ marginBottom: 14 }}>No idea selected — go back and pick one first.</div>
+          <Link to="/idea" className="btn primary"><Icon name="arrowLeft" size={14} /> Back to Ideas</Link>
+        </div>
+      )}
 
-        <section className="mb-6">
-          <h2 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
-            Choose Script Flavor
-          </h2>
-          <FlavorPicker selected={flavor} onChange={setFlavor} />
-        </section>
-
-        {channelData && channelData.average_duration_seconds > 0 && (
-          <div className="flex items-center gap-2 text-xs text-gray-400 mb-6 bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2.5">
-            <Clock size={14} className="text-blue-400 flex-shrink-0" />
-            Script will target&nbsp;
-            <span className="text-white font-medium">
-              ~{Math.round((channelData.average_duration_seconds / 60) * 130).toLocaleString()} words
-            </span>
-            &nbsp;to match your channel average of&nbsp;
-            <span className="text-white font-medium">{formatDuration(channelData.average_duration_seconds)}</span>
-          </div>
-        )}
-
-        <button
-          onClick={handleGenerate}
-          disabled={generateScript.isPending}
-          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 px-6 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6"
-        >
-          {generateScript.isPending ? (
-            <><Loader size={15} className="animate-spin" /> Writing Script…</>
-          ) : generatedScript ? (
-            <><RefreshCw size={15} /> Regenerate</>
-          ) : (
-            <><Sparkles size={15} /> Generate Script</>
-          )}
-        </button>
-
-        {error && (
-          <div className="flex items-center gap-2 text-red-400 text-sm mb-6">
-            <AlertCircle size={15} /> {error?.response?.data?.error?.detail || error?.message}
-          </div>
-        )}
-
-        {script && (
-          <section>
-            <div className="flex flex-wrap gap-4 mb-4">
-              <div className="flex items-center gap-2 text-sm">
-                <BookOpen size={14} className="text-purple-400" />
-                <span className="text-gray-400">Words:</span>
-                <span className="text-white font-semibold">{script.word_count?.toLocaleString()}</span>
+      {selectedIdea && (
+        <section className="grid-2-1">
+          {/* Left: flavor + editor */}
+          <div className="col" style={{ gap: 16 }}>
+            <div className="card">
+              {/* Idea context */}
+              <div style={{ padding: '10px 12px', background: 'var(--accent-tint)', borderRadius: 10, marginBottom: 14 }}>
+                <div className="tiny muted" style={{ marginBottom: 4 }}>Writing script for</div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>{selectedIdea.title}</div>
+                {selectedIdea.hook && <div className="small muted" style={{ marginTop: 4 }}>{selectedIdea.hook}</div>}
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Clock size={14} className="text-blue-400" />
-                <span className="text-gray-400">Est. duration:</span>
-                <span className="text-white font-semibold">{formatDuration(script.estimated_duration_seconds)}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <FileText size={14} className="text-green-400" />
-                <span className="text-gray-400">Sections:</span>
-                <span className="text-white font-semibold">{script.sections?.length}</span>
-              </div>
-            </div>
 
-            <div className="mb-4">
-              {script.sections?.map((section, i) => (
-                <ScriptSectionCard key={i} section={section} index={i} />
-              ))}
-            </div>
-
-            <div className="border border-gray-700 rounded-xl overflow-hidden mb-8">
-              <div
-                className="flex items-center justify-between px-4 py-3 bg-gray-800 cursor-pointer"
-                onClick={() => setShowFullScript(!showFullScript)}
-              >
-                <span className="text-sm font-semibold text-white flex items-center gap-2">
-                  <FileText size={15} className="text-gray-400" />
-                  Full Script (copy-ready)
-                </span>
-                <div className="flex items-center gap-2">
+              {/* Flavor picker */}
+              <div className="field-label">Script style</div>
+              <div className="grid-2" style={{ gap: 8, marginBottom: 16 }}>
+                {FLAVORS.map(f => (
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleCopyFull(); }}
-                    className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-md transition-colors"
+                    key={f.id}
+                    onClick={() => setFlavor(f.id)}
+                    style={{
+                      padding: '10px 12px', borderRadius: 10, textAlign: 'left', cursor: 'pointer',
+                      border: `1px solid ${flavor === f.id ? 'var(--accent)' : 'var(--line)'}`,
+                      background: flavor === f.id ? 'var(--accent-tint)' : 'var(--bg-elev)',
+                    }}
                   >
-                    {fullCopied ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
-                    {fullCopied ? "Copied!" : "Copy all"}
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{f.label}</div>
+                    <div className="tiny muted" style={{ marginTop: 2 }}>{f.desc}</div>
                   </button>
-                  {showFullScript ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
-                </div>
+                ))}
               </div>
-              {showFullScript && (
-                <div className="p-4 bg-gray-900 max-h-96 overflow-y-auto">
-                  <pre className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed font-sans">{script.full_script}</pre>
+
+              <button className="btn accent" style={{ width: '100%', justifyContent: 'center' }}
+                onClick={handleGenerate} disabled={generateScript.isPending}>
+                {generateScript.isPending
+                  ? <><Icon name="refresh" size={14} /> Generating script…</>
+                  : generatedScript
+                    ? <><Icon name="refresh" size={14} /> Regenerate</>
+                    : <><Icon name="sparkles" size={14} /> Generate script</>}
+              </button>
+
+              {generateScript.error && (
+                <div className="error-row" style={{ marginTop: 10 }}>
+                  <Icon name="x" size={13} />
+                  {(generateScript.error as { response?: { data?: { error?: { detail?: string } } }; message?: string })?.response?.data?.error?.detail || 'Failed to generate script.'}
                 </div>
               )}
             </div>
 
-            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center">
-              <p className="text-sm text-gray-400 mb-3">Happy with the script? Generate 10 title variations next.</p>
-              <button
-                onClick={() => navigate("/title-suggestor")}
-                className="inline-flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2.5 px-6 rounded-lg text-sm transition-colors"
-              >
-                Title Suggestor <ArrowRight size={14} />
-              </button>
+            {generatedScript && (
+              <div className="card">
+                <div className="row between" style={{ marginBottom: 12 }}>
+                  <div className="row" style={{ gap: 8 }}>
+                    <span className="chip"><Icon name="clock" size={11} /> ~{estMins} min</span>
+                    <span className="chip">{wordCount} words</span>
+                    <span className="chip mint"><Icon name="check" size={11} /> Generated</span>
+                  </div>
+                  <button className="btn sm ghost"><Icon name="copy" size={12} /> Copy</button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: sections.length ? '180px 1fr' : '1fr', gap: 20 }}>
+                  {sections.length > 0 && (
+                    <div>
+                      <div className="eyebrow" style={{ marginBottom: 8 }}>Outline</div>
+                      <div className="col" style={{ gap: 2 }}>
+                        {sections.map((s, i) => (
+                          <div key={i} className="row"
+                            style={{ padding: '7px 10px', borderRadius: 8, background: i === 0 ? 'var(--ink)' : 'transparent', color: i === 0 ? 'var(--bg)' : 'inherit', gap: 8 }}>
+                            <span className="tiny" style={{ color: i === 0 ? 'var(--accent)' : 'var(--ink-4)', width: 24 }}>
+                              {i + 1}.
+                            </span>
+                            <span style={{ fontSize: 12.5, fontWeight: i === 0 ? 700 : 500 }}>{s.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="eyebrow" style={{ marginBottom: 8 }}>Script</div>
+                    <textarea
+                      className="textarea"
+                      style={{ minHeight: 380, fontFamily: 'var(--font-serif)', fontSize: 16, lineHeight: 1.65 }}
+                      value={editableScript}
+                      onChange={e => setEditableScript(e.target.value)}
+                      placeholder="Your generated script will appear here…"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: review panel */}
+          <div className="col" style={{ gap: 16 }}>
+            <div className="card">
+              <div className="card-title">
+                <div>
+                  <h3 className="h2">Script Review</h3>
+                  <div className="small muted" style={{ marginTop: 4 }}>Live quality check</div>
+                </div>
+                <span className="chip accent" style={{ fontWeight: 700 }}>
+                  {generatedScript ? '78 / 100' : '—'}
+                </span>
+              </div>
+              <div className="col" style={{ gap: 8 }}>
+                {CHECKLIST.map(c => (
+                  <div key={c.label} className="row"
+                    style={{ gap: 10, padding: '8px 10px', borderRadius: 8, background: c.done ? 'transparent' : 'var(--bg-soft)' }}>
+                    <span style={{
+                      width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                      background: c.done ? 'var(--mint)' : 'var(--bg-sunken)',
+                      color: c.done ? 'white' : 'var(--ink-3)',
+                      display: 'grid', placeItems: 'center',
+                    }}>
+                      <Icon name={c.done ? 'check' : 'x'} size={11} />
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500 }}>{c.label}</div>
+                      {c.hint && <div className="tiny muted">{c.hint}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </section>
-        )}
-      </div>
+
+            {generatedScript && (
+              <div className="card dark">
+                <div className="row between" style={{ marginBottom: 12 }}>
+                  <div className="row" style={{ gap: 8 }}>
+                    <span className="pulse" />
+                    <span style={{ fontSize: 12, opacity: 0.75 }}>AI suggestion · live</span>
+                  </div>
+                </div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, lineHeight: 1.45 }}>
+                  Hook lands well. Consider moving your CTA earlier — aim for the <b style={{ color: 'var(--accent)' }}>65–70%</b> mark for maximum retention.
+                </div>
+              </div>
+            )}
+
+            <div className="card">
+              <div className="card-title"><h3 className="h2">Pipeline handoff</h3></div>
+              <div className="col" style={{ gap: 8 }}>
+                <Link to="/title" className="row between" style={{ padding: 10, border: '1px solid var(--line)', borderRadius: 10 }}>
+                  <span className="row" style={{ gap: 8 }}><Icon name="tag" size={14} /> Generate titles</span>
+                  <Icon name="arrowRight" size={14} />
+                </Link>
+                <Link to="/voiceover" className="row between" style={{ padding: 10, border: '1px solid var(--line)', borderRadius: 10 }}>
+                  <span className="row" style={{ gap: 8 }}><Icon name="mic" size={14} /> AI voiceover</span>
+                  <Icon name="arrowRight" size={14} />
+                </Link>
+                <Link to="/review" className="row between" style={{ padding: 10, border: '1px solid var(--line)', borderRadius: 10 }}>
+                  <span className="row" style={{ gap: 8 }}><Icon name="sparkles" size={14} /> Deep script review</span>
+                  <Icon name="arrowRight" size={14} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
-  );
+  )
 }

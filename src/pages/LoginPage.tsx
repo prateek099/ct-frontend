@@ -1,92 +1,129 @@
-import { useState, FormEvent } from "react";
-import { useWorkflowLogin } from "../api/useAuth";
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { useWorkflowLogin } from '../api/useAuth'
+import Icon from '../components/Icon'
+
+const FEATURES = [
+  { icon: 'lightbulb', text: 'Hook-scored video ideas ranked by trend lift' },
+  { icon: 'pencil',    text: 'AI script writer with live quality review' },
+  { icon: 'tag',       text: 'CTR-predicted title generator' },
+  { icon: 'align',     text: 'SEO description + hashtags in one click' },
+]
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("testemail@a.com");
-  const [password, setPassword] = useState("string");
-  const [error, setError] = useState("");
+  const [username, setUsername] = useState('testemail@a.com')
+  const [password, setPassword] = useState('string')
+  const [showPw, setShowPw] = useState(false)
+  const [error, setError] = useState('')
 
-  const login = useWorkflowLogin();
+  const login = useWorkflowLogin()
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError("");
+    e.preventDefault()
+    setError('')
     try {
-      await login.mutateAsync({
-        username: btoa(username),
-        password: btoa(password),
-      });
-      window.location.replace("/");
-    } catch (err: any) {
-      const detail = err?.response?.data?.error?.detail;
-      setError(typeof detail === "string" ? detail : "Invalid username or password.");
+      await login.mutateAsync({ username: btoa(username), password: btoa(password) })
+      window.location.replace('/')
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { error?: { detail?: string } } } })?.response?.data?.error?.detail
+      setError(typeof detail === 'string' ? detail : 'Invalid username or password.')
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
-      <div className="w-full max-w-md bg-gray-800 border border-gray-700 rounded-xl shadow-2xl p-8">
-        {/* Logo / Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white">Creator Tools</h1>
-          <p className="text-gray-400 mt-1 text-sm">Sign in to access your dashboard</p>
+    <div className="login-page">
+      {/* Left panel */}
+      <div className="login-panel">
+        <div>
+          <div className="brand" style={{ padding: 0, marginBottom: 32 }}>
+            <div className="brand-mark" style={{ boxShadow: '0 0 0 3px rgba(255,255,255,0.08)' }} />
+            <div>
+              <div className="brand-name" style={{ color: 'white' }}>Creator OS</div>
+              <div className="brand-tag" style={{ color: 'rgba(255,255,255,0.4)' }}>for YouTube</div>
+            </div>
+          </div>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 34, fontWeight: 400, lineHeight: 1.1, color: 'white', margin: '0 0 12px' }}>
+            Your AI-powered<br /><em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>YouTube studio.</em>
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>
+            From idea to published — one workspace, 19 tools, zero tab-switching.
+          </p>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="mb-5 bg-red-900/40 border border-red-700/60 text-red-300 rounded-lg px-4 py-2.5 text-sm">
-            {error}
-          </div>
-        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {FEATURES.map(f => (
+            <div key={f.icon} className="row" style={{ gap: 14 }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                background: 'rgba(255,77,46,0.15)',
+                display: 'grid', placeItems: 'center', color: 'var(--accent)',
+              }}>
+                <Icon name={f.icon} size={16} />
+              </div>
+              <span style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.7)', lineHeight: 1.4 }}>{f.text}</span>
+            </div>
+          ))}
+        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5" htmlFor="username">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoFocus
-              autoComplete="username"
-              placeholder="Enter your username"
-              required
-              className="w-full bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              placeholder="Enter your password"
-              required
-              className="w-full bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={login.isPending}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:text-blue-400 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors"
-          >
-            {login.isPending ? "Signing in…" : "Sign In"}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-gray-600 text-xs">
-          © {new Date().getFullYear()} Creator Tools
+        <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.25)', margin: 0 }}>
+          © {new Date().getFullYear()} Creator Tools · All rights reserved
         </p>
       </div>
+
+      {/* Right form side */}
+      <div className="login-form-side">
+        <div className="login-form">
+          <h2 className="h2" style={{ marginBottom: 6 }}>Welcome back</h2>
+          <p className="muted small" style={{ marginBottom: 28 }}>Sign in to your Creator OS workspace</p>
+
+          {error && <div className="error-banner">{error}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="field-label" htmlFor="username">Username or email</label>
+              <input
+                id="username"
+                className="input"
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                autoFocus
+                autoComplete="username"
+                placeholder="your@email.com"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="field-label" htmlFor="password">Password</label>
+              <div className="input-wrap">
+                <input
+                  id="password"
+                  className="input"
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  required
+                />
+                <button type="button" onClick={() => setShowPw(v => !v)} tabIndex={-1}>
+                  <Icon name={showPw ? 'eyeOff' : 'eye'} size={15} />
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={login.isPending}
+              className="btn primary"
+              style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
+            >
+              {login.isPending ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
-  );
+  )
 }

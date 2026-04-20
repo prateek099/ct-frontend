@@ -1,51 +1,120 @@
-import { useState } from "react";
-import { useUsers, useCreateUser, useDeleteUser } from "../api/useUsers";
-import UserCard from "../components/UserCard";
+import { useState } from 'react'
+import { useUsers, useCreateUser, useDeleteUser } from '../api/useUsers'
+import Icon from '../components/Icon'
+import PageHeader from '../components/PageHeader'
 
 export default function UsersPage() {
-  const { data: users, isLoading, error } = useUsers();
-  const createUser = useCreateUser();
-  const deleteUser = useDeleteUser();
+  const { data: users, isLoading, error } = useUsers()
+  const createUser = useCreateUser()
+  const deleteUser = useDeleteUser()
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !email) return;
-    createUser.mutate({ name, email }, { onSuccess: () => { setName(""); setEmail(""); } });
-  };
-
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p style={{ color: "red" }}>Error fetching users.</p>;
+    e.preventDefault()
+    if (!name || !email) return
+    createUser.mutate({ name, email }, { onSuccess: () => { setName(''); setEmail('') } })
+  }
 
   return (
-    <div style={{ maxWidth: 600, margin: "2rem auto", fontFamily: "sans-serif" }}>
-      <h1>Creator Tools — Users</h1>
+    <div className="stack-24" style={{ maxWidth: 720 }}>
+      <PageHeader
+        eyebrow="Manage"
+        icon="users"
+        title={<>Creator <em>users</em></>}
+        subtitle="Manage Creator Tools accounts and access."
+        actions={undefined}
+      />
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: "2rem", display: "flex", gap: "0.5rem" }}>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Name"
-          style={{ flex: 1, padding: "0.5rem", borderRadius: 4, border: "1px solid #ccc" }}
-        />
-        <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          style={{ flex: 2, padding: "0.5rem", borderRadius: 4, border: "1px solid #ccc" }}
-        />
-        <button type="submit" style={{ padding: "0.5rem 1rem", background: "#3182ce", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
-          Add
-        </button>
-      </form>
+      {/* Add user form */}
+      <div className="card">
+        <h3 className="h3" style={{ marginBottom: 14 }}>Add new user</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="row" style={{ gap: 10 }}>
+            <input
+              className="input"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Full name"
+              required
+              style={{ flex: 1 }}
+            />
+            <input
+              className="input"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="email@example.com"
+              type="email"
+              required
+              style={{ flex: 2 }}
+            />
+            <button type="submit" className="btn accent" disabled={createUser.isPending} style={{ flexShrink: 0 }}>
+              {createUser.isPending ? <Icon name="refresh" size={14} /> : <Icon name="plus" size={14} />}
+              Add
+            </button>
+          </div>
+        </form>
+      </div>
 
-      {users?.map((user) => (
-        <UserCard key={user.id} user={user} onDelete={(id) => deleteUser.mutate(id)} />
-      ))}
+      {/* Users list */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        {isLoading && (
+          <div style={{ padding: '48px 0', textAlign: 'center' }}>
+            <div className="muted small">Loading users…</div>
+          </div>
+        )}
 
-      {users?.length === 0 && <p>No users yet. Add one above!</p>}
+        {error && (
+          <div className="error-row" style={{ margin: 16 }}>
+            <Icon name="x" size={13} /> Failed to load users.
+          </div>
+        )}
+
+        {!isLoading && !error && users?.length === 0 && (
+          <div style={{ padding: '48px 0', textAlign: 'center' }}>
+            <div className="muted small">No users yet. Add one above!</div>
+          </div>
+        )}
+
+        {users && users.length > 0 && (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th style={{ width: 60 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(user => (
+                <tr key={user.id}>
+                  <td>
+                    <div className="row" style={{ gap: 10 }}>
+                      <div className="avatar sm" style={{ background: 'linear-gradient(135deg, var(--violet), #4F3BD0)' }}>
+                        {(user.name?.[0] ?? 'U').toUpperCase()}
+                      </div>
+                      <span style={{ fontWeight: 600 }}>{user.name}</span>
+                    </div>
+                  </td>
+                  <td className="muted">{user.email}</td>
+                  <td>
+                    <button
+                      className="btn sm ghost"
+                      onClick={() => deleteUser.mutate(user.id)}
+                      disabled={deleteUser.isPending}
+                      title="Delete user"
+                      style={{ color: 'var(--ink-4)' }}
+                    >
+                      <Icon name="x" size={13} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
-  );
+  )
 }

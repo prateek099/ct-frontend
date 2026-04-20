@@ -1,322 +1,316 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Youtube, Search, Sparkles, ChevronDown, ChevronUp,
-  Copy, Check, Users, Eye, Clock, ArrowRight, AlertCircle, Loader,
-} from "lucide-react";
-import { useWorkflow } from "../context/WorkflowContext";
-import { useFetchChannel, useGenerateIdeas } from "../api/useWorkflow";
-import type { ChannelData, VideoIdea } from "../types/workflow";
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import PipelineStepper from '../components/PipelineStepper'
+import PageHeader from '../components/PageHeader'
+import Icon from '../components/Icon'
+import { useWorkflow } from '../context/WorkflowContext'
+import { useFetchChannel, useGenerateIdeas } from '../api/useWorkflow'
+import type { VideoIdea } from '../types/workflow'
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-
-function formatCount(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
-  return String(n);
-}
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  if (m >= 60) {
-    const h = Math.floor(m / 60);
-    const rem = m % 60;
-    return `${h}h ${rem}m`;
-  }
-  return `${m}m ${s.toString().padStart(2, "0")}s`;
-}
-
-// ── sub-components ────────────────────────────────────────────────────────────
-
-function StatBadge({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-2 bg-gray-700/50 rounded-lg px-3 py-2">
-      <span className="text-gray-400">{icon}</span>
-      <div>
-        <p className="text-xs text-gray-400">{label}</p>
-        <p className="text-sm font-semibold text-white">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-function ChannelCard({ data }: { data: ChannelData }) {
-  return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 mb-6">
-      <div className="flex items-start gap-4">
-        {data.thumbnail_url && (
-          <img src={data.thumbnail_url} alt={data.channel_name} className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
-        )}
-        <div className="min-w-0">
-          <h3 className="text-lg font-bold text-white truncate">{data.channel_name}</h3>
-          {data.handle && <p className="text-sm text-blue-400">{data.handle}</p>}
-          {data.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{data.description}</p>}
-        </div>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-        <StatBadge icon={<Users size={14} />} label="Subscribers" value={formatCount(data.subscriber_count)} />
-        <StatBadge icon={<Eye size={14} />} label="Total Views" value={formatCount(data.total_views)} />
-        <StatBadge icon={<Youtube size={14} />} label="Videos" value={formatCount(data.video_count)} />
-        <StatBadge icon={<Clock size={14} />} label="Avg Duration" value={formatDuration(data.average_duration_seconds)} />
-      </div>
-      {data.recent_videos?.length > 0 && (
-        <details className="mt-4">
-          <summary className="text-sm text-gray-400 cursor-pointer hover:text-white select-none">
-            Recent videos ({data.recent_videos.length})
-          </summary>
-          <ul className="mt-2 space-y-1 max-h-48 overflow-y-auto pr-1">
-            {data.recent_videos.map((v) => (
-              <li key={v.id} className="flex items-center justify-between text-xs text-gray-300 py-1 border-b border-gray-700/50">
-                <span className="truncate mr-3 flex-1">{v.title}</span>
-                <span className="text-gray-500 flex-shrink-0">{formatCount(v.view_count)} views</span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-    </div>
-  );
-}
-
-function IdeaCard({ idea, index, onSelect }: { idea: VideoIdea; index: number; onSelect: (idea: VideoIdea) => void }) {
-  const [copied, setCopied] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-
-  const handleCopy = () => {
-    const text = `Title: ${idea.title}\nHook: ${idea.hook}\nAngle: ${idea.angle}\nFormat: ${idea.format}`;
-    navigator.clipboard.writeText(text).catch(() => {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.cssText = "position:fixed;left:-9999px;";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-    });
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-3 hover:border-blue-500 transition-all">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">
-            {index + 1}
-          </span>
-          <h3 className="text-sm font-bold text-white leading-snug">{idea.title}</h3>
-        </div>
-        <div className="flex gap-1 flex-shrink-0">
-          <button onClick={handleCopy} className="p-1.5 text-gray-400 hover:text-white transition-colors" title="Copy">
-            {copied ? <Check size={15} className="text-green-400" /> : <Copy size={15} />}
-          </button>
-          <button onClick={() => onSelect(idea)} className="p-1.5 text-blue-400 hover:text-blue-300 transition-colors" title="Use this idea">
-            <ArrowRight size={15} />
-          </button>
-        </div>
-      </div>
-
-      <p className="text-gray-300 text-xs mt-2 ml-9">
-        <span className="font-semibold text-gray-100">Hook: </span>{idea.hook}
-      </p>
-
-      <div className="flex flex-wrap gap-2 mt-2 ml-9">
-        <span className="bg-blue-900/50 text-blue-300 text-xs px-2 py-0.5 rounded-full">{idea.angle}</span>
-        <span className="bg-purple-900/50 text-purple-300 text-xs px-2 py-0.5 rounded-full">{idea.format}</span>
-        {idea.reasoning && (
-          <button onClick={() => setExpanded(!expanded)} className="text-gray-500 hover:text-gray-300 text-xs flex items-center gap-1 transition-colors">
-            {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            Reasoning
-          </button>
-        )}
-      </div>
-
-      {expanded && idea.reasoning && (
-        <p className="text-gray-400 text-xs mt-2 ml-9 italic border-l-2 border-gray-600 pl-3">
-          {idea.reasoning}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ── main component ────────────────────────────────────────────────────────────
+const TONES = ['Casual', 'Documentary', 'Educational', 'Hype', 'Story-driven']
 
 export default function VideoIdeaGenerator() {
-  const navigate = useNavigate();
-  const { channelData, setChannelData, ideas, setIdeas, setSelectedIdea, resetFromIdeas } = useWorkflow();
+  const { channelData, setChannelData, setIdeas, ideas, setSelectedIdea, selectedIdea, resetFromIdeas } = useWorkflow()
 
-  const [urlInput, setUrlInput] = useState(channelData?.handle || "");
-  const [urlType, setUrlType] = useState<"your" | "competitor">("your");
-  const [topicOverride, setTopicOverride] = useState("");
+  const [channelUrl, setChannelUrl] = useState('')
+  const [topic, setTopic] = useState('')
+  const [tone, setTone] = useState('Casual')
+  const [count, setCount] = useState(10)
 
-  const fetchChannel = useFetchChannel();
-  const generateIdeas = useGenerateIdeas();
+  const fetchChannel = useFetchChannel()
+  const generateIdeas = useGenerateIdeas()
 
-  const handleFetchChannel = async () => {
-    if (!urlInput.trim()) return;
-    resetFromIdeas();
-    try {
-      const data = await fetchChannel.mutateAsync({ url: urlInput.trim() });
-      setChannelData(data);
-    } catch {
-      // error shown via fetchChannel.error
+  const handleFetch = () => {
+    if (!channelUrl.trim()) return
+    fetchChannel.mutate({ url: channelUrl.trim() }, {
+      onSuccess: (data) => setChannelData(data),
+    })
+  }
+
+  const handleGenerate = async () => {
+    resetFromIdeas()
+    const payload = {
+      prompt: topic || 'Generate engaging YouTube video ideas',
+      channel_context: channelData ? {
+        channel_name: channelData.channel_name,
+        handle: channelData.handle,
+        description: channelData.description,
+        subscriber_count: channelData.subscriber_count,
+        average_duration_seconds: channelData.average_duration_seconds,
+        recent_video_titles: channelData.recent_videos?.map(v => v.title) || [],
+      } : undefined,
     }
-  };
+    generateIdeas.mutate(payload, { onSuccess: (data) => setIdeas(data) })
+  }
 
-  const handleGenerateIdeas = async () => {
-    if (!channelData) return;
-    setIdeas([]);
-    const topic = topicOverride.trim() || channelData.channel_name;
-    try {
-      const ideas = await generateIdeas.mutateAsync({
-        prompt: topic,
-        channel_context: {
-          channel_name: channelData.channel_name,
-          handle: channelData.handle,
-          description: channelData.description,
-          subscriber_count: channelData.subscriber_count,
-          average_duration_seconds: channelData.average_duration_seconds,
-          recent_video_titles: channelData.recent_videos.map((v) => v.title),
-        },
-      });
-      setIdeas(ideas);
-    } catch {
-      // error shown via generateIdeas.error
-    }
-  };
-
-  const handleSelectIdea = (idea: VideoIdea) => {
-    setSelectedIdea(idea);
-    navigate("/script-generator");
-  };
-
-  const channelError = fetchChannel.error as any;
-  const ideasError = generateIdeas.error as any;
+  const pickIdea = (idea: VideoIdea) => setSelectedIdea(idea)
 
   return (
-    <div className="bg-gray-900 text-gray-200 min-h-screen font-sans">
-      <div className="container mx-auto p-4 md:p-8 max-w-5xl">
-        {/* Header */}
-        <header className="text-center mb-8">
-          <div className="inline-flex items-center justify-center bg-red-500/10 text-red-400 rounded-full p-3 mb-4">
-            <Youtube size={32} />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white">YouTube Idea Generator</h1>
-          <p className="text-gray-400 mt-2 max-w-xl mx-auto text-sm">
-            Enter a channel URL to pull real data, then generate 10 channel-aware video ideas with AI reasoning.
-          </p>
-        </header>
+    <div className="stack-24">
+      <PageHeader
+        eyebrow="Step 1 of 6 · Ideation"
+        code="T1"
+        icon="lightbulb"
+        title={<>Video <em>Ideas</em></>}
+        subtitle="Brainstorm hook-scored, trend-aware ideas — ranked by what's most likely to pop in your niche right now."
+        actions={
+          <>
+            <button className="btn" disabled={!selectedIdea}>
+              <Icon name="save" size={14} /> Save to idea bank
+            </button>
+            <Link to="/script" className={'btn primary' + (!selectedIdea ? ' disabled' : '')}
+              style={!selectedIdea ? { opacity: 0.4, pointerEvents: 'none' } : {}}>
+              <Icon name="arrowRight" size={14} /> Next: Script
+            </Link>
+          </>
+        }
+      />
 
-        {/* Step 1 — Channel URL */}
-        <section className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
-            Enter YouTube URL
-          </h2>
+      <PipelineStepper active={1} />
 
-          <div className="flex gap-2 mb-4">
-            {(["your", "competitor"] as const).map((type) => (
+      <section className="grid-2-1">
+        {/* Left: channel + prompt + results */}
+        <div className="col" style={{ gap: 16 }}>
+
+          {/* Channel card */}
+          <div className="card">
+            <div className="field-label"><Icon name="chart" size={12} /> Channel context (optional)</div>
+            <div className="row" style={{ gap: 8 }}>
+              <input
+                className="input"
+                value={channelUrl}
+                onChange={e => setChannelUrl(e.target.value)}
+                placeholder="Paste YouTube channel URL or @handle"
+                onKeyDown={e => e.key === 'Enter' && handleFetch()}
+              />
               <button
-                key={type}
-                onClick={() => setUrlType(type)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  urlType === type ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                }`}
+                className="btn"
+                onClick={handleFetch}
+                disabled={fetchChannel.isPending || !channelUrl.trim()}
+                style={{ flexShrink: 0 }}
               >
-                {type === "your" ? "Your Channel" : "Competitor Channel"}
+                {fetchChannel.isPending ? <><Icon name="refresh" size={14} className="spin" /> Fetching…</> : <><Icon name="search" size={14} /> Fetch</>}
               </button>
-            ))}
-          </div>
-
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Youtube size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleFetchChannel()}
-                placeholder="https://youtube.com/@channelname  or  paste a video link"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg py-2.5 pl-9 pr-4 text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <button
-              onClick={handleFetchChannel}
-              disabled={fetchChannel.isPending || !urlInput.trim()}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {fetchChannel.isPending ? <Loader size={15} className="animate-spin" /> : <Search size={15} />}
-              {fetchChannel.isPending ? "Fetching…" : "Fetch"}
-            </button>
-          </div>
-
-          {channelError && (
-            <div className="mt-3 flex items-center gap-2 text-red-400 text-sm">
-              <AlertCircle size={15} /> {channelError?.response?.data?.error?.detail || channelError?.message}
-            </div>
-          )}
-        </section>
-
-        {/* Channel card */}
-        {channelData && <ChannelCard data={channelData} />}
-
-        {/* Step 2 — Generate Ideas */}
-        {channelData && (
-          <section className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">2</span>
-              Generate 10 Ideas
-            </h2>
-
-            <div className="mb-4">
-              <label className="block text-sm text-gray-400 mb-1">
-                Topic / Niche focus <span className="text-gray-500">(optional — defaults to channel name)</span>
-              </label>
-              <input
-                type="text"
-                value={topicOverride}
-                onChange={(e) => setTopicOverride(e.target.value)}
-                placeholder={`e.g. "${channelData.channel_name}" or "budget travel tips"`}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg py-2.5 px-4 text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
             </div>
 
-            <button
-              onClick={handleGenerateIdeas}
-              disabled={generateIdeas.isPending}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-6 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {generateIdeas.isPending ? (
-                <><Loader size={15} className="animate-spin" /> Generating…</>
-              ) : (
-                <><Sparkles size={15} /> Generate 10 Ideas</>
-              )}
-            </button>
-
-            {ideasError && (
-              <div className="mt-3 flex items-center gap-2 text-red-400 text-sm">
-                <AlertCircle size={15} /> {ideasError?.response?.data?.error?.detail || ideasError?.message}
+            {channelData && (
+              <div className="row" style={{ marginTop: 12, padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 10, gap: 12 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{channelData.channel_name}</div>
+                  <div className="row" style={{ gap: 8, marginTop: 4 }}>
+                    <span className="chip sm">{channelData.handle}</span>
+                    {channelData.subscriber_count && (
+                      <span className="chip sm mint">{(channelData.subscriber_count / 1000).toFixed(0)}k subs</span>
+                    )}
+                    {channelData.recent_videos?.length && (
+                      <span className="chip sm">{channelData.recent_videos.length} videos loaded</span>
+                    )}
+                  </div>
+                </div>
+                <button className="btn sm ghost" onClick={() => setChannelData(null)}><Icon name="x" size={12} /></button>
               </div>
             )}
-          </section>
-        )}
 
-        {/* Ideas list */}
-        {ideas.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Sparkles size={18} className="text-yellow-400" />
-              10 Video Ideas
-              <span className="text-xs text-gray-500 font-normal ml-1">— click <ArrowRight size={11} className="inline" /> to use an idea</span>
-            </h2>
-            {ideas.map((idea, i) => (
-              <IdeaCard key={i} idea={idea} index={i} onSelect={handleSelectIdea} />
-            ))}
-          </section>
-        )}
-      </div>
+            {fetchChannel.error && (
+              <div className="error-row" style={{ marginTop: 10 }}>
+                <Icon name="x" size={13} /> Failed to fetch channel. Check the URL and try again.
+              </div>
+            )}
+          </div>
+
+          {/* Prompt card */}
+          <div className="card">
+            <div className="field-label"><Icon name="sparkles" size={12} /> What's the video about?</div>
+            <textarea
+              className="textarea"
+              value={topic}
+              onChange={e => setTopic(e.target.value)}
+              placeholder="Describe the video, the audience, the angle…"
+            />
+            <div className="row wrap" style={{ marginTop: 8, gap: 8 }}>
+              <div className="field-label" style={{ margin: 0, color: 'var(--ink-3)' }}>Tone:</div>
+              {TONES.map(t => (
+                <button key={t} className={'chip' + (tone === t ? ' filled' : '')} onClick={() => setTone(t)}>{t}</button>
+              ))}
+            </div>
+            <div className="row between" style={{ marginTop: 16 }}>
+              <div className="segmented">
+                {[5, 10, 20].map(n => (
+                  <button key={n} className={count === n ? 'on' : ''} onClick={() => setCount(n)}>{n} ideas</button>
+                ))}
+              </div>
+              <button className="btn accent" onClick={handleGenerate} disabled={generateIdeas.isPending}>
+                {generateIdeas.isPending
+                  ? <><Icon name="refresh" size={14} /> Generating…</>
+                  : <><Icon name="sparkles" size={14} /> Generate {count} ideas</>}
+              </button>
+            </div>
+          </div>
+
+          {/* Results */}
+          {(ideas.length > 0 || generateIdeas.error) && (
+            <div className="card">
+              <div className="card-title">
+                <div>
+                  <h3 className="h2">Results</h3>
+                  <div className="small muted" style={{ marginTop: 4 }}>
+                    Ranked by <b>hook strength</b> · {ideas.length} ideas generated
+                  </div>
+                </div>
+                <div className="row" style={{ gap: 6 }}>
+                  <button className="btn sm" onClick={handleGenerate} disabled={generateIdeas.isPending}>
+                    <Icon name="refresh" size={12} /> Regenerate
+                  </button>
+                </div>
+              </div>
+
+              {generateIdeas.error && (
+                <div className="error-row" style={{ marginBottom: 12 }}>
+                  <Icon name="x" size={13} />
+                  {(generateIdeas.error as { response?: { data?: { error?: { detail?: string } } }; message?: string })?.response?.data?.error?.detail || 'Failed to generate ideas.'}
+                </div>
+              )}
+
+              <div className="stack-8">
+                {ideas.map((idea, i) => {
+                  const picked = selectedIdea?.title === idea.title
+                  return (
+                    <div
+                      key={i}
+                      className="card"
+                      style={{
+                        padding: 14,
+                        borderColor: picked ? 'var(--accent)' : 'var(--line)',
+                        background: picked ? 'var(--accent-tint)' : 'var(--bg-elev)',
+                      }}
+                    >
+                      <div className="row between" style={{ alignItems: 'flex-start', gap: 12 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="row" style={{ gap: 10 }}>
+                            <span className="muted small" style={{ width: 18 }}>{i + 1}.</span>
+                            <div style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.005em' }}>
+                              {picked ? <span className="underline-accent">{idea.title}</span> : idea.title}
+                            </div>
+                          </div>
+                          {idea.hook && (
+                            <div className="small muted" style={{ marginTop: 6, marginLeft: 28, lineHeight: 1.4 }}>
+                              {idea.hook}
+                            </div>
+                          )}
+                          <div className="row" style={{ gap: 6, marginTop: 8, marginLeft: 28, flexWrap: 'wrap' }}>
+                            {idea.format && <span className="chip sm"><Icon name="film" size={11} /> {idea.format}</span>}
+                            {idea.angle && <span className="chip sm violet"><Icon name="star" size={11} /> {idea.angle}</span>}
+                          </div>
+                        </div>
+                        <div className="row" style={{ gap: 6 }}>
+                          <button className="btn sm ghost" title="Regenerate"><Icon name="refresh" size={13} /></button>
+                          <button
+                            className={'btn sm ' + (picked ? 'accent' : '')}
+                            onClick={() => pickIdea(idea)}
+                          >
+                            {picked ? <>Picked <Icon name="check" size={12} /></> : 'Pick'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {selectedIdea && (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
+                  <Link to="/script" className="btn primary" style={{ width: '100%', justifyContent: 'center' }}>
+                    Continue with "{selectedIdea.title.slice(0, 40)}…" <Icon name="arrowRight" size={14} />
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right sidebar helpers */}
+        <div className="col" style={{ gap: 16 }}>
+          <div className="card">
+            <div className="card-title">
+              <h3 className="h2">Your style DNA</h3>
+              <span className="chip sm">Learned</span>
+            </div>
+            <div className="col" style={{ gap: 10 }}>
+              <div>
+                <div className="tiny muted" style={{ marginBottom: 4 }}>Common hook type</div>
+                <div className="row between">
+                  <span style={{ fontWeight: 600 }}>Numbered list ("5 things…")</span>
+                  <span className="small muted">62%</span>
+                </div>
+                <div className="bar accent" style={{ marginTop: 6 }}><i style={{ width: '62%' }} /></div>
+              </div>
+              <div>
+                <div className="tiny muted" style={{ marginBottom: 4 }}>Average length</div>
+                <div className="row between">
+                  <span style={{ fontWeight: 600 }}>4:12</span>
+                  <span className="small muted">sweet spot</span>
+                </div>
+                <div className="bar mint" style={{ marginTop: 6 }}><i style={{ width: '72%' }} /></div>
+              </div>
+              <div>
+                <div className="tiny muted" style={{ marginBottom: 4 }}>Top-performing CTA</div>
+                <div style={{ fontWeight: 600 }}>"Subscribe if this saved you time"</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card tinted">
+            <div className="card-title">
+              <h3 className="h2">Trend radar</h3>
+              <Link to="/trending" className="btn sm ghost">Open <Icon name="arrowRight" size={12} /></Link>
+            </div>
+            <div className="col" style={{ gap: 10 }}>
+              {[
+                { t: 'AI tools for creators',  d: '↑ 340%' },
+                { t: 'Claude vs ChatGPT 2026', d: '↑ 210%' },
+                { t: 'Free alternatives to…',  d: '↑ 155%' },
+                { t: 'Channel makeovers',      d: '↑ 88%' },
+              ].map(r => (
+                <div key={r.t} className="row between">
+                  <span style={{ fontSize: 13 }}>{r.t}</span>
+                  <span className="badge mint">{r.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {channelData?.recent_videos?.length ? (
+            <div className="card">
+              <div className="card-title">
+                <h3 className="h2">Recent videos</h3>
+                <span className="small muted">{channelData.channel_name}</span>
+              </div>
+              <div className="col" style={{ gap: 8 }}>
+                {channelData.recent_videos.slice(0, 5).map((v, i) => (
+                  <div key={i} className="row between" style={{ fontSize: 13 }}>
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="card">
+              <div className="card-title">
+                <h3 className="h2">Idea bank</h3>
+                <span className="small muted">23 saved</span>
+              </div>
+              <div className="col" style={{ gap: 8 }}>
+                {['"Why free tools beat paid ones"', '"30 days of Claude"', '"Editing in 1 hour"'].map(idea => (
+                  <div className="row between" key={idea} style={{ fontSize: 13 }}>
+                    <span>{idea}</span>
+                    <button className="btn sm ghost"><Icon name="arrowRight" size={12} /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
-  );
+  )
 }
