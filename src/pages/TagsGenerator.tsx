@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import PageHeader from '../components/PageHeader'
-import Icon from '../components/Icon'
+import PageHeader from '../components/layout/PageHeader'
+import Icon from '../components/shared/Icon'
 
 const INITIAL_TAGS =
   'youtube growth, how to grow on youtube, youtube algorithm 2024, grow youtube channel fast, ' +

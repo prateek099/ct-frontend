@@ -1,10 +1,14 @@
+// Step 3 — title generation. Reads selectedIdea + generatedScript; writes suggestedTitles via mutation.
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import PipelineStepper from '../components/PipelineStepper'
-import PageHeader from '../components/PageHeader'
-import Icon from '../components/Icon'
+import PipelineStepper from '../components/pipeline/PipelineStepper'
+import PageHeader from '../components/layout/PageHeader'
+import Icon from '../components/shared/Icon'
 import { useWorkflow } from '../context/WorkflowContext'
 import { useGenerateTitles } from '../api/useWorkflow'
+import { getApiErrorMessage } from '../types/api'
+import BackgroundGenerationBanner from '../components/pipeline/BackgroundGenerationBanner'
+import NoIdeaSelectedCard from '../components/pipeline/NoIdeaSelectedCard'
 import type { TitleItem } from '../types/workflow'
 
 const ANGLE_COLORS: Record<string, string> = {
@@ -16,33 +20,34 @@ const ANGLE_COLORS: Record<string, string> = {
 export default function TitleSuggestor() {
   const {
     selectedIdea, generatedScript, channelData,
-    suggestedTitles, setSuggestedTitles,
-    selectedTitle, setSelectedTitle,
-    resetFromTitles,
+    suggestedTitles, selectedTitle, setSelectedTitle,
+    resetFromTitles, titlesPending,
+    startTitles, stopTitles,
   } = useWorkflow()
 
   const [steer, setSteer] = useState('')
   const generateTitles = useGenerateTitles()
+  const isGenerating = titlesPending || generateTitles.isPending
 
   const handleGenerate = () => {
     if (!selectedIdea) return
     resetFromTitles()
+    const controller = new AbortController()
+    startTitles(controller)
     const scriptSummary = generatedScript?.script?.sections?.map(s => s.name).join(' → ') || null
-    generateTitles.mutate(
-      {
-        topic: selectedIdea.title,
-        hook: selectedIdea.hook,
-        angle: selectedIdea.angle,
-        format: selectedIdea.format,
-        script_summary: scriptSummary,
-        channel_context: channelData ? {
-          channel_name: channelData.channel_name,
-          handle: channelData.handle,
-          recent_video_titles: channelData.recent_videos?.map(v => v.title) || [],
-        } : undefined,
-      },
-      { onSuccess: (data) => setSuggestedTitles(data) }
-    )
+    generateTitles.mutate({
+      topic: selectedIdea.title,
+      hook: selectedIdea.hook,
+      angle: selectedIdea.angle,
+      format: selectedIdea.format,
+      script_summary: scriptSummary,
+      channel_context: channelData ? {
+        channel_name: channelData.channel_name,
+        handle: channelData.handle,
+        recent_video_titles: channelData.recent_videos?.map(v => v.title) || [],
+      } : undefined,
+      signal: controller.signal,
+    })
   }
 
   const pickTitle = (t: TitleItem) => setSelectedTitle(selectedTitle?.title === t.title ? null : t)
@@ -71,11 +76,13 @@ export default function TitleSuggestor() {
 
       <PipelineStepper active={3} />
 
-      {!selectedIdea && (
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <div className="muted" style={{ marginBottom: 14 }}>No idea selected — start from Step 1.</div>
-          <Link to="/idea" className="btn primary"><Icon name="arrowLeft" size={14} /> Back to Ideas</Link>
-        </div>
+      {!selectedIdea && <NoIdeaSelectedCard />}
+
+      {selectedIdea && titlesPending && !generateTitles.isPending && (
+        <BackgroundGenerationBanner
+          message="Generating titles in the background — results will appear when ready."
+          onStop={stopTitles}
+        />
       )}
 
       {selectedIdea && (
@@ -102,22 +109,29 @@ export default function TitleSuggestor() {
               </div>
 
               <div className="row between" style={{ marginTop: 16 }}>
-                <button className="btn" onClick={handleGenerate} disabled={generateTitles.isPending}>
+                <button className="btn" onClick={handleGenerate} disabled={isGenerating}>
                   <Icon name="sparkles" size={14} /> Generate 10 more
                 </button>
-                <button className="btn accent" onClick={handleGenerate} disabled={generateTitles.isPending}>
-                  {generateTitles.isPending
-                    ? <><Icon name="refresh" size={14} /> Generating…</>
-                    : suggestedTitles.length
-                      ? <><Icon name="refresh" size={14} /> Regenerate</>
-                      : <><Icon name="sparkles" size={14} /> Generate titles</>}
-                </button>
+                <div className="row" style={{ gap: 8 }}>
+                  {isGenerating && (
+                    <button className="btn" onClick={stopTitles}>
+                      <Icon name="x" size={14} /> Stop
+                    </button>
+                  )}
+                  <button className="btn accent" onClick={handleGenerate} disabled={isGenerating}>
+                    {isGenerating
+                      ? <><Icon name="refresh" size={14} className="spin" /> Generating…</>
+                      : suggestedTitles.length
+                        ? <><Icon name="refresh" size={14} /> Regenerate</>
+                        : <><Icon name="sparkles" size={14} /> Generate titles</>}
+                  </button>
+                </div>
               </div>
 
-              {generateTitles.error && (
+              {generateTitles.isError && (
                 <div className="error-row" style={{ marginTop: 10 }}>
                   <Icon name="x" size={13} />
-                  {(generateTitles.error as { response?: { data?: { error?: { detail?: string } } }; message?: string })?.response?.data?.error?.detail || 'Failed to generate titles.'}
+                  {getApiErrorMessage(generateTitles.error, 'Failed to generate titles.')}
                 </div>
               )}
             </div>

@@ -1,10 +1,15 @@
-import { useState } from 'react'
+// Step 4 — SEO description + tags + hashtags. Reads selectedIdea + script + title; writes seoDescription.
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import PipelineStepper from '../components/PipelineStepper'
-import PageHeader from '../components/PageHeader'
-import Icon from '../components/Icon'
+import PipelineStepper from '../components/pipeline/PipelineStepper'
+import PageHeader from '../components/layout/PageHeader'
+import Icon from '../components/shared/Icon'
 import { useWorkflow } from '../context/WorkflowContext'
 import { useGenerateSeoDescription } from '../api/useWorkflow'
+import { getApiErrorMessage } from '../types/api'
+import BackgroundGenerationBanner from '../components/pipeline/BackgroundGenerationBanner'
+import NoIdeaSelectedCard from '../components/pipeline/NoIdeaSelectedCard'
+import ContextBanner from '../components/pipeline/ContextBanner'
 
 const SEO_METRICS = [
   { label: 'Keyword density',    v: 82 },
@@ -16,35 +21,43 @@ const SEO_METRICS = [
 export default function SeoDescription() {
   const {
     selectedIdea, generatedScript, channelData, selectedTitle,
-    seoDescription, setSeoDescription, resetFromTitles,
+    seoDescription, resetFromTitles, seoPending,
+    startSeo, stopSeo,
   } = useWorkflow()
 
   const [editableDesc, setEditableDesc] = useState(seoDescription?.description || '')
   const [editableTags, setEditableTags] = useState(seoDescription?.tags || '')
   const generateSeo = useGenerateSeoDescription()
+  const isGenerating = seoPending || generateSeo.isPending
 
-  const handleGenerate = async () => {
+  // Sync editable fields when context seoDescription arrives (e.g. after tab switch)
+  useEffect(() => {
+    if (seoDescription) {
+      setEditableDesc(seoDescription.description || '')
+      setEditableTags(seoDescription.tags || '')
+    }
+  }, [seoDescription])
+
+  const handleGenerate = () => {
     resetFromTitles()
     setEditableDesc('')
     setEditableTags('')
+    const controller = new AbortController()
+    startSeo(controller)
     const scriptOutline = generatedScript?.script?.sections?.map(s => s.name).join(' → ') || null
     const activeTitle = selectedTitle?.title || selectedIdea?.title || ''
-    try {
-      const data = await generateSeo.mutateAsync({
-        title: activeTitle,
-        topic: selectedIdea?.title || activeTitle,
-        script_outline: scriptOutline,
-        niche: channelData?.description?.slice(0, 150) || null,
-        channel_context: channelData ? {
-          channel_name: channelData.channel_name,
-          handle: channelData.handle,
-          recent_video_titles: channelData.recent_videos?.map(v => v.title) || [],
-        } : undefined,
-      })
-      setSeoDescription(data)
-      setEditableDesc(data.description || '')
-      setEditableTags(data.tags || '')
-    } catch { /* error shown below */ }
+    generateSeo.mutate({
+      title: activeTitle,
+      topic: selectedIdea?.title || activeTitle,
+      script_outline: scriptOutline,
+      niche: channelData?.description?.slice(0, 150) || null,
+      channel_context: channelData ? {
+        channel_name: channelData.channel_name,
+        handle: channelData.handle,
+        recent_video_titles: channelData.recent_videos?.map(v => v.title) || [],
+      } : undefined,
+      signal: controller.signal,
+    })
   }
 
   const descWordCount = editableDesc ? editableDesc.trim().split(/\s+/).filter(Boolean).length : 0
@@ -73,35 +86,43 @@ export default function SeoDescription() {
 
       <PipelineStepper active={4} />
 
-      {!selectedIdea && (
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <div className="muted" style={{ marginBottom: 14 }}>No idea selected — start from Step 1.</div>
-          <Link to="/idea" className="btn primary"><Icon name="arrowLeft" size={14} /> Back to Ideas</Link>
-        </div>
+      {!selectedIdea && <NoIdeaSelectedCard />}
+
+      {selectedIdea && seoPending && !generateSeo.isPending && (
+        <BackgroundGenerationBanner
+          message="Generating description in the background — results will appear when ready."
+          onStop={stopSeo}
+        />
       )}
 
       {selectedIdea && (
         <section className="grid-2-1">
           <div className="col" style={{ gap: 16 }}>
-            {/* Context banner */}
-            <div style={{ padding: '10px 14px', background: 'var(--accent-tint)', borderRadius: 10 }}>
-              <div className="tiny muted" style={{ marginBottom: 3 }}>Writing description for</div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{selectedTitle?.title || selectedIdea.title}</div>
-            </div>
+            <ContextBanner
+              label="Writing description for"
+              title={selectedTitle?.title || selectedIdea.title}
+            />
 
             {/* Generate button */}
-            <button className="btn accent" onClick={handleGenerate} disabled={generateSeo.isPending}>
-              {generateSeo.isPending
-                ? <><Icon name="refresh" size={14} /> Generating…</>
-                : seoDescription
-                  ? <><Icon name="refresh" size={14} /> Regenerate</>
-                  : <><Icon name="sparkles" size={14} /> Generate description</>}
-            </button>
+            <div className="row" style={{ gap: 8 }}>
+              {isGenerating && (
+                <button className="btn" onClick={stopSeo} style={{ flexShrink: 0 }}>
+                  <Icon name="x" size={14} /> Stop
+                </button>
+              )}
+              <button className="btn accent" style={{ flex: 1, justifyContent: 'center' }} onClick={handleGenerate} disabled={isGenerating}>
+                {isGenerating
+                  ? <><Icon name="refresh" size={14} className="spin" /> Generating…</>
+                  : seoDescription
+                    ? <><Icon name="refresh" size={14} /> Regenerate</>
+                    : <><Icon name="sparkles" size={14} /> Generate description</>}
+              </button>
+            </div>
 
-            {generateSeo.error && (
+            {generateSeo.isError && (
               <div className="error-row">
                 <Icon name="x" size={13} />
-                {(generateSeo.error as { response?: { data?: { error?: { detail?: string } } }; message?: string })?.response?.data?.error?.detail || 'Failed to generate.'}
+                {getApiErrorMessage(generateSeo.error, 'Failed to generate.')}
               </div>
             )}
 
@@ -117,8 +138,8 @@ export default function SeoDescription() {
                     )}
                   </div>
                   <div className="row" style={{ gap: 6 }}>
-                    <button className="btn sm" onClick={handleGenerate} disabled={generateSeo.isPending}>
-                      <Icon name="refresh" size={12} /> Regenerate
+                    <button className="btn sm" onClick={handleGenerate} disabled={isGenerating}>
+                      <Icon name="refresh" size={12} className={isGenerating ? 'spin' : ''} /> Regenerate
                     </button>
                     <button className="btn sm" onClick={() => navigator.clipboard?.writeText(editableDesc)}>
                       <Icon name="copy" size={12} />

@@ -7,7 +7,7 @@ import './index.css'
 
 import { AuthProvider } from './context/AuthContext'
 import { WorkflowProvider } from './context/WorkflowContext'
-import ProtectedRoute from './components/ProtectedRoute'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 import AppShell from './components/layout/AppShell'
 
 import LoginPage from './pages/LoginPage'

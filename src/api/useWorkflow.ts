@@ -2,11 +2,17 @@ import { useMutation } from "@tanstack/react-query";
 import client from "./client";
 import type { ChannelData, VideoIdea, GeneratedScript, TitleItem, SeoData } from "../types/workflow";
 
+// Stable keys used by WorkflowContext to subscribe to mutation state globally
+export const MUTATION_KEYS = {
+  generateIdeas:  ["generate-ideas"]  as const,
+  generateScript: ["generate-script"] as const,
+  generateTitles: ["generate-titles"] as const,
+  generateSeo:    ["generate-seo"]    as const,
+} as const
+
 // ── Channel fetch ─────────────────────────────────────────────────────────────
 
-interface FetchChannelPayload {
-  url: string;
-}
+interface FetchChannelPayload { url: string }
 
 export function useFetchChannel() {
   return useMutation({
@@ -31,6 +37,7 @@ interface ChannelContext {
 interface GenerateIdeasPayload {
   prompt: string;
   channel_context?: ChannelContext;
+  signal?: AbortSignal;
 }
 
 interface VideoIdeasResponse {
@@ -40,8 +47,9 @@ interface VideoIdeasResponse {
 
 export function useGenerateIdeas() {
   return useMutation({
-    mutationFn: async (payload: GenerateIdeasPayload): Promise<VideoIdea[]> => {
-      const { data } = await client.post<VideoIdeasResponse>("/video-idea-gen", payload);
+    mutationKey: MUTATION_KEYS.generateIdeas,
+    mutationFn: async ({ signal, ...payload }: GenerateIdeasPayload): Promise<VideoIdea[]> => {
+      const { data } = await client.post<VideoIdeasResponse>("/video-idea-gen", payload, { signal });
       return data.response?.videoIdeas || [];
     },
   });
@@ -62,12 +70,14 @@ interface GenerateScriptPayload {
   format: string;
   flavor?: string;
   channel_context?: ScriptChannelContext;
+  signal?: AbortSignal;
 }
 
 export function useGenerateScript() {
   return useMutation({
-    mutationFn: async (payload: GenerateScriptPayload): Promise<GeneratedScript> => {
-      const { data } = await client.post<GeneratedScript>("/script-generator", payload);
+    mutationKey: MUTATION_KEYS.generateScript,
+    mutationFn: async ({ signal, ...payload }: GenerateScriptPayload): Promise<GeneratedScript> => {
+      const { data } = await client.post<GeneratedScript>("/script-generator", payload, { signal });
       return data;
     },
   });
@@ -88,6 +98,7 @@ interface GenerateTitlesPayload {
   format?: string;
   script_summary?: string | null;
   channel_context?: TitleChannelContext;
+  signal?: AbortSignal;
 }
 
 interface TitleResponse {
@@ -97,8 +108,9 @@ interface TitleResponse {
 
 export function useGenerateTitles() {
   return useMutation({
-    mutationFn: async (payload: GenerateTitlesPayload): Promise<TitleItem[]> => {
-      const { data } = await client.post<TitleResponse>("/title-suggestor", payload);
+    mutationKey: MUTATION_KEYS.generateTitles,
+    mutationFn: async ({ signal, ...payload }: GenerateTitlesPayload): Promise<TitleItem[]> => {
+      const { data } = await client.post<TitleResponse>("/title-suggestor", payload, { signal });
       return data.titles || [];
     },
   });
@@ -118,12 +130,14 @@ interface GenerateSeoPayload {
   script_outline?: string | null;
   niche?: string | null;
   channel_context?: SeoChannelContext;
+  signal?: AbortSignal;
 }
 
 export function useGenerateSeoDescription() {
   return useMutation({
-    mutationFn: async (payload: GenerateSeoPayload): Promise<SeoData> => {
-      const { data } = await client.post<SeoData>("/seo-description", payload);
+    mutationKey: MUTATION_KEYS.generateSeo,
+    mutationFn: async ({ signal, ...payload }: GenerateSeoPayload): Promise<SeoData> => {
+      const { data } = await client.post<SeoData>("/seo-description", payload, { signal });
       return data;
     },
   });

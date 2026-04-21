@@ -1,10 +1,19 @@
 import { NavLink } from 'react-router-dom'
-import Icon from '../Icon'
+import Icon from '../shared/Icon'
 import { TOOLS, GROUPS } from '../../data/tools'
 import { useAuth } from '../../context/AuthContext'
+import { useWorkflow } from '../../context/WorkflowContext'
 
 export default function Sidebar() {
   const { user, logout } = useAuth()
+  const { ideasPending, scriptPending, titlesPending, seoPending } = useWorkflow()
+
+  const pendingPaths: Record<string, boolean> = {
+    '/idea': ideasPending,
+    '/script': scriptPending,
+    '/title': titlesPending,
+    '/description': seoPending,
+  }
 
   const byGroup = GROUPS.map(g => ({
     ...g,
@@ -47,7 +56,10 @@ export default function Sidebar() {
             >
               <Icon name={t.icon} />
               <span>{t.name}</span>
-              <span className="tag">{t.code}</span>
+              {pendingPaths[t.path]
+                ? <Icon name="refresh" size={12} className="spin" style={{ marginLeft: 'auto', color: 'var(--accent)' }} />
+                : <span className="tag">{t.code}</span>
+              }
             </NavLink>
           ))}
         </div>

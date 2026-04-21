@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import PageHeader from '../components/PageHeader'
-import Icon from '../components/Icon'
+import PageHeader from '../components/layout/PageHeader'
+import Icon from '../components/shared/Icon'
 
 const MOCK_SCRIPT =
   `Hey, what's up everyone — welcome back to the channel.\n\nToday I'm pulling back the curtain on the exact YouTube growth strategy that took me from zero to a hundred thousand subscribers in just 11 months.\n\nThis isn't about lucky breaks. There's a very specific system I've built — and I'm going to hand it to you piece by piece.\n\nStick around until the end, because I've got a free resource that ties everything together.\n\nLet's get into it.`

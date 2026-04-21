@@ -340,7 +340,6 @@ button { font-family: inherit; }
 }
 .h-display em { font-style: italic; color: var(--accent); }
 
-.h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
 .h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
 .h3 { font-size: 14px; font-weight: 700; margin: 0; }
 .eyebrow {
@@ -360,7 +359,6 @@ button { font-family: inherit; }
 .col { display: flex; flex-direction: column; gap: 10px; }
 .stack-8 > * + * { margin-top: 8px; }
 .stack-12 > * + * { margin-top: 12px; }
-.stack-16 > * + * { margin-top: 16px; }
 .stack-24 > * + * { margin-top: 24px; }
 
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -575,10 +573,6 @@ button { font-family: inherit; }
 
 /* ======== Misc ======== */
 
-.divider {
-  height: 1px; background: var(--line); border: 0; margin: 12px 0;
-}
-
 .kbd {
   font-family: ui-monospace, monospace;
   font-size: 11px;
@@ -606,6 +600,8 @@ button { font-family: inherit; }
   0% { transform: scale(0.6); opacity: 0.8; }
   100% { transform: scale(1.6); opacity: 0; }
 }
+.spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ======== Dashboard hero ======== */
 

@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import Icon from '../Icon'
+import Icon from '../shared/Icon'
 import { TOOLS } from '../../data/tools'
 
 export default function TopBar() {

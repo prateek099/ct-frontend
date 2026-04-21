@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import PageHeader from '../components/PageHeader'
-import Icon from '../components/Icon'
+import PageHeader from '../components/layout/PageHeader'
+import Icon from '../components/shared/Icon'
 
 const STYLES_LIST = ['Talking head', 'B-roll heavy', 'Slides', 'Animation']
 

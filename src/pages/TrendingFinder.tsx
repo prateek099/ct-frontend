@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import PageHeader from '../components/PageHeader'
-import Icon from '../components/Icon'
+import PageHeader from '../components/layout/PageHeader'
+import Icon from '../components/shared/Icon'
 
 const PERIODS = ['24h', '7d', '30d', '90d'] as const
 const REGIONS = ['US', 'UK', 'Global'] as const

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useUsers, useCreateUser, useDeleteUser } from '../api/useUsers'
-import Icon from '../components/Icon'
-import PageHeader from '../components/PageHeader'
+import Icon from '../components/shared/Icon'
+import PageHeader from '../components/layout/PageHeader'
 
 export default function UsersPage() {
   const { data: users, isLoading, error } = useUsers()

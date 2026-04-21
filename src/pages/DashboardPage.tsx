@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import Icon from '../components/Icon'
+import Icon from '../components/shared/Icon'
 import { useAuth } from '../context/AuthContext'
 
 const IN_FLIGHT = [

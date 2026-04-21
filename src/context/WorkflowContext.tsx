@@ -1,19 +1,13 @@
 /**
  * WorkflowContext — shared state across the creator tools workflow.
  *
- * Flow: Channel URL → Video Ideas → Script → Titles → SEO Description
- *
- * Each tool page reads from and writes to this context so no data needs
- * to be passed through URL params or re-fetched on navigation.
+ * Pending flags and data are synced via useMutationState so they update
+ * even when the generating page is unmounted (user navigated away).
  */
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import type {
-  ChannelData,
-  VideoIdea,
-  GeneratedScript,
-  TitleItem,
-  SeoData,
-} from "../types/workflow";
+import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react";
+import { useMutationState } from "@tanstack/react-query";
+import type { ChannelData, VideoIdea, GeneratedScript, TitleItem, SeoData } from "../types/workflow";
+import { MUTATION_KEYS } from "../api/useWorkflow";
 
 interface WorkflowContextValue {
   // Step 1: Channel data
@@ -35,6 +29,20 @@ interface WorkflowContextValue {
   // Step 5: SEO description
   seoDescription: SeoData | null;
   setSeoDescription: (seo: SeoData | null) => void;
+  // Pending flags (read-only — managed internally via mutation subscriptions)
+  ideasPending: boolean;
+  scriptPending: boolean;
+  titlesPending: boolean;
+  seoPending: boolean;
+  // Generation lifecycle — call startXxx before mutate(), stopXxx to cancel
+  startIdeas: (controller: AbortController) => void;
+  startScript: (controller: AbortController) => void;
+  startTitles: (controller: AbortController) => void;
+  startSeo: (controller: AbortController) => void;
+  stopIdeas: () => void;
+  stopScript: () => void;
+  stopTitles: () => void;
+  stopSeo: () => void;
   // Reset helpers
   resetAll: () => void;
   resetFromIdeas: () => void;
@@ -53,7 +61,149 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
   const [selectedTitle, setSelectedTitle] = useState<TitleItem | null>(null);
   const [seoDescription, setSeoDescription] = useState<SeoData | null>(null);
 
-  /** Full reset — used when starting a brand new workflow */
+  const [ideasPending, setIdeasPending] = useState(false);
+  const [scriptPending, setScriptPending] = useState(false);
+  const [titlesPending, setTitlesPending] = useState(false);
+  const [seoPending, setSeoPending] = useState(false);
+
+  // AbortController refs (useRef = no re-render on change)
+  const ideasCtrl = useRef<AbortController | null>(null);
+  const scriptCtrl = useRef<AbortController | null>(null);
+  const titlesCtrl = useRef<AbortController | null>(null);
+  const seoCtrl = useRef<AbortController | null>(null);
+
+  // ── Subscribe to each mutation's latest state ────────────────────────────
+  // useMutationState lives in WorkflowProvider (always mounted), so it fires
+  // even when the individual page component that called mutate() is unmounted.
+
+  const ideasHistory = useMutationState({
+    filters: { mutationKey: MUTATION_KEYS.generateIdeas },
+    select: m => ({ status: m.state.status, data: m.state.data as VideoIdea[] | undefined }),
+  });
+  const latestIdeas = ideasHistory[ideasHistory.length - 1];
+
+  const scriptHistory = useMutationState({
+    filters: { mutationKey: MUTATION_KEYS.generateScript },
+    select: m => ({ status: m.state.status, data: m.state.data as GeneratedScript | undefined }),
+  });
+  const latestScript = scriptHistory[scriptHistory.length - 1];
+
+  const titlesHistory = useMutationState({
+    filters: { mutationKey: MUTATION_KEYS.generateTitles },
+    select: m => ({ status: m.state.status, data: m.state.data as TitleItem[] | undefined }),
+  });
+  const latestTitles = titlesHistory[titlesHistory.length - 1];
+
+  const seoHistory = useMutationState({
+    filters: { mutationKey: MUTATION_KEYS.generateSeo },
+    select: m => ({ status: m.state.status, data: m.state.data as SeoData | undefined }),
+  });
+  const latestSeo = seoHistory[seoHistory.length - 1];
+
+  // Sync ideas
+  useEffect(() => {
+    if (!latestIdeas) return;
+    if (latestIdeas.status === "success" && latestIdeas.data) {
+      setIdeas(latestIdeas.data);
+      setIdeasPending(false);
+      ideasCtrl.current = null;
+    } else if (latestIdeas.status === "error") {
+      setIdeasPending(false);
+      ideasCtrl.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestIdeas?.status]);
+
+  // Sync script
+  useEffect(() => {
+    if (!latestScript) return;
+    if (latestScript.status === "success" && latestScript.data) {
+      setGeneratedScript(latestScript.data);
+      setScriptPending(false);
+      scriptCtrl.current = null;
+    } else if (latestScript.status === "error") {
+      setScriptPending(false);
+      scriptCtrl.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestScript?.status]);
+
+  // Sync titles
+  useEffect(() => {
+    if (!latestTitles) return;
+    if (latestTitles.status === "success" && latestTitles.data) {
+      setSuggestedTitles(latestTitles.data);
+      setTitlesPending(false);
+      titlesCtrl.current = null;
+    } else if (latestTitles.status === "error") {
+      setTitlesPending(false);
+      titlesCtrl.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestTitles?.status]);
+
+  // Sync seo
+  useEffect(() => {
+    if (!latestSeo) return;
+    if (latestSeo.status === "success" && latestSeo.data) {
+      setSeoDescription(latestSeo.data);
+      setSeoPending(false);
+      seoCtrl.current = null;
+    } else if (latestSeo.status === "error") {
+      setSeoPending(false);
+      seoCtrl.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestSeo?.status]);
+
+  // ── Generation lifecycle helpers ─────────────────────────────────────────
+
+  const startIdeas = useCallback((c: AbortController) => {
+    ideasCtrl.current = c;
+    setIdeasPending(true);
+  }, []);
+
+  const startScript = useCallback((c: AbortController) => {
+    scriptCtrl.current = c;
+    setScriptPending(true);
+  }, []);
+
+  const startTitles = useCallback((c: AbortController) => {
+    titlesCtrl.current = c;
+    setTitlesPending(true);
+  }, []);
+
+  const startSeo = useCallback((c: AbortController) => {
+    seoCtrl.current = c;
+    setSeoPending(true);
+  }, []);
+
+  const stopIdeas = useCallback(() => {
+    ideasCtrl.current?.abort();
+    ideasCtrl.current = null;
+    setIdeasPending(false);
+  }, []);
+
+  const stopScript = useCallback(() => {
+    scriptCtrl.current?.abort();
+    scriptCtrl.current = null;
+    setScriptPending(false);
+  }, []);
+
+  const stopTitles = useCallback(() => {
+    titlesCtrl.current?.abort();
+    titlesCtrl.current = null;
+    setTitlesPending(false);
+  }, []);
+
+  const stopSeo = useCallback(() => {
+    seoCtrl.current?.abort();
+    seoCtrl.current = null;
+    setSeoPending(false);
+  }, []);
+
+  // ── Reset helpers ────────────────────────────────────────────────────────
+
   const resetAll = useCallback(() => {
     setChannelData(null);
     setIdeas([]);
@@ -64,7 +214,6 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     setSeoDescription(null);
   }, []);
 
-  /** Partial reset — keep channel data but clear downstream */
   const resetFromIdeas = useCallback(() => {
     setIdeas([]);
     setSelectedIdea(null);
@@ -74,14 +223,12 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     setSeoDescription(null);
   }, []);
 
-  /** Partial reset — keep channel + idea, clear script and downstream */
   const resetFromScript = useCallback(() => {
     setSuggestedTitles([]);
     setSelectedTitle(null);
     setSeoDescription(null);
   }, []);
 
-  /** Partial reset — keep everything up to selected title, clear desc */
   const resetFromTitles = useCallback(() => {
     setSeoDescription(null);
   }, []);
@@ -96,6 +243,9 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         suggestedTitles, setSuggestedTitles,
         selectedTitle, setSelectedTitle,
         seoDescription, setSeoDescription,
+        ideasPending, scriptPending, titlesPending, seoPending,
+        startIdeas, startScript, startTitles, startSeo,
+        stopIdeas, stopScript, stopTitles, stopSeo,
         resetAll, resetFromIdeas, resetFromScript, resetFromTitles,
       }}
     >
@@ -104,7 +254,6 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Convenience hook — throws if used outside provider */
 export function useWorkflow(): WorkflowContextValue {
   const ctx = useContext(WorkflowContext);
   if (!ctx) throw new Error("useWorkflow must be used inside <WorkflowProvider>");

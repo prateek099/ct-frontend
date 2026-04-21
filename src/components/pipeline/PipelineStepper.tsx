@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import Icon from './Icon'
+import Icon from '../shared/Icon'
 
 const STEPS = [
   { id: 1, label: 'Idea',        path: '/idea' },

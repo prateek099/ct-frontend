@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import PageHeader from '../components/PageHeader'
-import Icon from '../components/Icon'
+import PageHeader from '../components/layout/PageHeader'
+import Icon from '../components/shared/Icon'
 
 const MOCK_SCRIPT =
   `Hey everyone, welcome back.\n\nSo today I want to talk about something that completely changed how I approach content creation — and that's building systems instead of relying on motivation.\n\nMotivation is unreliable. Some days you have it, most days you don't. But a system? A system just runs.\n\nHere are the three systems I use every single week to stay consistent:\n\nFirst — a content calendar. Not complicated. Just know what you're making next.\n\nSecond — batch filming. I film four videos in one session, every two weeks. It's painful but it works.\n\nThird — a review ritual. Every Sunday, I watch the previous week's videos with fresh eyes and write down three things I'd do differently.\n\nThat's it. Three systems. If you do nothing else, do those.\n\nHit subscribe if this was useful — I post every Tuesday and Thursday.`

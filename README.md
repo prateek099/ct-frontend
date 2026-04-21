@@ -13,18 +13,47 @@ React 18 + TypeScript frontend for Creator Tools. Vite dev server with Tailwind 
 | React Router | 6.23 | Client-side routing |
 | Axios | 1.7 | HTTP client with auth interceptors |
 | Tailwind CSS | 3.4 | Utility-first styling |
+| js-cookie | 3.x | Cookie read/write for auth tokens |
 | Vitest | 1.6 | Unit testing |
 
 ## Project Structure
 
 ```
 src/
-├── api/            # React Query hooks (useAuth, useUsers, useWorkflow, client)
-├── components/     # Shared components (Navbar, ProtectedRoute, UserCard)
-├── context/        # AuthContext, WorkflowContext
-├── pages/          # Route-level components
-├── types/          # TypeScript type definitions
-└── main.tsx        # App entry point — router + providers setup
+├── api/                    # React Query hooks + Axios client
+│   ├── client.ts               # Axios instance — Bearer interceptor, cookie-based refresh
+│   ├── useAuth.ts              # useMe, useWorkflowLogin, useLogout
+│   ├── useUsers.ts             # User CRUD hooks
+│   └── useWorkflow.ts          # AI workflow mutations (ideas, script, titles, SEO)
+├── components/
+│   ├── auth/
+│   │   └── ProtectedRoute.tsx  # Redirects unauthenticated users to /login
+│   ├── layout/
+│   │   ├── AppShell.tsx        # Sidebar + top-bar frame around routed pages
+│   │   ├── Sidebar.tsx
+│   │   ├── TopBar.tsx
+│   │   ├── Navbar.tsx
+│   │   └── PageHeader.tsx      # Eyebrow + title + subtitle + actions
+│   ├── pipeline/               # Reused across the 4 AI pipeline pages
+│   │   ├── PipelineStepper.tsx
+│   │   ├── BackgroundGenerationBanner.tsx   # "Generating in background" + Stop
+│   │   ├── NoIdeaSelectedCard.tsx           # Empty state when no idea picked
+│   │   └── ContextBanner.tsx                # "Writing X for Y" summary row
+│   └── shared/
+│       ├── Icon.tsx            # Centralised SVG icon set
+│       ├── UserCard.tsx
+│       └── UserWidget.tsx
+├── context/                # AuthContext, WorkflowContext (pipeline state + pending flags)
+├── pages/                  # Route-level components
+│   ├── idea/
+│   │   └── IdeaSidebar.tsx     # Style DNA + trend radar + recent videos sidebar
+│   ├── script/
+│   │   ├── FlavorPicker.tsx    # Script flavor (story/educational/listicle/documentary)
+│   │   └── ReviewPanel.tsx     # Live script checklist + AI suggestion + handoff
+│   └── *.tsx                   # One file per route (Video ideas, Script, Title, SEO, etc.)
+├── types/                  # TypeScript types (auth, user, workflow, api)
+│   └── api.ts                  # ApiError envelope + getApiErrorMessage helper
+└── main.tsx                # App entry — router + QueryClient + providers
 ```
 
 ## Local Development
@@ -138,20 +167,35 @@ Set these in the Render dashboard (or `render.yaml`):
 
 ## Auth Flow
 
-- JWT access token (30 min) + refresh token (7 days) stored in `localStorage`
-- `src/api/client.ts` — Axios interceptor attaches the Bearer token and handles 401 refresh automatically
+- JWT access token (30 min) + refresh token (7 days) stored in **cookies** (not localStorage)
+  - `access_token` — expires in 30 min
+  - `refresh_token` — expires in 7 days
+  - `user_name` — display name, expires in 7 days
+  - `login_type` — `"demo"` for workflow login, absent for registered users
+- `src/api/client.ts` — Axios interceptor reads `access_token` from cookie, attaches `Authorization: Bearer <token>` on every request, and auto-refreshes on 401
 - `src/components/ProtectedRoute.tsx` — redirects unauthenticated users to `/login`
-- `src/context/AuthContext.tsx` — exposes `useAuth()` hook with user state throughout the app
+- `src/context/AuthContext.tsx` — exposes `useAuth()` hook with `{ user, isAuthenticated, logout }`
+- `src/components/UserWidget.tsx` — fixed top-right widget showing the logged-in username and a Logout button; hidden on `/` and `/users` which have their own nav
+
+### Sending the Bearer token manually
+
+The Axios client sends it automatically. For direct API calls (e.g. curl or Postman), get the token from the `access_token` cookie after login and pass it as:
+
+```
+Authorization: Bearer <access_token>
+```
 
 ## Routes
 
 | Path | Access | Page |
 |------|--------|------|
 | `/login` | Public | Login / Register |
-| `/` | Protected | Home / Dashboard |
+| `/` | Protected | Home / Dashboard (includes logout in sticky header) |
 | `/video-idea-generator` | Protected | Video Idea Generator |
 | `/script-generator` | Protected | Script Generator |
 | `/title-suggestor` | Protected | Title Suggestor |
 | `/seo-description` | Protected | SEO Description |
 | `/work-in-progress` | Protected | Work in Progress |
 | `/users` | Admin | User Management |
+
+All protected routes require a valid `access_token` cookie. Unauthenticated visitors are redirected to `/login`.

@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 // Routes that have their own dedicated nav/header with logout — widget not needed there
 const ROUTES_WITH_OWN_NAV = new Set(["/", "/users"]);

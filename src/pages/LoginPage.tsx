@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useWorkflowLogin } from '../api/useAuth'
-import Icon from '../components/Icon'
+import Icon from '../components/shared/Icon'
+import { getApiErrorMessage } from '../types/api'
 
 const FEATURES = [
   { icon: 'lightbulb', text: 'Hook-scored video ideas ranked by trend lift' },
@@ -25,8 +26,7 @@ export default function LoginPage() {
       await login.mutateAsync({ username: btoa(username), password: btoa(password) })
       window.location.replace('/')
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { error?: { detail?: string } } } })?.response?.data?.error?.detail
-      setError(typeof detail === 'string' ? detail : 'Invalid username or password.')
+      setError(getApiErrorMessage(err, 'Invalid username or password.'))
     }
   }
 
