@@ -1,0 +1,1364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Creator OS — Wireframe Exploration</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Kalam:wght@300;400;700&family=Architects+Daughter&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf7f2;
+    --paper-2:#f2ede3;
+    --ink:#1a1a1a;
+    --ink-2:#3a3a3a;
+    --ink-3:#7a7468;
+    --rule:#1a1a1a;
+    --accent:oklch(0.55 0.15 250);
+    --accent-soft:oklch(0.90 0.05 250);
+    --warn:oklch(0.72 0.14 60);
+    --sketchiness:1;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Kalam',sans-serif}
+  body{
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(0,0,0,0.015) 1px, transparent 1.5px),
+      radial-gradient(circle at 80% 60%, rgba(0,0,0,0.02) 1px, transparent 1.5px),
+      linear-gradient(var(--paper),var(--paper));
+    background-size: 180px 180px, 220px 220px, 100% 100%;
+  }
+  .hand{font-family:'Caveat',cursive}
+  .anno{font-family:'Architects Daughter',cursive}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+
+  header.top{
+    padding:28px 40px 12px;
+    border-bottom:1.5px dashed var(--ink);
+    position:sticky;top:0;background:var(--paper);z-index:20;
+  }
+  header.top h1{font-family:'Caveat';font-weight:700;font-size:48px;margin:0;letter-spacing:0.5px}
+  header.top .sub{font-family:'Architects Daughter';color:var(--ink-3);font-size:14px;margin-top:2px}
+  header.top .meta{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+  .tabs{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+  .tab{
+    font-family:'Caveat';font-size:22px;font-weight:600;
+    padding:6px 18px 8px;border:1.5px solid var(--ink);border-bottom:none;
+    background:var(--paper-2);cursor:pointer;
+    border-radius:18px 22px 2px 2px / 24px 18px 2px 2px;
+    transform:rotate(var(--r,-0.4deg));
+    position:relative;top:2px;
+  }
+  .tab:nth-child(2){--r:0.3deg}
+  .tab:nth-child(3){--r:-0.6deg}
+  .tab.active{background:var(--paper);color:var(--ink);top:0;border-bottom:2px solid var(--paper);z-index:2;box-shadow:0 -2px 0 var(--ink)}
+  .tab .num{color:var(--accent);font-family:'Architects Daughter';font-size:13px;margin-right:6px;vertical-align:3px}
+
+  /* Storyboard */
+  .reel{
+    overflow-x:auto; overflow-y:hidden;
+    padding:28px 40px 60px;
+    scroll-snap-type:x proximity;
+  }
+  .reel-inner{display:flex;gap:0;align-items:flex-start;min-width:min-content}
+  .frame{
+    flex:0 0 auto;
+    width:460px; min-height:560px;
+    background:var(--paper);
+    border:1.8px solid var(--ink);
+    border-radius:14px 12px 16px 10px / 12px 14px 10px 16px;
+    padding:14px 16px 18px;
+    position:relative;
+    scroll-snap-align:start;
+    box-shadow: 2px 3px 0 var(--ink);
+    transform:rotate(calc(var(--rot,0deg) * var(--sketchiness)));
+  }
+  .frame.wide{width:560px}
+  .frame.tall{min-height:640px}
+  .frame-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.2px dashed var(--ink);padding-bottom:6px;margin-bottom:10px}
+  .frame-head .no{font-family:'Architects Daughter';font-size:12px;color:var(--ink-3);letter-spacing:1px}
+  .frame-head .ttl{font-family:'Caveat';font-weight:700;font-size:26px;line-height:1}
+  .arrow{
+    flex:0 0 auto;
+    width:64px; height:560px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--ink);
+  }
+  .arrow svg{width:60px;height:48px}
+
+  /* Generic sketchy UI primitives */
+  .box{border:1.5px solid var(--ink);border-radius:6px 8px 5px 9px / 8px 5px 9px 6px;padding:8px 10px;background:var(--paper)}
+  .box.filled{background:var(--paper-2)}
+  .box.accent{border-color:var(--accent);background:color-mix(in oklch, var(--accent) 8%, var(--paper))}
+  .pill{display:inline-block;border:1.3px solid var(--ink);border-radius:999px;padding:2px 10px;font-family:'Caveat';font-size:16px;background:var(--paper)}
+  .pill.accent{border-color:var(--accent);color:var(--accent)}
+  .pill.filled{background:var(--ink);color:var(--paper)}
+  .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .col{display:flex;flex-direction:column;gap:6px}
+  .line{height:1.4px;background:var(--ink);opacity:0.8;border-radius:2px}
+  .line.w30{width:30%} .line.w40{width:40%} .line.w50{width:50%} .line.w60{width:60%} .line.w70{width:70%} .line.w80{width:80%} .line.w90{width:90%} .line.w100{width:100%}
+  .scribble{height:8px;background:repeating-linear-gradient(135deg,var(--ink),var(--ink) 1.2px,transparent 1.2px,transparent 4px);opacity:0.7;border-radius:2px}
+  .img-ph{
+    border:1.4px solid var(--ink);border-radius:4px;
+    background:
+      linear-gradient(var(--ink),var(--ink)) 0 0/100% 1.4px no-repeat,
+      linear-gradient(var(--ink),var(--ink)) 0 100%/100% 1.4px no-repeat,
+      repeating-linear-gradient(45deg,transparent,transparent 6px,rgba(0,0,0,0.08) 6px,rgba(0,0,0,0.08) 7px);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Architects Daughter';font-size:11px;color:var(--ink-3);
+    min-height:60px;
+  }
+  .btn{
+    display:inline-block;border:1.5px solid var(--ink);
+    font-family:'Caveat';font-weight:600;font-size:18px;
+    padding:4px 14px 6px;background:var(--paper);
+    border-radius:24px 22px 26px 20px / 22px 26px 20px 24px;
+    box-shadow:1.5px 2px 0 var(--ink);
+    cursor:default;
+  }
+  .btn.primary{background:var(--ink);color:var(--paper)}
+  .btn.accent{background:var(--accent);color:white;border-color:var(--accent);box-shadow:1.5px 2px 0 var(--ink)}
+  .btn.sm{font-size:15px;padding:2px 10px 3px}
+  .chk{width:12px;height:12px;border:1.4px solid var(--ink);border-radius:3px;display:inline-block;vertical-align:-1px}
+  .chk.on{background:var(--ink)}
+  .tag{font-family:'Architects Daughter';font-size:11px;color:var(--ink-3);letter-spacing:0.5px;text-transform:uppercase}
+
+  /* Annotations */
+  .note{
+    position:absolute;font-family:'Architects Daughter';font-size:12.5px;color:var(--ink);
+    background:color-mix(in oklch, var(--accent-soft) 55%, var(--paper));
+    border:1.2px dashed var(--accent);
+    padding:4px 8px;border-radius:4px;max-width:180px;line-height:1.25;
+    z-index:5;transform:rotate(var(--r,-1deg));
+    box-shadow:1px 1px 0 rgba(0,0,0,0.08);
+  }
+  .note::before{
+    content:'';position:absolute;border-top:1.2px dashed var(--accent);
+    width:var(--len,40px);left:var(--nx,-40px);top:var(--ny,50%);
+    transform:rotate(var(--nr,-15deg));transform-origin:right center;
+  }
+  .hide-notes .note{display:none}
+
+  /* Direction header / intro card */
+  .intro{
+    flex:0 0 auto;width:320px;min-height:560px;
+    padding:20px 18px;margin-right:18px;
+    background:var(--paper-2);
+    border:2px solid var(--ink);border-radius:8px;
+    box-shadow:3px 4px 0 var(--ink);
+    display:flex;flex-direction:column;gap:12px;
+    transform:rotate(calc(-0.5deg * var(--sketchiness)));
+  }
+  .intro .kicker{font-family:'Architects Daughter';font-size:12px;letter-spacing:2px;color:var(--accent);text-transform:uppercase}
+  .intro h2{font-family:'Caveat';font-size:42px;font-weight:700;margin:0;line-height:0.95}
+  .intro p{font-family:'Kalam';font-size:14px;line-height:1.45;margin:0;color:var(--ink-2)}
+  .intro ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px}
+  .intro li{font-family:'Kalam';font-size:13px;padding-left:18px;position:relative}
+  .intro li::before{content:'→';position:absolute;left:0;color:var(--accent);font-family:'Caveat';font-weight:700}
+  .intro .tools{margin-top:auto;font-family:'Architects Daughter';font-size:11px;color:var(--ink-3);line-height:1.5}
+
+  /* Tool index card */
+  .tool-legend{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:4px 14px;
+    font-family:'Kalam';font-size:12px;
+  }
+  .tool-legend span{display:flex;gap:6px}
+  .tool-legend b{color:var(--accent);font-family:'Architects Daughter';min-width:18px}
+
+  /* Tweaks */
+  #tweaks{
+    position:fixed;bottom:18px;right:18px;z-index:50;
+    background:var(--paper);border:1.5px solid var(--ink);
+    border-radius:10px;box-shadow:3px 4px 0 var(--ink);
+    padding:12px 14px;font-family:'Kalam';font-size:13px;
+    display:none;min-width:220px;
+  }
+  #tweaks.open{display:block}
+  #tweaks h4{margin:0 0 8px;font-family:'Caveat';font-size:22px;font-weight:700}
+  #tweaks label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0}
+  #tweaks input[type=range]{width:100px}
+  #tweaks select, #tweaks button{font-family:'Kalam';font-size:12px;padding:2px 6px;border:1px solid var(--ink);background:var(--paper)}
+
+  /* Mini helpers */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .spacer{height:6px}
+  .bar{height:10px;background:var(--ink);opacity:0.2;border-radius:2px;position:relative}
+  .bar > i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:2px;display:block}
+  .tool-tag{font-family:'Architects Daughter';font-size:10.5px;color:var(--accent);border:1px dashed var(--accent);border-radius:3px;padding:0 5px}
+
+  /* Sidebar mock */
+  .sidebar{border:1.4px solid var(--ink);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:4px;background:var(--paper)}
+  .side-item{font-family:'Kalam';font-size:13px;padding:2px 6px;border-radius:3px;display:flex;gap:6px;align-items:center}
+  .side-item.active{background:var(--ink);color:var(--paper)}
+  .side-item .dot{width:6px;height:6px;border-radius:50%;background:var(--ink)}
+  .side-item.active .dot{background:var(--accent)}
+  .side-section{font-family:'Architects Daughter';font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:1.5px;margin-top:6px}
+
+  /* Screenshot */
+  .screen{
+    border:1.5px solid var(--ink);border-radius:4px;background:var(--paper);
+    padding:8px;display:flex;flex-direction:column;gap:6px;
+  }
+  .browser{
+    border:1.5px solid var(--ink);border-radius:7px;overflow:hidden;background:var(--paper);
+  }
+  .browser .chrome{
+    height:20px;background:var(--paper-2);border-bottom:1px solid var(--ink);
+    display:flex;align-items:center;gap:5px;padding:0 8px;
+  }
+  .browser .chrome .dot{width:6px;height:6px;border-radius:50%;background:var(--ink);opacity:0.5}
+  .browser .body{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+
+  /* Chat bubble */
+  .bubble{
+    border:1.4px solid var(--ink);border-radius:14px 14px 14px 2px;
+    padding:6px 10px;font-family:'Kalam';font-size:12.5px;line-height:1.35;
+    max-width:88%;
+  }
+  .bubble.me{border-radius:14px 14px 2px 14px;margin-left:auto;background:var(--accent-soft);border-color:var(--accent)}
+  .bubble.ai{background:var(--paper)}
+  .bubble .tool-tag{margin-bottom:3px;display:inline-block}
+
+  /* Small utility */
+  .kbd{border:1px solid var(--ink);border-radius:3px;padding:0 4px;font-family:ui-monospace,monospace;font-size:10px;background:var(--paper-2)}
+
+  /* Thumbnail preview */
+  .thumb{
+    aspect-ratio:16/9;border:1.4px solid var(--ink);border-radius:4px;
+    background:
+      repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(0,0,0,0.09) 5px,rgba(0,0,0,0.09) 6px);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Caveat';font-size:18px;font-weight:700;color:var(--ink);
+    text-align:center;padding:4px;line-height:1;
+  }
+
+  .hint{
+    font-family:'Architects Daughter';font-size:11px;color:var(--ink-3);
+    padding:8px 40px 0;
+  }
+
+  .direction{display:none}
+  .direction.active{display:block}
+
+  /* Scroll hint */
+  .reel::-webkit-scrollbar{height:10px}
+  .reel::-webkit-scrollbar-track{background:var(--paper-2);border-top:1px solid var(--ink)}
+  .reel::-webkit-scrollbar-thumb{background:var(--ink);border-radius:4px}
+
+  /* Responsive frame rotation for organic feel */
+  .frame:nth-child(2n){--rot:-0.3deg}
+  .frame:nth-child(3n){--rot:0.4deg}
+  .frame:nth-child(5n){--rot:-0.5deg}
+</style>
+</head>
+<body class="show-notes">
+
+<header class="top">
+  <div class="meta">
+    <div>
+      <h1>Creator OS — Wireframe Exploration</h1>
+      <div class="sub">3 directions · storyboarded · all 19 tools covered · v0 thinking</div>
+    </div>
+    <div class="anno" style="font-size:12px;color:var(--ink-3);text-align:right;line-height:1.5">
+      hand-lettered · responsive web · AI-first<br>
+      multi-platform creator (YT / TikTok / IG)
+    </div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-dir="pipeline"><span class="num">A</span>Pipeline</button>
+    <button class="tab" data-dir="chat"><span class="num">B</span>Chat-First</button>
+    <button class="tab" data-dir="hub"><span class="num">C</span>Project Hub</button>
+  </div>
+</header>
+
+<div class="hint">← scroll the reel horizontally →  ·  switch directions with the tabs above  ·  toggle Tweaks from the toolbar for knobs</div>
+
+<!-- =================== DIRECTION A: PIPELINE =================== -->
+<section class="direction active" data-dir="pipeline">
+<div class="reel"><div class="reel-inner">
+
+  <!-- Intro card -->
+  <div class="intro">
+    <div class="kicker">Direction A</div>
+    <h2>The Pipeline</h2>
+    <p>A linear factory line: <b>Idea → Script → Title → Thumbnail → Publish</b>. Every tool is a station. The current video moves left→right along the top stepper.</p>
+    <ul>
+      <li>For creators who think "one video at a time"</li>
+      <li>AI runs inside each station</li>
+      <li>Progress is obvious — you see the whole line</li>
+    </ul>
+    <div class="tools">
+      COVERS: 1 Idea · 2 Script · 3 Title · 4 Desc/Hashtags · 5 Thumbnail · 6 Tags · 10 Planner · 11 Voiceover · 12 Review Script · 13 Video Gen · 14 Repurposer · 7 Trending · 8 Channel Stats · 19 Copyright · 17 Thumb DL · 18 Subs DL · 9 Admin
+    </div>
+  </div>
+
+  <!-- F1: Dashboard -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">01 / DASHBOARD</span><span class="ttl">Today's studio</span></div>
+    <div class="col" style="gap:10px">
+      <div class="row" style="justify-content:space-between">
+        <div class="hand" style="font-size:22px">Hi Alex 👋 — 2 videos in flight</div>
+        <span class="pill accent">+ New video</span>
+      </div>
+
+      <div class="tag">In progress</div>
+      <div class="box filled col" style="gap:6px">
+        <div class="row" style="justify-content:space-between">
+          <b class="hand" style="font-size:18px">"Why I quit my 9-5"</b>
+          <span class="tag">step 3 / 6</span>
+        </div>
+        <div class="row" style="gap:3px">
+          <div class="pill filled">Idea</div>
+          <div class="pill filled">Script</div>
+          <div class="pill accent">Title</div>
+          <div class="pill">Thumb</div>
+          <div class="pill">Tags</div>
+          <div class="pill">Publish</div>
+        </div>
+      </div>
+
+      <div class="box col" style="gap:4px">
+        <div class="row" style="justify-content:space-between">
+          <b class="hand" style="font-size:18px">"5 AI tools for 2026"</b>
+          <span class="tag">step 5 / 6</span>
+        </div>
+        <div class="bar"><i style="width:78%"></i></div>
+      </div>
+
+      <div class="tag" style="margin-top:4px">Calendar this week</div>
+      <div class="grid4" style="gap:4px">
+        <div class="box" style="padding:4px;font-size:11px;text-align:center"><b>M</b><div class="scribble" style="margin-top:3px"></div></div>
+        <div class="box accent" style="padding:4px;font-size:11px;text-align:center"><b>T</b><div class="anno" style="font-size:10px">publish</div></div>
+        <div class="box" style="padding:4px;font-size:11px;text-align:center"><b>W</b></div>
+        <div class="box" style="padding:4px;font-size:11px;text-align:center"><b>Th</b></div>
+      </div>
+
+      <div class="tag" style="margin-top:4px">Quick tools</div>
+      <div class="grid3" style="gap:4px">
+        <div class="box" style="font-size:11px;text-align:center">📈 Trending <span class="tool-tag">T7</span></div>
+        <div class="box" style="font-size:11px;text-align:center">📊 Stats <span class="tool-tag">T8</span></div>
+        <div class="box" style="font-size:11px;text-align:center">⚖︎ Copyright <span class="tool-tag">T19</span></div>
+      </div>
+    </div>
+
+    <div class="note" style="top:40px;right:-100px;--nx:-20px;--ny:10px;--len:20px;--r:2deg">
+      Hero card = most recent video w/ step indicator
+    </div>
+    <div class="note" style="bottom:60px;left:-90px;--nx:auto;--nr:15deg;--r:-2deg">
+      Utilities (7,8,19) tucked below — rarely primary
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 Q30 10 52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F2: Idea Generator -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">02 / STEP 1 <span class="tool-tag">T1</span></span><span class="ttl">Video Idea Generator</span></div>
+
+    <!-- stepper -->
+    <div class="row" style="gap:3px;margin-bottom:8px">
+      <div class="pill accent">1 Idea</div>
+      <div class="pill">2 Script</div>
+      <div class="pill">3 Title</div>
+      <div class="pill">4 Desc</div>
+      <div class="pill">5 Thumb</div>
+      <div class="pill">6 Tags</div>
+    </div>
+
+    <div class="box col" style="gap:6px">
+      <div class="anno" style="font-size:11px">What's the video about?</div>
+      <div class="line w90"></div>
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <span class="pill">niche: productivity</span>
+          <span class="pill">tone: casual</span>
+        </div>
+        <span class="btn accent sm">✨ Generate 10</span>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">10 ideas · rank by <u>hook strength</u> · <u>trend lift</u> · <u>your style</u></div>
+
+    <div class="col" style="gap:4px;margin-top:4px">
+      <div class="box accent col" style="gap:3px">
+        <div class="row" style="justify-content:space-between"><b class="hand" style="font-size:17px">"I tried 5 AI tools so you don't have to"</b><span class="tag">92</span></div>
+        <div class="line w80"></div>
+        <div class="row"><span class="tool-tag">hook: 94</span><span class="tool-tag">trend: ↑ +40%</span></div>
+      </div>
+      <div class="box col" style="gap:3px">
+        <div class="row" style="justify-content:space-between"><b class="hand" style="font-size:17px">"The $0 creator stack"</b><span class="tag">88</span></div>
+        <div class="line w70"></div>
+      </div>
+      <div class="box col" style="gap:3px">
+        <div class="row" style="justify-content:space-between"><b class="hand" style="font-size:17px">"Why I deleted TikTok"</b><span class="tag">81</span></div>
+      </div>
+      <div class="box" style="padding:4px 10px"><span class="anno" style="font-size:11px">↓ 7 more…</span></div>
+    </div>
+
+    <div class="row" style="justify-content:space-between;margin-top:10px">
+      <span class="anno" style="font-size:11px;color:var(--ink-3)">🔄 regenerate · 💾 save idea bank</span>
+      <span class="btn primary sm">Next → Script</span>
+    </div>
+
+    <div class="note" style="top:60px;right:-120px;--nx:-22px;--ny:10px;--len:22px;--r:1deg">
+      Idea is the #1 job. Give it the most real-estate.
+    </div>
+    <div class="note" style="bottom:80px;left:-100px;--nx:auto;--nr:20deg;--r:-1.5deg">
+      Scores = differentiator vs competitors
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F3: Script + Review -->
+  <div class="frame wide tall">
+    <div class="frame-head"><span class="no">03 / STEP 2 <span class="tool-tag">T2</span> + <span class="tool-tag">T12</span></span><span class="ttl">Script + Review</span></div>
+
+    <div class="row" style="gap:3px;margin-bottom:8px">
+      <div class="pill filled">1</div><div class="pill accent">2 Script</div><div class="pill">3</div><div class="pill">4</div><div class="pill">5</div><div class="pill">6</div>
+    </div>
+
+    <div class="grid2" style="gap:8px">
+      <div class="box col" style="gap:5px">
+        <div class="row" style="justify-content:space-between">
+          <span class="tag">Script · 4:12 estimated</span>
+          <span class="pill accent">✨ rewrite section</span>
+        </div>
+        <div class="line w90"></div><div class="line w80"></div><div class="line w70"></div>
+        <div class="line w90"></div><div class="line w60"></div>
+        <div class="box filled" style="padding:4px"><span class="anno" style="font-size:11px">[B-roll: laptop]</span></div>
+        <div class="line w80"></div><div class="line w90"></div><div class="line w50"></div>
+        <div class="row"><span class="pill">add hook</span><span class="pill">add CTA</span><span class="pill">add b-roll</span></div>
+      </div>
+      <div class="box col" style="gap:6px">
+        <div class="row" style="justify-content:space-between">
+          <span class="tag">Review My Script <span class="tool-tag">T12</span></span>
+          <span class="pill accent">78 / 100</span>
+        </div>
+        <div class="col" style="gap:3px;font-family:'Kalam';font-size:12px">
+          <div class="row"><span class="chk on"></span> Hook in first 8s</div>
+          <div class="row"><span class="chk on"></span> Clear thesis</div>
+          <div class="row"><span class="chk"></span> CTA before 70%</div>
+          <div class="row"><span class="chk"></span> Pattern interrupt</div>
+        </div>
+        <div class="tag">Suggestions</div>
+        <div class="box" style="padding:4px"><span class="anno" style="font-size:11px">Cut the aside at 1:40 — kills pacing</span></div>
+        <div class="box" style="padding:4px"><span class="anno" style="font-size:11px">Add question hook at 0:04</span></div>
+        <div class="row" style="margin-top:auto;justify-content:space-between">
+          <span class="pill">🎙 Voiceover <span class="tool-tag">T11</span></span>
+          <span class="pill">🎬 Generate video <span class="tool-tag">T13</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="justify-content:space-between;margin-top:10px">
+      <span class="anno" style="font-size:11px;color:var(--ink-3)">⬅ back to ideas</span>
+      <span class="btn primary sm">Next → Title</span>
+    </div>
+
+    <div class="note" style="top:50px;right:-100px;--nx:-22px;--ny:20px;--len:22px;--r:1.5deg">
+      Review panel is live — scores update as you type
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F4: Title + Desc + Tags -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">04 / STEPS 3·4·6 <span class="tool-tag">T3</span> <span class="tool-tag">T4</span> <span class="tool-tag">T6</span></span><span class="ttl">Pack the metadata</span></div>
+
+    <div class="row" style="gap:3px;margin-bottom:8px">
+      <div class="pill filled">1</div><div class="pill filled">2</div><div class="pill accent">3·4·6</div><div class="pill">5</div>
+    </div>
+
+    <div class="tag">Titles <span class="tool-tag">T3</span></div>
+    <div class="col" style="gap:4px">
+      <div class="box accent"><b class="hand" style="font-size:17px">"I tried 5 AI tools — here's what won"</b> <span class="tag" style="float:right">CTR ~9.2%</span></div>
+      <div class="box"><b class="hand" style="font-size:17px">"The $0 AI creator stack"</b></div>
+      <div class="box"><b class="hand" style="font-size:17px">"5 free AI tools that changed my channel"</b></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">Description + Hashtags <span class="tool-tag">T4</span></div>
+    <div class="box col" style="gap:3px">
+      <div class="line w90"></div><div class="line w80"></div><div class="line w60"></div>
+      <div class="row" style="margin-top:3px">
+        <span class="pill">#aitools</span><span class="pill">#creator</span><span class="pill">#yt2026</span><span class="pill">#productivity</span>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">Tags <span class="tool-tag">T6</span></div>
+    <div class="row" style="gap:3px">
+      <span class="pill">ai tools</span><span class="pill">free ai</span><span class="pill">creator stack</span>
+      <span class="pill">2026</span><span class="pill">+ 8 more</span>
+    </div>
+
+    <div class="row" style="justify-content:space-between;margin-top:10px">
+      <span class="anno" style="font-size:11px;color:var(--ink-3)">↺ regenerate all</span>
+      <span class="btn primary sm">Next → Thumbnail</span>
+    </div>
+
+    <div class="note" style="top:120px;right:-110px;--nx:-22px;--ny:10px;--len:22px;--r:-1deg">
+      Three tools fused into one step — they share context anyway
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F5: Thumbnail -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">05 / STEP 5 <span class="tool-tag">T5</span> + <span class="tool-tag">T17</span></span><span class="ttl">Thumbnail Lab</span></div>
+
+    <div class="row" style="gap:3px;margin-bottom:8px">
+      <div class="pill filled">1</div><div class="pill filled">2</div><div class="pill filled">3·4·6</div><div class="pill accent">5 Thumb</div>
+    </div>
+
+    <div class="tag">Ideas</div>
+    <div class="grid2" style="gap:6px">
+      <div class="col" style="gap:3px"><div class="thumb">ME + 5 LOGOS</div><span class="anno" style="font-size:10px">"direct look + stack"</span></div>
+      <div class="col" style="gap:3px"><div class="thumb">VS SPLIT SCREEN</div><span class="anno" style="font-size:10px">"A vs B comparison"</span></div>
+      <div class="col" style="gap:3px"><div class="thumb">BIG RED ARROW</div><span class="anno" style="font-size:10px">"bold overlay"</span></div>
+      <div class="col" style="gap:3px"><div class="thumb">SHOCK FACE</div><span class="anno" style="font-size:10px">"expression-led"</span></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">Reference (Thumbnail DL <span class="tool-tag">T17</span>)</div>
+    <div class="box" style="padding:6px">
+      <div class="row">
+        <div class="line w70"></div>
+        <span class="pill sm">paste YT url</span>
+      </div>
+      <div class="grid3" style="gap:4px;margin-top:5px">
+        <div class="thumb" style="font-size:10px">ref 1</div>
+        <div class="thumb" style="font-size:10px">ref 2</div>
+        <div class="thumb" style="font-size:10px">ref 3</div>
+      </div>
+    </div>
+
+    <div class="row" style="justify-content:space-between;margin-top:10px">
+      <span class="anno" style="font-size:11px;color:var(--ink-3)">upload headshot → get 4 designs</span>
+      <span class="btn primary sm">Next → Publish</span>
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F6: Publish + Repurpose + Copyright -->
+  <div class="frame wide tall">
+    <div class="frame-head"><span class="no">06 / STEP 6 <span class="tool-tag">T14</span> <span class="tool-tag">T19</span></span><span class="ttl">Ship & Repurpose</span></div>
+
+    <div class="row" style="gap:3px;margin-bottom:8px">
+      <div class="pill filled">1</div><div class="pill filled">2</div><div class="pill filled">3·4·6</div><div class="pill filled">5</div><div class="pill accent">PUBLISH</div>
+    </div>
+
+    <div class="grid2" style="gap:10px">
+      <div class="col" style="gap:6px">
+        <div class="tag">Pre-flight</div>
+        <div class="box col" style="gap:3px;font-family:'Kalam';font-size:12.5px">
+          <div class="row"><span class="chk on"></span> Title looks clean</div>
+          <div class="row"><span class="chk on"></span> Thumb ready</div>
+          <div class="row"><span class="chk on"></span> Hashtags: 4</div>
+          <div class="row"><span class="chk"></span> <b>Copyright check</b> <span class="tool-tag">T19</span></div>
+          <div class="box filled" style="padding:4px;margin-top:3px">
+            <span class="anno" style="font-size:11px">⚠ 3s of music matches "xyz" — trim or replace</span>
+          </div>
+        </div>
+        <div class="tag">Subs / transcript</div>
+        <div class="box"><span class="anno" style="font-size:11px">⬇ download auto-subs <span class="tool-tag">T18</span></span></div>
+      </div>
+
+      <div class="col" style="gap:6px">
+        <div class="tag">Cross-Platform Repurposer <span class="tool-tag">T14</span></div>
+        <div class="box col" style="gap:4px">
+          <div class="row"><span class="chk on"></span><b>YouTube</b> <span class="tag">16:9 · long</span></div>
+          <div class="row"><span class="chk on"></span><b>YT Shorts</b> <span class="tag">9:16 · 45s cut</span></div>
+          <div class="row"><span class="chk on"></span><b>TikTok</b> <span class="tag">9:16 · hook @0s</span></div>
+          <div class="row"><span class="chk"></span><b>Instagram Reel</b></div>
+          <div class="row"><span class="chk"></span><b>X / Twitter</b> <span class="tag">thread</span></div>
+          <div class="row"><span class="chk"></span><b>LinkedIn</b> <span class="tag">post + clip</span></div>
+        </div>
+        <div class="box accent"><span class="anno" style="font-size:11px">AI auto-tailors captions + aspect ratio per channel</span></div>
+        <span class="btn accent">Publish all →</span>
+      </div>
+    </div>
+
+    <div class="note" style="top:60px;right:-110px;--nx:-20px;--ny:10px;--len:20px;--r:2deg">
+      Pre-flight blocks publish until copyright is green
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F7: Research / Trending / Stats (side tools) -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">07 / SIDE QUEST <span class="tool-tag">T7</span> <span class="tool-tag">T8</span></span><span class="ttl">Research drawer</span></div>
+    <div class="anno" style="font-size:11px;color:var(--ink-3)">accessible via ⌘K from any step</div>
+
+    <div class="spacer"></div>
+    <div class="tag">Trending Video Finder <span class="tool-tag">T7</span></div>
+    <div class="box col" style="gap:4px">
+      <div class="row">
+        <span class="pill">niche: AI tools</span><span class="pill">region: US</span><span class="pill">7d</span>
+      </div>
+      <div class="col" style="gap:3px;margin-top:4px">
+        <div class="row"><div class="thumb" style="width:60px;aspect-ratio:16/9;font-size:9px">▶</div><div class="col" style="gap:2px;flex:1"><b class="hand" style="font-size:14px">"5 AI tools I can't live without"</b><span class="tag">2.1M · ↑ 340%</span></div></div>
+        <div class="row"><div class="thumb" style="width:60px;aspect-ratio:16/9;font-size:9px">▶</div><div class="col" style="gap:2px;flex:1"><b class="hand" style="font-size:14px">"Claude vs ChatGPT in 2026"</b><span class="tag">890k · ↑ 210%</span></div></div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">Channel Stats <span class="tool-tag">T8</span></div>
+    <div class="box col" style="gap:4px">
+      <div class="row"><span class="pill">@mychannel</span></div>
+      <div class="grid3" style="gap:4px">
+        <div class="box" style="text-align:center;padding:4px"><b class="hand" style="font-size:18px">124k</b><div class="tag">subs</div></div>
+        <div class="box" style="text-align:center;padding:4px"><b class="hand" style="font-size:18px">6.4%</b><div class="tag">avg CTR</div></div>
+        <div class="box" style="text-align:center;padding:4px"><b class="hand" style="font-size:18px">4:12</b><div class="tag">avg watch</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F8: Planner + Admin -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">08 / PLANNER + ADMIN <span class="tool-tag">T10</span> <span class="tool-tag">T9</span></span><span class="ttl">Calendar & prompt lab</span></div>
+
+    <div class="tag">Content Calendar <span class="tool-tag">T10</span></div>
+    <div class="grid4" style="gap:3px">
+      <div class="box" style="padding:3px;min-height:44px"><div class="tag">M 21</div><div class="scribble" style="margin-top:2px"></div></div>
+      <div class="box filled" style="padding:3px;min-height:44px"><div class="tag">T 22</div><div class="hand" style="font-size:12px">publish: AI</div></div>
+      <div class="box" style="padding:3px;min-height:44px"><div class="tag">W 23</div></div>
+      <div class="box" style="padding:3px;min-height:44px"><div class="tag">Th 24</div><div class="hand" style="font-size:12px">record</div></div>
+      <div class="box" style="padding:3px;min-height:44px"><div class="tag">F 25</div></div>
+      <div class="box filled" style="padding:3px;min-height:44px"><div class="tag">S 26</div><div class="hand" style="font-size:12px">short</div></div>
+      <div class="box" style="padding:3px;min-height:44px"><div class="tag">Su 27</div></div>
+      <div class="box" style="padding:3px;min-height:44px"><div class="tag">M 28</div></div>
+    </div>
+    <div class="anno" style="font-size:11px;color:var(--ink-3)">drag a video card onto a day → auto-schedules full pipeline</div>
+
+    <div class="spacer"></div>
+    <div class="tag">Admin Panel <span class="tool-tag">T9</span> <span class="anno" style="font-size:10px">(only visible to owners)</span></div>
+    <div class="box col" style="gap:4px">
+      <div class="row" style="justify-content:space-between"><b class="hand" style="font-size:15px">T1 · Idea prompt</b><span class="pill sm">edit</span></div>
+      <div class="row" style="justify-content:space-between"><b class="hand" style="font-size:15px">T2 · Script prompt</b><span class="pill sm">edit</span></div>
+      <div class="row" style="justify-content:space-between"><b class="hand" style="font-size:15px">T3 · Title prompt</b><span class="pill sm">edit</span></div>
+      <div class="anno" style="font-size:11px;color:var(--ink-3)">… +16 more prompts · version history · A/B tests</div>
+    </div>
+
+    <div class="note" style="top:50px;right:-110px;--nx:-22px;--ny:10px;--len:22px;--r:1deg">
+      Planner is the zoomed-out view of the pipeline
+    </div>
+    <div class="note" style="bottom:60px;left:-100px;--nx:auto;--nr:18deg;--r:-1.5deg">
+      Admin lives at /settings/prompts — low traffic
+    </div>
+  </div>
+
+</div></div>
+</section>
+
+<!-- =================== DIRECTION B: CHAT-FIRST =================== -->
+<section class="direction" data-dir="chat">
+<div class="reel"><div class="reel-inner">
+
+  <div class="intro">
+    <div class="kicker">Direction B</div>
+    <h2>Chat-First Copilot</h2>
+    <p>One conversation. <b>19 tools are "skills"</b> the AI invokes inline. You just talk — the copilot routes to the right generator and shows results as cards in the thread.</p>
+    <ul>
+      <li>Lowest friction · most forgiving</li>
+      <li>AI is the interface</li>
+      <li>Good for messy, non-linear creators</li>
+    </ul>
+    <div class="tools">
+      ALL 19 surface as inline "skill cards." Sidebar = past conversations + saved outputs. Tool drawer gives direct access when needed.
+    </div>
+  </div>
+
+  <!-- F1: Empty / welcome -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">01 / WELCOME</span><span class="ttl">Meet your co-creator</span></div>
+    <div class="col" style="gap:10px;align-items:center;padding:20px 0">
+      <div style="font-family:'Caveat';font-size:44px;font-weight:700;text-align:center;line-height:1">what are we<br>making today?</div>
+      <div class="box accent" style="width:90%">
+        <div class="row" style="justify-content:space-between"><span class="anno" style="font-size:11px">type or press <span class="kbd">⌘K</span></span><span class="tag">19 skills</span></div>
+        <div class="line w90" style="margin-top:5px"></div>
+      </div>
+
+      <div class="tag" style="margin-top:8px">Quick starts</div>
+      <div class="grid2" style="gap:5px;width:90%">
+        <div class="box">💡 Brainstorm ideas</div>
+        <div class="box">✍️ Draft a script</div>
+        <div class="box">🎨 Thumbnail ideas</div>
+        <div class="box">📈 What's trending in my niche?</div>
+        <div class="box">🔁 Repurpose last video</div>
+        <div class="box">📅 Plan this month</div>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="anno" style="font-size:11px;color:var(--ink-3);text-align:center;width:80%">Copilot picks the right tool. You never pick from a menu.</div>
+    </div>
+
+    <div class="note" style="top:40px;right:-110px;--nx:-22px;--ny:10px;--len:22px;--r:2deg">
+      No tool list — you just say what you want
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 Q30 10 52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F2: Chat mid-flow (idea → title → thumb inline) -->
+  <div class="frame wide tall">
+    <div class="frame-head"><span class="no">02 / CHAT · IDEAS + TITLES</span><span class="ttl">"give me 10 ideas about AI tools"</span></div>
+
+    <div class="col" style="gap:6px">
+      <div class="bubble me">give me 10 video ideas about free AI tools for creators</div>
+
+      <div class="bubble ai">
+        <span class="tool-tag">🧠 Idea Generator · T1</span>
+        <div>here are 10 — ranked by hook strength + trend lift:</div>
+        <div class="col" style="gap:3px;margin-top:4px">
+          <div class="box" style="padding:4px 6px">1. <b class="hand">"5 AI tools I wish I knew sooner"</b> <span class="tag">↑92</span></div>
+          <div class="box" style="padding:4px 6px">2. <b class="hand">"The $0 creator stack"</b> <span class="tag">↑88</span></div>
+          <div class="box" style="padding:4px 6px">3. <b class="hand">"Why every tiny channel needs AI now"</b> <span class="tag">↑84</span></div>
+          <div class="anno" style="font-size:11px;color:var(--ink-3)">…7 more · 💾 save all</div>
+        </div>
+      </div>
+
+      <div class="bubble me">I like #1. write me a 4-min script + title options</div>
+
+      <div class="bubble ai">
+        <span class="tool-tag">✍️ Script · T2</span> <span class="tool-tag">🏷 Title · T3</span>
+        <div>got it — drafted script + 3 titles:</div>
+        <div class="box" style="padding:5px;margin-top:4px">
+          <div class="tag">Script · 4:06 est.</div>
+          <div class="line w90"></div><div class="line w80"></div><div class="line w70"></div>
+          <div class="anno" style="font-size:10px">…open in editor</div>
+        </div>
+        <div class="col" style="gap:3px;margin-top:4px">
+          <div class="box accent" style="padding:4px 6px"><b class="hand">"5 AI tools I wish I knew at 0 subs"</b> <span class="tag">CTR 9.1%</span></div>
+          <div class="box" style="padding:4px 6px"><b class="hand">"free AI stack that 10x'd my channel"</b></div>
+          <div class="box" style="padding:4px 6px"><b class="hand">"I used these tools for 30 days — here's what happened"</b></div>
+        </div>
+      </div>
+
+      <div class="bubble me">perfect. now thumbnails for the top title.</div>
+    </div>
+
+    <div class="box filled" style="margin-top:8px">
+      <div class="row" style="justify-content:space-between"><span class="anno" style="font-size:11px">type message…</span><span class="pill sm">+ attach</span></div>
+    </div>
+
+    <div class="note" style="top:50px;right:-110px;--nx:-20px;--ny:10px;--len:22px;--r:1deg">
+      Tool tags show WHICH skill fired — trust + learning
+    </div>
+    <div class="note" style="bottom:90px;left:-100px;--nx:auto;--nr:18deg;--r:-1.5deg">
+      Results are cards, not walls of text
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F3: Thumbnail + Script Review inline -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">03 / INLINE THUMB + REVIEW <span class="tool-tag">T5</span> <span class="tool-tag">T12</span></span><span class="ttl">more skills in thread</span></div>
+
+    <div class="bubble ai" style="max-width:100%">
+      <span class="tool-tag">🎨 Thumbnail · T5</span>
+      <div class="grid2" style="gap:5px;margin-top:4px">
+        <div class="thumb">ME + 5 LOGOS</div>
+        <div class="thumb">VS SPLIT</div>
+        <div class="thumb">ARROW + SHOCK</div>
+        <div class="thumb">ZERO → HERO</div>
+      </div>
+      <div class="anno" style="font-size:11px;margin-top:4px">upload a headshot to render these for real</div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="bubble me">quick — check my script for pacing</div>
+
+    <div class="bubble ai" style="max-width:100%">
+      <span class="tool-tag">🔍 Review Script · T12</span>
+      <div class="row" style="justify-content:space-between;margin-top:2px"><b class="hand">score</b><span class="pill accent">78/100</span></div>
+      <div class="col" style="gap:2px;margin-top:3px">
+        <div class="row"><span class="chk on"></span> hook ≤ 8s</div>
+        <div class="row"><span class="chk on"></span> clear thesis</div>
+        <div class="row"><span class="chk"></span> <u>CTA missing</u> — suggest at 2:40</div>
+        <div class="row"><span class="chk"></span> <u>pacing dip</u> at 1:40</div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="bubble me">also — is the BG music safe?</div>
+    <div class="bubble ai" style="max-width:100%">
+      <span class="tool-tag">⚖︎ Copyright · T19</span>
+      <div class="box" style="padding:4px;background:color-mix(in oklch,var(--warn) 15%, var(--paper));border-color:var(--warn)">
+        <span class="anno" style="font-size:11px">⚠ 0:33–0:36 matches "Song X" — swap to royalty-free</span>
+      </div>
+    </div>
+
+    <div class="note" style="top:40px;right:-100px;--nx:-22px;--ny:10px;--len:22px;--r:1.5deg">
+      Any of the 19 can be invoked conversationally
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F4: Tool drawer (explicit picker) -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">04 / ⌘K · ALL TOOLS</span><span class="ttl">skill drawer</span></div>
+    <div class="anno" style="font-size:11px;color:var(--ink-3)">for power users who'd rather not describe</div>
+
+    <div class="box filled" style="margin:6px 0"><div class="row"><span class="anno" style="font-size:11px">🔎 search skills…</span><div class="line w40" style="margin-left:auto"></div></div></div>
+
+    <div class="tag">Generate</div>
+    <div class="grid2" style="gap:4px">
+      <div class="box">💡 Idea <span class="tool-tag">T1</span></div>
+      <div class="box">✍️ Script <span class="tool-tag">T2</span></div>
+      <div class="box">🏷 Title <span class="tool-tag">T3</span></div>
+      <div class="box">📝 Desc + #s <span class="tool-tag">T4</span></div>
+      <div class="box">🎨 Thumbnail <span class="tool-tag">T5</span></div>
+      <div class="box">🔖 Tags <span class="tool-tag">T6</span></div>
+      <div class="box">🎙 Voiceover <span class="tool-tag">T11</span></div>
+      <div class="box">🎬 Video Gen <span class="tool-tag">T13</span></div>
+    </div>
+
+    <div class="tag" style="margin-top:6px">Improve</div>
+    <div class="grid2" style="gap:4px">
+      <div class="box">🔍 Review script <span class="tool-tag">T12</span></div>
+      <div class="box">🔁 Repurpose <span class="tool-tag">T14</span></div>
+    </div>
+
+    <div class="tag" style="margin-top:6px">Research</div>
+    <div class="grid2" style="gap:4px">
+      <div class="box">📈 Trending <span class="tool-tag">T7</span></div>
+      <div class="box">📊 Stats <span class="tool-tag">T8</span></div>
+    </div>
+
+    <div class="tag" style="margin-top:6px">Utilities</div>
+    <div class="grid2" style="gap:4px">
+      <div class="box">⬇ Thumb DL <span class="tool-tag">T17</span></div>
+      <div class="box">⬇ Subs DL <span class="tool-tag">T18</span></div>
+      <div class="box">⚖︎ Copyright <span class="tool-tag">T19</span></div>
+      <div class="box">📅 Planner <span class="tool-tag">T10</span></div>
+    </div>
+
+    <div class="tag" style="margin-top:6px">Admin</div>
+    <div class="box">🧪 Prompt Lab <span class="tool-tag">T9</span></div>
+
+    <div class="note" style="bottom:70px;left:-100px;--nx:auto;--nr:18deg;--r:-1deg">
+      Mirrors the chat — same skills, direct form UIs
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F5: Side panel - library -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">05 / LIBRARY</span><span class="ttl">where things get saved</span></div>
+
+    <div class="tag">Conversations</div>
+    <div class="col" style="gap:3px">
+      <div class="box"><b class="hand">AI tools video</b> <span class="tag" style="float:right">today</span></div>
+      <div class="box"><b class="hand">Quit 9-5 video</b> <span class="tag" style="float:right">yesterday</span></div>
+      <div class="box"><b class="hand">Trending check</b> <span class="tag" style="float:right">3d</span></div>
+    </div>
+
+    <div class="tag" style="margin-top:8px">Saved outputs</div>
+    <div class="col" style="gap:3px">
+      <div class="box"><span class="tool-tag">T1</span> 10 ideas · productivity niche</div>
+      <div class="box"><span class="tool-tag">T3</span> 5 title options · AI tools</div>
+      <div class="box"><span class="tool-tag">T5</span> 4 thumbnails · AI tools</div>
+      <div class="box"><span class="tool-tag">T2</span> Script · "quit 9-5" · 4:12</div>
+    </div>
+
+    <div class="tag" style="margin-top:8px">Calendar <span class="tool-tag">T10</span></div>
+    <div class="box col" style="gap:3px">
+      <div class="row" style="justify-content:space-between"><b class="hand">Tue</b><span class="tag">publish: AI tools</span></div>
+      <div class="row" style="justify-content:space-between"><b class="hand">Thu</b><span class="tag">record: quit 9-5</span></div>
+      <div class="row" style="justify-content:space-between"><b class="hand">Sat</b><span class="tag">short</span></div>
+    </div>
+
+    <div class="note" style="top:80px;right:-110px;--nx:-22px;--ny:10px;--len:22px;--r:1deg">
+      Chat is ephemeral; library is permanent
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F6: Repurpose in chat -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">06 / REPURPOSE <span class="tool-tag">T14</span></span><span class="ttl">one video → 6 channels</span></div>
+
+    <div class="bubble me">publish this to all my channels</div>
+    <div class="bubble ai" style="max-width:100%">
+      <span class="tool-tag">🔁 Cross-Platform Repurposer · T14</span>
+      <div class="anno" style="font-size:11px;margin-top:3px">I'll tailor each — confirm below:</div>
+      <div class="col" style="gap:3px;margin-top:4px">
+        <div class="box"><b>YouTube</b> — full 4:12 · original title <span class="tag" style="float:right">edit</span></div>
+        <div class="box"><b>YT Shorts</b> — 0:42 vertical · hook @0s <span class="tag" style="float:right">edit</span></div>
+        <div class="box"><b>TikTok</b> — 0:58 · captions larger <span class="tag" style="float:right">edit</span></div>
+        <div class="box"><b>IG Reel</b> — 0:45 · 3 hashtags <span class="tag" style="float:right">edit</span></div>
+        <div class="box"><b>X thread</b> — 5 tweets w/ 15s clip <span class="tag" style="float:right">edit</span></div>
+        <div class="box"><b>LinkedIn</b> — long post + clip <span class="tag" style="float:right">edit</span></div>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:6px"><span class="btn accent sm">publish 6 →</span></div>
+    </div>
+
+    <div class="bubble ai" style="max-width:100%;margin-top:6px">
+      <span class="tool-tag">📅 Planner · T10</span>
+      shall I schedule? <span class="anno" style="font-size:11px">YT Tue 9a · Shorts Wed · TikTok Thu…</span>
+    </div>
+
+    <div class="note" style="top:60px;right:-110px;--nx:-22px;--ny:10px;--len:22px;--r:-1deg">
+      Skills chain — one feeds the next
+    </div>
+  </div>
+
+</div></div>
+</section>
+
+<!-- =================== DIRECTION C: PROJECT HUB =================== -->
+<section class="direction" data-dir="hub">
+<div class="reel"><div class="reel-inner">
+
+  <div class="intro">
+    <div class="kicker">Direction C</div>
+    <h2>Project Hub</h2>
+    <p>Every idea is a <b>"Video" project</b> — a single page that accumulates idea, script, title, thumb, tags, transcript, cross-platform cuts. Tools are <b>blocks you add</b> to a project.</p>
+    <ul>
+      <li>Think Notion / Figma file, but for a video</li>
+      <li>Best for serial creators + teams</li>
+      <li>Linkable, commentable, remixable</li>
+    </ul>
+    <div class="tools">
+      Sidebar = projects + utilities. Inside a project: every tool is a block. Planner is a global view. Admin lives in settings.
+    </div>
+  </div>
+
+  <!-- F1: Dashboard / Projects list -->
+  <div class="frame wide tall">
+    <div class="frame-head"><span class="no">01 / DASHBOARD</span><span class="ttl">All videos</span></div>
+
+    <div class="row" style="gap:8px">
+      <!-- sidebar -->
+      <div class="sidebar" style="width:130px;flex:0 0 130px">
+        <div class="side-item active"><span class="dot"></span>All videos</div>
+        <div class="side-item"><span class="dot"></span>Drafts</div>
+        <div class="side-item"><span class="dot"></span>Scheduled</div>
+        <div class="side-item"><span class="dot"></span>Published</div>
+        <div class="side-section">Tools</div>
+        <div class="side-item">📅 Planner <span class="tool-tag">T10</span></div>
+        <div class="side-item">📈 Trending <span class="tool-tag">T7</span></div>
+        <div class="side-item">📊 Stats <span class="tool-tag">T8</span></div>
+        <div class="side-item">⬇ Downloaders <span class="tool-tag">T17</span><span class="tool-tag">T18</span></div>
+        <div class="side-section">Admin</div>
+        <div class="side-item">🧪 Prompt Lab <span class="tool-tag">T9</span></div>
+      </div>
+
+      <!-- main -->
+      <div class="col" style="gap:6px;flex:1">
+        <div class="row" style="justify-content:space-between">
+          <div class="row"><span class="pill filled">all</span><span class="pill">drafts</span><span class="pill">scheduled</span></div>
+          <span class="btn accent sm">+ New video</span>
+        </div>
+        <div class="grid2" style="gap:5px">
+          <div class="box col" style="gap:3px">
+            <div class="thumb">AI TOOLS</div>
+            <b class="hand" style="font-size:15px">5 AI tools in 2026</b>
+            <div class="row"><span class="pill">draft</span><span class="tag">5/6 blocks</span></div>
+          </div>
+          <div class="box col" style="gap:3px">
+            <div class="thumb">QUIT 9-5</div>
+            <b class="hand" style="font-size:15px">Why I quit my 9-5</b>
+            <div class="row"><span class="pill accent">scheduled</span><span class="tag">Tue 9a</span></div>
+          </div>
+          <div class="box col" style="gap:3px">
+            <div class="thumb">MORNING</div>
+            <b class="hand" style="font-size:15px">My morning routine</b>
+            <div class="row"><span class="pill">published</span><span class="tag">124k views</span></div>
+          </div>
+          <div class="box col" style="gap:3px;border-style:dashed">
+            <div class="thumb" style="border-style:dashed">+ new</div>
+            <b class="hand" style="font-size:15px;opacity:0.5">start from idea</b>
+          </div>
+        </div>
+
+        <div class="tag" style="margin-top:4px">Recently touched</div>
+        <div class="col" style="gap:2px">
+          <div class="row"><span class="pill sm">script</span><span class="anno" style="font-size:11px">AI tools · edited 2h ago</span></div>
+          <div class="row"><span class="pill sm">thumb</span><span class="anno" style="font-size:11px">Quit 9-5 · edited yesterday</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="top:50px;right:-110px;--nx:-22px;--ny:10px;--len:22px;--r:1.5deg">
+      Sidebar groups: Projects · Research tools · Admin
+    </div>
+    <div class="note" style="bottom:40px;left:-100px;--nx:auto;--nr:20deg;--r:-1deg">
+      Each card = project, not a tool output
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 Q30 10 52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F2: Video project page -->
+  <div class="frame wide tall">
+    <div class="frame-head"><span class="no">02 / PROJECT PAGE</span><span class="ttl">"5 AI tools in 2026"</span></div>
+
+    <div class="row" style="justify-content:space-between;align-items:baseline">
+      <div class="hand" style="font-size:22px">🎬 5 AI tools in 2026</div>
+      <div class="row"><span class="pill">draft</span><span class="pill accent">✨ ask copilot</span><span class="pill">share</span></div>
+    </div>
+    <div class="anno" style="font-size:11px;color:var(--ink-3)">5 of 6 blocks · last edit 2h ago</div>
+
+    <div class="spacer"></div>
+    <!-- blocks -->
+    <div class="col" style="gap:6px">
+      <div class="box col" style="gap:3px">
+        <div class="row" style="justify-content:space-between"><span class="tag">💡 Idea block <span class="tool-tag">T1</span></span><span class="pill sm">edit</span></div>
+        <div class="hand" style="font-size:15px">"I tried 5 AI tools so you don't have to"</div>
+      </div>
+
+      <div class="box col" style="gap:3px">
+        <div class="row" style="justify-content:space-between"><span class="tag">✍️ Script block <span class="tool-tag">T2</span> · ✅ reviewed <span class="tool-tag">T12</span></span><span class="pill sm">open</span></div>
+        <div class="line w90"></div><div class="line w70"></div><div class="line w80"></div>
+      </div>
+
+      <div class="box col" style="gap:3px">
+        <div class="row" style="justify-content:space-between"><span class="tag">🏷 Title <span class="tool-tag">T3</span></span><span class="pill sm">3 options</span></div>
+        <div class="hand" style="font-size:15px">"5 AI tools I wish I knew at 0 subs"</div>
+      </div>
+
+      <div class="box col" style="gap:3px">
+        <div class="row" style="justify-content:space-between"><span class="tag">🎨 Thumbnail <span class="tool-tag">T5</span></span><span class="pill sm">4 drafts</span></div>
+        <div class="grid4" style="gap:3px">
+          <div class="thumb" style="font-size:10px">A</div>
+          <div class="thumb" style="font-size:10px">B</div>
+          <div class="thumb" style="font-size:10px">C</div>
+          <div class="thumb" style="font-size:10px">D</div>
+        </div>
+      </div>
+
+      <div class="box col" style="gap:3px">
+        <div class="row" style="justify-content:space-between"><span class="tag">📝 Desc + #s <span class="tool-tag">T4</span> · 🔖 Tags <span class="tool-tag">T6</span></span><span class="pill sm">edit</span></div>
+        <div class="row"><span class="pill">#aitools</span><span class="pill">#creator</span><span class="pill">+12</span></div>
+      </div>
+
+      <div class="box" style="border-style:dashed;text-align:center">
+        <span class="anno" style="font-size:12px">+ add block — voiceover · video gen · repurpose · copyright</span>
+      </div>
+    </div>
+
+    <div class="note" style="top:60px;right:-120px;--nx:-22px;--ny:10px;--len:22px;--r:1deg">
+      Each block = a tool output, pinned to this project
+    </div>
+    <div class="note" style="bottom:60px;left:-100px;--nx:auto;--nr:18deg;--r:-1.5deg">
+      "+ add block" reveals the remaining 14 tools
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F3: Block detail (Idea generator in-context) -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">03 / BLOCK · IDEAS <span class="tool-tag">T1</span></span><span class="ttl">expand a block</span></div>
+
+    <div class="anno" style="font-size:11px;color:var(--ink-3)">← back to project</div>
+    <div class="spacer"></div>
+
+    <div class="box col" style="gap:4px">
+      <div class="row" style="justify-content:space-between">
+        <span class="tag">brief</span>
+        <span class="pill accent sm">✨ regenerate</span>
+      </div>
+      <div class="line w90"></div><div class="line w60"></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">candidates · ⭐ = pinned to project</div>
+    <div class="col" style="gap:3px">
+      <div class="box accent"><span style="float:right">⭐</span><b class="hand">"5 AI tools I wish I knew sooner"</b></div>
+      <div class="box"><b class="hand">"The $0 creator stack"</b></div>
+      <div class="box"><b class="hand">"I used these for 30 days"</b></div>
+      <div class="box"><b class="hand">"Why every tiny channel needs AI"</b></div>
+      <div class="anno" style="font-size:11px">+6 more</div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">inspired by</div>
+    <div class="box col" style="gap:3px">
+      <div class="row"><span class="tool-tag">T7 Trending</span><b class="hand" style="font-size:13px">"5 AI tools I can't live without" · 2.1M</b></div>
+      <div class="row"><span class="tool-tag">T8 Stats</span><span class="anno" style="font-size:11px">your top videos skew "list + personal"</span></div>
+    </div>
+
+    <div class="note" style="top:40px;right:-100px;--nx:-22px;--ny:10px;--len:22px;--r:2deg">
+      Block expands to its full tool · other tools feed context in
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F4: Calendar global view -->
+  <div class="frame wide tall">
+    <div class="frame-head"><span class="no">04 / PLANNER <span class="tool-tag">T10</span></span><span class="ttl">global calendar</span></div>
+
+    <div class="row" style="justify-content:space-between">
+      <div class="row"><span class="pill filled">month</span><span class="pill">week</span><span class="pill">list</span></div>
+      <div class="anno" style="font-size:11px">drag projects onto a day to schedule</div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="grid4" style="gap:3px">
+      <!-- week 1 -->
+      <div class="box" style="padding:4px;min-height:60px"><div class="tag">M 20</div></div>
+      <div class="box filled" style="padding:4px;min-height:60px"><div class="tag">T 21</div><div class="hand" style="font-size:12px">AI tools</div><span class="tool-tag">YT</span></div>
+      <div class="box" style="padding:4px;min-height:60px"><div class="tag">W 22</div></div>
+      <div class="box" style="padding:4px;min-height:60px"><div class="tag">Th 23</div><div class="hand" style="font-size:12px">quit 9-5</div><span class="tool-tag">record</span></div>
+      <div class="box" style="padding:4px;min-height:60px"><div class="tag">F 24</div></div>
+      <div class="box filled" style="padding:4px;min-height:60px"><div class="tag">S 25</div><div class="hand" style="font-size:12px">short</div><span class="tool-tag">TT</span><span class="tool-tag">IG</span></div>
+      <div class="box" style="padding:4px;min-height:60px"><div class="tag">Su 26</div></div>
+      <div class="box" style="padding:4px;min-height:60px"><div class="tag">M 27</div></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">channels</div>
+    <div class="row">
+      <span class="pill">YouTube · Tue 9a</span>
+      <span class="pill">Shorts · daily</span>
+      <span class="pill">TikTok · daily</span>
+      <span class="pill">IG Reel · 3x/wk</span>
+    </div>
+
+    <div class="note" style="top:60px;right:-120px;--nx:-22px;--ny:10px;--len:22px;--r:1deg">
+      Repurposer <span class="tool-tag">T14</span> auto-fans out one project across channels
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F5: Research tools -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">05 / RESEARCH <span class="tool-tag">T7</span> <span class="tool-tag">T8</span></span><span class="ttl">trending + stats</span></div>
+
+    <div class="tag">Trending in your niche</div>
+    <div class="col" style="gap:3px">
+      <div class="box col" style="gap:2px">
+        <div class="row"><div class="thumb" style="width:80px;aspect-ratio:16/9;font-size:10px">▶</div>
+        <div class="col" style="flex:1"><b class="hand" style="font-size:13px">"5 AI tools I can't live without"</b><span class="tag">2.1M · ↑ 340%</span><span class="anno" style="font-size:10px">+ pin to a project</span></div></div>
+      </div>
+      <div class="box col" style="gap:2px">
+        <div class="row"><div class="thumb" style="width:80px;aspect-ratio:16/9;font-size:10px">▶</div>
+        <div class="col" style="flex:1"><b class="hand" style="font-size:13px">"Claude vs ChatGPT 2026"</b><span class="tag">890k · ↑ 210%</span></div></div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">Channel health <span class="tool-tag">T8</span></div>
+    <div class="grid3">
+      <div class="box" style="text-align:center;padding:4px"><b class="hand" style="font-size:18px">124k</b><div class="tag">subs</div></div>
+      <div class="box" style="text-align:center;padding:4px"><b class="hand" style="font-size:18px">6.4%</b><div class="tag">CTR</div></div>
+      <div class="box" style="text-align:center;padding:4px"><b class="hand" style="font-size:18px">4:12</b><div class="tag">watch</div></div>
+    </div>
+    <div class="box" style="margin-top:5px">
+      <span class="anno" style="font-size:11px">🏆 top styles: list, personal · 📉 weak: tutorials > 8min</span>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">Utilities</div>
+    <div class="grid2" style="gap:4px">
+      <div class="box">⬇ Thumbnail DL <span class="tool-tag">T17</span></div>
+      <div class="box">⬇ Subs DL <span class="tool-tag">T18</span></div>
+      <div class="box">⚖︎ Copyright check <span class="tool-tag">T19</span></div>
+      <div class="box">🎙 Voiceover <span class="tool-tag">T11</span></div>
+    </div>
+
+    <div class="note" style="top:50px;right:-110px;--nx:-22px;--ny:10px;--len:22px;--r:2deg">
+      Research stays outside projects — it's input, not output
+    </div>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 60 48"><path d="M4 24 L52 24 M44 16 L54 24 L44 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+
+  <!-- F6: Admin / Prompt Lab -->
+  <div class="frame tall">
+    <div class="frame-head"><span class="no">06 / ADMIN <span class="tool-tag">T9</span></span><span class="ttl">Prompt Lab</span></div>
+
+    <div class="anno" style="font-size:11px;color:var(--ink-3)">/settings/prompts · owner-only</div>
+
+    <div class="spacer"></div>
+    <div class="col" style="gap:4px">
+      <div class="box row" style="justify-content:space-between"><b class="hand">T1 · Idea prompt</b><span class="pill sm">v4 · edit</span></div>
+      <div class="box row" style="justify-content:space-between"><b class="hand">T2 · Script prompt</b><span class="pill sm">v7 · edit</span></div>
+      <div class="box row" style="justify-content:space-between"><b class="hand">T3 · Title prompt</b><span class="pill sm">v3 · edit</span></div>
+      <div class="anno" style="font-size:11px">…+16 more</div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">Editing · T1 · Idea prompt</div>
+    <div class="box col" style="gap:4px">
+      <div class="anno" style="font-size:11px">system</div>
+      <div class="line w90"></div><div class="line w80"></div><div class="line w60"></div>
+      <div class="anno" style="font-size:11px;margin-top:4px">variables</div>
+      <div class="row"><span class="pill">{niche}</span><span class="pill">{tone}</span><span class="pill">{n}</span></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="tag">A/B test</div>
+    <div class="box col" style="gap:3px">
+      <div class="row"><span class="pill accent">A · v4</span><span class="tag">win rate 58%</span></div>
+      <div class="row"><span class="pill">B · v5 (draft)</span><span class="tag">—</span></div>
+      <div class="anno" style="font-size:11px;color:var(--ink-3)">ship winner → production</div>
+    </div>
+
+    <div class="note" style="top:40px;right:-110px;--nx:-22px;--ny:10px;--len:22px;--r:1deg">
+      Hidden from creators — only the team prompt-tunes here
+    </div>
+  </div>
+
+</div></div>
+</section>
+
+<!-- Tool coverage legend -->
+<div style="padding:24px 40px 80px;border-top:1.5px dashed var(--ink)">
+  <div class="hand" style="font-size:26px;margin-bottom:8px">All 19 tools — where they live</div>
+  <div class="tool-legend">
+    <span><b>T1</b> Video Idea Generator</span>
+    <span><b>T2</b> Video Script Generator</span>
+    <span><b>T3</b> Video Title Generator</span>
+    <span><b>T4</b> Description + Hashtag Gen</span>
+    <span><b>T5</b> Thumbnail Idea Generator</span>
+    <span><b>T6</b> Tags Generator</span>
+    <span><b>T7</b> Trending Video Finder (YT)</span>
+    <span><b>T8</b> YT Channel Stats</span>
+    <span><b>T9</b> Admin · Prompt Editor</span>
+    <span><b>T10</b> Content Planner / Calendar</span>
+    <span><b>T11</b> AI Voiceover Generator</span>
+    <span><b>T12</b> Review My Script</span>
+    <span><b>T13</b> Video Generator</span>
+    <span><b>T14</b> Cross-Platform Repurposer</span>
+    <span><b>T15</b> Link In Bio <span class="tag">(out of scope)</span></span>
+    <span><b>T16</b> My Shop <span class="tag">(out of scope)</span></span>
+    <span><b>T17</b> YT Thumbnail Downloader</span>
+    <span><b>T18</b> YT Subtitles Downloader</span>
+    <span><b>T19</b> YT Copyright Checker</span>
+  </div>
+  <div class="anno" style="margin-top:10px;color:var(--ink-3);font-size:11.5px">
+    T15 + T16 excluded per your answer (focus on content generation). Admin (T9) included — every tool needs prompts. Thumbnail + Subtitle downloaders (T17/T18) surface as secondary utilities in all three directions.
+  </div>
+</div>
+
+<!-- Tweaks panel -->
+<div id="tweaks">
+  <h4>Tweaks</h4>
+  <label>Sketchiness <input type="range" min="0" max="2" step="0.1" value="1" id="t-sketch"></label>
+  <label>Annotations <input type="checkbox" checked id="t-notes"></label>
+  <label>Accent
+    <select id="t-accent">
+      <option value="oklch(0.55 0.15 250)">cobalt</option>
+      <option value="oklch(0.60 0.17 30)">rust</option>
+      <option value="oklch(0.62 0.14 145)">moss</option>
+      <option value="oklch(0.62 0.16 330)">magenta</option>
+      <option value="oklch(0.55 0 0)">mono (no accent)</option>
+    </select>
+  </label>
+  <label>Paper
+    <select id="t-paper">
+      <option value="warm">warm (off-white)</option>
+      <option value="cool">cool (blue-grey)</option>
+      <option value="plain">plain white</option>
+      <option value="grid">graph paper</option>
+    </select>
+  </label>
+</div>
+
+<script>
+// --- Tabs -------------------------------------------------------------------
+const tabs = document.querySelectorAll('.tab');
+const sections = document.querySelectorAll('.direction');
+tabs.forEach(t => t.addEventListener('click', () => {
+  tabs.forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  const d = t.dataset.dir;
+  sections.forEach(s => s.classList.toggle('active', s.dataset.dir === d));
+  try { localStorage.setItem('cos_dir', d); } catch(e){}
+}));
+try {
+  const saved = localStorage.getItem('cos_dir');
+  if (saved) {
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.dir === saved));
+    sections.forEach(s => s.classList.toggle('active', s.dataset.dir === saved));
+  }
+} catch(e){}
+
+// --- Tweaks host protocol ---------------------------------------------------
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "sketchiness": 1,
+  "annotations": true,
+  "accent": "oklch(0.55 0.15 250)",
+  "paper": "warm"
+}/*EDITMODE-END*/;
+
+const state = { ...TWEAK_DEFAULTS };
+const panel = document.getElementById('tweaks');
+const $sketch = document.getElementById('t-sketch');
+const $notes  = document.getElementById('t-notes');
+const $accent = document.getElementById('t-accent');
+const $paper  = document.getElementById('t-paper');
+
+function applyState(){
+  document.documentElement.style.setProperty('--sketchiness', state.sketchiness);
+  document.body.classList.toggle('hide-notes', !state.annotations);
+  document.documentElement.style.setProperty('--accent', state.accent);
+  // paper
+  const paperMap = {
+    warm: { paper:'#faf7f2', paper2:'#f2ede3' },
+    cool: { paper:'#f4f6fa', paper2:'#e8ecf2' },
+    plain:{ paper:'#ffffff', paper2:'#f3f3f3' },
+    grid: { paper:'#fafafa', paper2:'#f0f0f0' },
+  };
+  const p = paperMap[state.paper] || paperMap.warm;
+  document.documentElement.style.setProperty('--paper', p.paper);
+  document.documentElement.style.setProperty('--paper-2', p.paper2);
+  if (state.paper === 'grid') {
+    document.body.style.backgroundImage =
+      'linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),' +
+      'linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px)';
+    document.body.style.backgroundSize = '18px 18px, 18px 18px';
+  } else {
+    document.body.style.backgroundImage = '';
+    document.body.style.backgroundSize = '';
+  }
+}
+function syncInputs(){
+  $sketch.value = state.sketchiness;
+  $notes.checked = !!state.annotations;
+  $accent.value = state.accent;
+  $paper.value  = state.paper;
+}
+syncInputs(); applyState();
+
+function persist(){
+  try {
+    window.parent.postMessage({type:'__edit_mode_set_keys', edits: state }, '*');
+  } catch(e){}
+}
+$sketch.addEventListener('input', () => { state.sketchiness = parseFloat($sketch.value); applyState(); persist(); });
+$notes.addEventListener('change', () => { state.annotations = $notes.checked; applyState(); persist(); });
+$accent.addEventListener('change', () => { state.accent = $accent.value; applyState(); persist(); });
+$paper.addEventListener('change', () => { state.paper = $paper.value; applyState(); persist(); });
+
+window.addEventListener('message', (e) => {
+  if (!e.data) return;
+  if (e.data.type === '__activate_edit_mode') panel.classList.add('open');
+  else if (e.data.type === '__deactivate_edit_mode') panel.classList.remove('open');
+});
+window.parent.postMessage({type:'__edit_mode_available'}, '*');
+</script>
+
+</body>
+</html>

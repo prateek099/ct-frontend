@@ -1,33 +1,64 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import PageHeader from '../components/layout/PageHeader'
 import Icon from '../components/shared/Icon'
+import {
+  useChannelStats,
+  useChannels,
+  useCreateChannel,
+  useRefreshChannel,
+} from '../api/useChannels'
+import { getApiErrorMessage } from '../types/api'
 
-const STATS = [
-  { label: 'Subscribers',  value: '124.3k', delta: '+2.1k',  deltaDir: 'up',   badge: 'mint' },
-  { label: 'Avg CTR',      value: '6.4%',   delta: '+0.8%',  deltaDir: 'up',   badge: 'mint' },
-  { label: 'Avg watch',    value: '4:12',   delta: '-0:08',  deltaDir: 'down',  badge: 'amber' },
-  { label: '7d views',     value: '184.2k', delta: '+14.1k', deltaDir: 'up',   badge: 'mint' },
-]
+function formatCount(n: number | null | undefined): string {
+  if (n == null) return '—'
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return `${n}`
+}
 
-const TOP_VIDEOS = [
-  { title: '10 AI Tools That Will Change Everything',  views: '412K', ctr: '9.1%', duration: '14:22' },
-  { title: 'I Quit My Job to Make YouTube Full-Time',  views: '287K', ctr: '7.8%', duration: '18:04' },
-  { title: 'How I Went from 0 to 100K Subscribers',    views: '261K', ctr: '8.4%', duration: '12:50' },
-  { title: 'The Brutal Truth About Content Creation',  views: '198K', ctr: '6.2%', duration: '10:11' },
-  { title: 'My Complete YouTube Studio Setup 2024',    views: '143K', ctr: '5.9%', duration: '22:38' },
-]
-
-const AUDIENCE_BARS = [
-  { label: '18–24', v: 28, color: 'accent' },
-  { label: '25–34', v: 41, color: 'mint' },
-  { label: '35–44', v: 19, color: 'violet' },
-  { label: '45–54', v: 8,  color: 'amber' },
-  { label: '55+',   v: 4,  color: 'sky' },
-]
+function formatDuration(seconds: number | null | undefined): string {
+  if (!seconds || seconds <= 0) return '—'
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
 
 export default function ChannelStats() {
-  const [url, setUrl] = useState('https://youtube.com/@MrBeast')
-  const [loaded, setLoaded] = useState(true)
+  const channels = useChannels()
+  const createChannel = useCreateChannel()
+  const refreshChannel = useRefreshChannel()
+
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [url, setUrl] = useState('')
+
+  useEffect(() => {
+    if (selectedId == null && channels.data && channels.data.length > 0) {
+      setSelectedId(channels.data[0].id)
+    }
+  }, [channels.data, selectedId])
+
+  const stats = useChannelStats(selectedId)
+  const selectedChannel = useMemo(
+    () => channels.data?.find(c => c.id === selectedId) ?? null,
+    [channels.data, selectedId],
+  )
+
+  const handleAnalyse = async () => {
+    if (!url.trim()) return
+    const created = await createChannel.mutateAsync(url.trim())
+    setSelectedId(created.id)
+    setUrl('')
+  }
+
+  const handleRefresh = async () => {
+    if (selectedId == null) return
+    await refreshChannel.mutateAsync(selectedId)
+  }
+
+  const engagementPct =
+    stats.data && stats.data.engagement_rate
+      ? (stats.data.engagement_rate * 100).toFixed(2)
+      : '0.00'
 
   return (
     <div className="stack-24">
@@ -36,110 +67,211 @@ export default function ChannelStats() {
         code="T8"
         icon="chart"
         title={<>Channel <em>stats</em></>}
-        subtitle="Analyse any YouTube channel — yours or a competitor's."
+        subtitle="Analyse any YouTube channel — aggregates pulled from its last uploads."
+        actions={
+          selectedId != null ? (
+            <button
+              className="btn"
+              onClick={handleRefresh}
+              disabled={refreshChannel.isPending}
+            >
+              <Icon
+                name="refresh"
+                size={14}
+                className={refreshChannel.isPending ? 'spin' : ''}
+              />{' '}
+              Refresh
+            </button>
+          ) : undefined
+        }
       />
 
-      {/* URL input */}
       <div className="card">
-        <div className="field-label">YouTube channel URL or handle</div>
-        <div className="row" style={{ gap: 10 }}>
+        <div className="field-label">Add a channel</div>
+        <div className="row" style={{ gap: 10, marginBottom: 12 }}>
           <input
             className="input"
             style={{ flex: 1 }}
             value={url}
             onChange={e => setUrl(e.target.value)}
-            placeholder="https://youtube.com/@handle or channel URL"
+            placeholder="https://youtube.com/@handle, /channel/UC..., or video URL"
           />
-          <button className="btn accent" onClick={() => setLoaded(true)}>
+          <button
+            className="btn accent"
+            onClick={handleAnalyse}
+            disabled={createChannel.isPending || !url.trim()}
+          >
             <Icon name="search" size={14} /> Analyse
           </button>
         </div>
+
+        {createChannel.isError && (
+          <div className="error-row" style={{ marginBottom: 8 }}>
+            <Icon name="x" size={13} />
+            {getApiErrorMessage(createChannel.error, 'Failed to add channel.')}
+          </div>
+        )}
+
+        {channels.data && channels.data.length > 0 && (
+          <>
+            <div className="field-label">Saved channels</div>
+            <div className="row wrap" style={{ gap: 6 }}>
+              {channels.data.map(c => (
+                <button
+                  key={c.id}
+                  className={'chip sm' + (selectedId === c.id ? ' filled' : '')}
+                  onClick={() => setSelectedId(c.id)}
+                >
+                  {c.channel_name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
-      {loaded && (
+      {stats.isError && (
+        <div className="card">
+          <div className="error-row">
+            <Icon name="x" size={13} />
+            {getApiErrorMessage(stats.error, 'Failed to load stats.')}
+          </div>
+        </div>
+      )}
+
+      {selectedId != null && stats.isLoading && (
+        <div className="card"><div className="small muted">Loading stats…</div></div>
+      )}
+
+      {stats.data && (
         <>
-          {/* Stat cards */}
           <div className="grid-4">
-            {STATS.map(s => (
-              <div key={s.label} className="card" style={{ textAlign: 'center' }}>
-                <div className="muted small" style={{ marginBottom: 6 }}>{s.label}</div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
-                  {s.value}
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <span className={`badge ${s.badge}`}>
-                    {s.deltaDir === 'up' ? '↑' : '↓'} {s.delta} 7d
-                  </span>
-                </div>
+            <div className="card" style={{ textAlign: 'center' }}>
+              <div className="muted small" style={{ marginBottom: 6 }}>Subscribers</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
+                {formatCount(stats.data.subscriber_count)}
               </div>
-            ))}
+            </div>
+            <div className="card" style={{ textAlign: 'center' }}>
+              <div className="muted small" style={{ marginBottom: 6 }}>Total views</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
+                {formatCount(stats.data.total_views)}
+              </div>
+            </div>
+            <div className="card" style={{ textAlign: 'center' }}>
+              <div className="muted small" style={{ marginBottom: 6 }}>Total videos</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
+                {formatCount(stats.data.video_count)}
+              </div>
+            </div>
+            <div className="card" style={{ textAlign: 'center' }}>
+              <div className="muted small" style={{ marginBottom: 6 }}>Avg duration</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
+                {formatDuration(stats.data.average_duration_seconds)}
+              </div>
+            </div>
           </div>
 
           <section className="grid-2-1">
-            {/* Top videos table */}
             <div className="card">
-              <div className="h2" style={{ marginBottom: 14 }}>Top performing videos</div>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Views</th>
-                    <th>CTR</th>
-                    <th>Duration</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {TOP_VIDEOS.map((v, i) => (
-                    <tr key={i}>
-                      <td style={{ fontWeight: 500 }}>{v.title}</td>
-                      <td>{v.views}</td>
-                      <td><span className="badge mint">{v.ctr}</span></td>
-                      <td className="muted">{v.duration}</td>
+              <div className="h2" style={{ marginBottom: 14 }}>
+                Top videos · last {stats.data.sample_size} uploads
+              </div>
+              {stats.data.top_videos.length === 0 ? (
+                <div className="small muted">No videos in the cached sample.</div>
+              ) : (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Views</th>
+                      <th>Likes</th>
+                      <th>Duration</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {stats.data.top_videos.map(v => (
+                      <tr key={v.id}>
+                        <td style={{ fontWeight: 500 }}>
+                          <a
+                            href={`https://www.youtube.com/watch?v=${v.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {v.title}
+                          </a>
+                        </td>
+                        <td>{formatCount(v.view_count)}</td>
+                        <td>{formatCount(v.like_count)}</td>
+                        <td className="muted">{formatDuration(v.duration_seconds)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
-            {/* Audience sidebar */}
             <div className="col" style={{ gap: 16 }}>
               <div className="card">
-                <div className="h2" style={{ marginBottom: 14 }}>Audience age breakdown</div>
-                <div className="col" style={{ gap: 10 }}>
-                  {AUDIENCE_BARS.map(b => (
-                    <div key={b.label}>
-                      <div className="row between small">
-                        <span>{b.label}</span>
-                        <b>{b.v}%</b>
-                      </div>
-                      <div className={`bar ${b.color}`} style={{ marginTop: 4 }}>
-                        <i style={{ width: `${b.v}%` }} />
-                      </div>
-                    </div>
-                  ))}
+                <div className="h2" style={{ marginBottom: 10 }}>Recent performance</div>
+                <div className="col" style={{ gap: 8 }}>
+                  <div className="row between small">
+                    <span className="muted">Sample size</span>
+                    <b>{stats.data.sample_size} videos</b>
+                  </div>
+                  <div className="row between small">
+                    <span className="muted">Recent views</span>
+                    <b>{formatCount(stats.data.recent_views_sum)}</b>
+                  </div>
+                  <div className="row between small">
+                    <span className="muted">Avg views / video</span>
+                    <b>{formatCount(stats.data.average_views_per_video)}</b>
+                  </div>
+                  <div className="row between small">
+                    <span className="muted">Recent likes</span>
+                    <b>{formatCount(stats.data.recent_likes_sum)}</b>
+                  </div>
+                  <div className="row between small">
+                    <span className="muted">Recent comments</span>
+                    <b>{formatCount(stats.data.recent_comments_sum)}</b>
+                  </div>
+                  <div className="row between small">
+                    <span className="muted">Engagement rate</span>
+                    <b>{engagementPct}%</b>
+                  </div>
+                  <div className="row between small">
+                    <span className="muted">Publish cadence</span>
+                    <b>{stats.data.videos_per_week.toFixed(2)} / week</b>
+                  </div>
                 </div>
               </div>
 
-              <div className="card">
-                <div className="h2" style={{ marginBottom: 10 }}>Channel health</div>
-                <div className="col" style={{ gap: 8 }}>
-                  {[
-                    { label: 'Upload frequency', val: '2× / week' },
-                    { label: 'Avg retention',    val: '48%' },
-                    { label: 'Comment rate',     val: '1.2%' },
-                    { label: 'Like rate',        val: '4.8%' },
-                    { label: 'Total videos',     val: '184' },
-                  ].map(r => (
-                    <div key={r.label} className="row between small">
-                      <span className="muted">{r.label}</span>
-                      <b>{r.val}</b>
+              {selectedChannel?.handle && (
+                <div className="card tinted">
+                  <div className="h2" style={{ marginBottom: 8 }}>Channel</div>
+                  <div className="small" style={{ lineHeight: 1.5 }}>
+                    <b>{stats.data.channel_name}</b>
+                    <div className="muted tiny" style={{ marginTop: 4 }}>
+                      {selectedChannel.handle}
                     </div>
-                  ))}
+                    <div className="muted tiny" style={{ marginTop: 4 }}>
+                      Last refreshed{' '}
+                      {new Date(stats.data.last_refreshed_at).toLocaleString()}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </section>
         </>
+      )}
+
+      {!stats.data && !stats.isLoading && selectedId == null && (
+        <div className="card">
+          <div className="small muted">
+            Add a YouTube channel above to see its stats.
+          </div>
+        </div>
       )}
     </div>
   )
