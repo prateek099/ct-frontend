@@ -8,6 +8,7 @@ import './index.css'
 import { AuthProvider } from './context/AuthContext'
 import { WorkflowProvider } from './context/WorkflowContext'
 import ProtectedRoute from './components/auth/ProtectedRoute'
+import AdminRoute from './components/auth/AdminRoute'
 import AppShell from './components/layout/AppShell'
 
 import LoginPage from './pages/LoginPage'
@@ -98,8 +99,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="/subtitles-downloader"  element={<Shell><SubtitlesDownloader /></Shell>} />
               <Route path="/copyright"             element={<Shell><CopyrightChecker /></Shell>} />
 
-              {/* Admin (T9) */}
-              <Route path="/admin" element={<Shell><AdminPanel /></Shell>} />
+              {/* Admin (T9) — admin-only */}
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AppShell><AdminPanel /></AppShell>
+                  </AdminRoute>
+                }
+              />
 
               {/* Users */}
               <Route path="/users" element={<Shell><UsersPage /></Shell>} />
