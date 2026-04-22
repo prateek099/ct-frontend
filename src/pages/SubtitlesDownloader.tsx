@@ -1,43 +1,72 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import PageHeader from '../components/layout/PageHeader'
 import Icon from '../components/shared/Icon'
+import { useFetchSubtitles } from '../api/useSubtitles'
+import { getApiErrorMessage } from '../types/api'
+import type { SubtitlesResponse } from '../types/subtitle'
 
-const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Portuguese', 'Auto-detect']
-const FORMATS    = ['SRT', 'VTT', 'TXT']
+const LANGUAGES: { label: string; code: string }[] = [
+  { label: 'English', code: 'en' },
+  { label: 'Spanish', code: 'es' },
+  { label: 'French',  code: 'fr' },
+  { label: 'German',  code: 'de' },
+  { label: 'Portuguese', code: 'pt' },
+]
 
-const MOCK_SUBTITLES = `1
-00:00:00,000 --> 00:00:03,200
-Hey, what's up everyone — welcome back to the channel.
+type FormatKey = 'SRT' | 'VTT' | 'TXT'
+const FORMATS: FormatKey[] = ['SRT', 'VTT', 'TXT']
 
-2
-00:00:03,400 --> 00:00:07,800
-Today I'm pulling back the curtain on the exact YouTube growth strategy
+function buildTxt(data: SubtitlesResponse): string {
+  return data.entries.map(e => e.text).join('\n')
+}
 
-3
-00:00:07,900 --> 00:00:12,100
-that took me from zero to a hundred thousand subscribers in just 11 months.
+function pickBody(data: SubtitlesResponse, fmt: FormatKey): string {
+  if (fmt === 'SRT') return data.srt
+  if (fmt === 'VTT') return data.vtt
+  return buildTxt(data)
+}
 
-4
-00:00:12,400 --> 00:00:16,600
-This isn't about lucky breaks. There's a very specific system I've built.
-
-5
-00:00:16,800 --> 00:00:21,200
-And I'm going to hand it to you piece by piece.
-
-6
-00:00:21,500 --> 00:00:26,000
-Stick around until the end — I've got a free resource that ties everything together.
-
-7
-00:00:26,200 --> 00:00:28,000
-Let's get into it.`
+function saveBlob(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime })
+  const href = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = href
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(href)
+}
 
 export default function SubtitlesDownloader() {
-  const [url, setUrl]         = useState('')
-  const [fetched, setFetched] = useState(false)
-  const [language, setLanguage] = useState('English')
-  const [format, setFormat]   = useState('SRT')
+  const [url, setUrl] = useState('')
+  const [langCode, setLangCode] = useState('en')
+  const [format, setFormat] = useState<FormatKey>('SRT')
+
+  const fetchSubs = useFetchSubtitles()
+  const data = fetchSubs.data
+
+  const previewBody = useMemo(
+    () => (data ? pickBody(data, format) : ''),
+    [data, format],
+  )
+
+  const handleFetch = () => {
+    if (!url.trim()) return
+    fetchSubs.mutate({ url: url.trim(), language: langCode })
+  }
+
+  const handleDownload = () => {
+    if (!data) return
+    const ext = format.toLowerCase()
+    const mime =
+      format === 'SRT'
+        ? 'application/x-subrip'
+        : format === 'VTT'
+          ? 'text/vtt'
+          : 'text/plain'
+    saveBlob(previewBody, `${data.video_id}.${ext}`, mime)
+  }
 
   return (
     <div className="stack-24">
@@ -49,7 +78,6 @@ export default function SubtitlesDownloader() {
         subtitle="Download captions from any YouTube video in SRT, VTT, or TXT."
       />
 
-      {/* URL input */}
       <div className="card">
         <div className="field-label">YouTube video URL</div>
         <div className="row" style={{ gap: 10 }}>
@@ -59,14 +87,30 @@ export default function SubtitlesDownloader() {
             value={url}
             onChange={e => setUrl(e.target.value)}
             placeholder="https://youtube.com/watch?v=…"
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleFetch()
+            }}
           />
-          <button className="btn accent" onClick={() => setFetched(true)}>
-            <Icon name="search" size={14} /> Fetch
+          <button
+            className="btn accent"
+            onClick={handleFetch}
+            disabled={!url.trim() || fetchSubs.isPending}
+          >
+            {fetchSubs.isPending ? (
+              <><Icon name="refresh" size={14} className="spin" /> Fetching…</>
+            ) : (
+              <><Icon name="search" size={14} /> Fetch</>
+            )}
           </button>
         </div>
+        {fetchSubs.isError && (
+          <div className="error-row" style={{ marginTop: 10 }}>
+            <Icon name="x" size={13} />
+            {getApiErrorMessage(fetchSubs.error, 'Failed to fetch subtitles.')}
+          </div>
+        )}
       </div>
 
-      {/* Options */}
       <div className="card">
         <div className="row wrap" style={{ gap: 24 }}>
           <div>
@@ -74,11 +118,11 @@ export default function SubtitlesDownloader() {
             <div className="row wrap" style={{ gap: 6 }}>
               {LANGUAGES.map(l => (
                 <button
-                  key={l}
-                  className={`chip sm${language === l ? ' filled' : ''}`}
-                  onClick={() => setLanguage(l)}
+                  key={l.code}
+                  className={`chip sm${langCode === l.code ? ' filled' : ''}`}
+                  onClick={() => setLangCode(l.code)}
                 >
-                  {l}
+                  {l.label}
                 </button>
               ))}
             </div>
@@ -88,22 +132,27 @@ export default function SubtitlesDownloader() {
             <div className="field-label" style={{ marginBottom: 8 }}>Format</div>
             <div className="segmented">
               {FORMATS.map(f => (
-                <button key={f} className={format === f ? 'on' : ''} onClick={() => setFormat(f)}>{f}</button>
+                <button
+                  key={f}
+                  className={format === f ? 'on' : ''}
+                  onClick={() => setFormat(f)}
+                >
+                  {f}
+                </button>
               ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Preview + download */}
-      {fetched && (
+      {data && (
         <section className="grid-2-1">
           <div className="card">
             <div className="row between" style={{ marginBottom: 12 }}>
               <div className="h2">Preview — {format}</div>
               <div className="row" style={{ gap: 6 }}>
-                <span className="badge mint">{language}</span>
-                <span className="chip sm">{MOCK_SUBTITLES.split('\n\n').length} cues</span>
+                <span className="badge mint">{data.language}</span>
+                <span className="chip sm">{data.entries.length} cues</span>
               </div>
             </div>
 
@@ -116,14 +165,21 @@ export default function SubtitlesDownloader() {
               whiteSpace: 'pre-wrap',
               marginBottom: 14,
             }}>
-              {MOCK_SUBTITLES}
+              {previewBody}
             </div>
 
             <div className="row" style={{ gap: 8 }}>
-              <button className="btn accent" style={{ flex: 1, justifyContent: 'center' }}>
+              <button
+                className="btn accent"
+                style={{ flex: 1, justifyContent: 'center' }}
+                onClick={handleDownload}
+              >
                 <Icon name="download" size={14} /> Download .{format.toLowerCase()}
               </button>
-              <button className="btn" onClick={() => navigator.clipboard?.writeText(MOCK_SUBTITLES)}>
+              <button
+                className="btn"
+                onClick={() => navigator.clipboard?.writeText(previewBody)}
+              >
                 <Icon name="copy" size={14} /> Copy
               </button>
             </div>
@@ -132,22 +188,17 @@ export default function SubtitlesDownloader() {
           <div className="col" style={{ gap: 16 }}>
             <div className="card">
               <div className="h2" style={{ marginBottom: 12 }}>Video info</div>
-              <div className="thumb coral" style={{ marginBottom: 12, borderRadius: 10, fontSize: 12 }}>PREVIEW</div>
               <div style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.3, marginBottom: 6 }}>
-                10 AI Tools That Will Change Content Creation Forever
+                Video ID: <span style={{ fontFamily: 'var(--font-mono, monospace)' }}>{data.video_id}</span>
               </div>
-              <div className="small muted">TechCreator · 14:22</div>
+              <div className="small muted">
+                {data.entries.length} cues · language: {data.language}
+              </div>
             </div>
 
             <div className="card tinted">
-              <div className="h2" style={{ marginBottom: 10 }}>Available languages</div>
-              <div className="col" style={{ gap: 6 }}>
-                {['English (manual)', 'Spanish (auto)', 'French (auto)', 'German (auto)'].map(l => (
-                  <div key={l} className="row" style={{ gap: 8 }}>
-                    <Icon name="check" size={12} />
-                    <span className="small">{l}</span>
-                  </div>
-                ))}
+              <div className="small" style={{ lineHeight: 1.6 }}>
+                <b>Heads up:</b> Subtitles come from YouTube's transcript endpoint. Some videos have transcripts disabled or only offer machine-generated captions — try a different language if the fetch fails.
               </div>
             </div>
           </div>
