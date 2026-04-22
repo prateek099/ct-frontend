@@ -1,12 +1,17 @@
 import { Link } from 'react-router-dom'
 import Icon from '../../components/shared/Icon'
-import type { ChannelData } from '../../types/workflow'
+import type { ChannelData, VideoIdea } from '../../types/workflow'
+import { useSavedIdeas, useDeleteIdea } from '../../api/useSavedIdeas'
 
 interface Props {
   channelData: ChannelData | null
+  onPickSaved?: (idea: VideoIdea) => void
 }
 
-export default function IdeaSidebar({ channelData }: Props) {
+export default function IdeaSidebar({ channelData, onPickSaved }: Props) {
+  const { data: savedIdeas = [] } = useSavedIdeas({ limit: 10 })
+  const deleteIdea = useDeleteIdea()
+
   return (
     <div className="col" style={{ gap: 16 }}>
       <div className="card">
@@ -31,10 +36,6 @@ export default function IdeaSidebar({ channelData }: Props) {
             </div>
             <div className="bar mint" style={{ marginTop: 6 }}><i style={{ width: '72%' }} /></div>
           </div>
-          <div>
-            <div className="tiny muted" style={{ marginBottom: 4 }}>Top-performing CTA</div>
-            <div style={{ fontWeight: 600 }}>"Subscribe if this saved you time"</div>
-          </div>
         </div>
       </div>
 
@@ -48,7 +49,6 @@ export default function IdeaSidebar({ channelData }: Props) {
             { t: 'AI tools for creators',  d: '↑ 340%' },
             { t: 'Claude vs ChatGPT 2026', d: '↑ 210%' },
             { t: 'Free alternatives to…',  d: '↑ 155%' },
-            { t: 'Channel makeovers',      d: '↑ 88%' },
           ].map(r => (
             <div key={r.t} className="row between">
               <span style={{ fontSize: 13 }}>{r.t}</span>
@@ -56,6 +56,62 @@ export default function IdeaSidebar({ channelData }: Props) {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title">
+          <h3 className="h2">Idea bank</h3>
+          <span className="small muted">{savedIdeas.length} saved</span>
+        </div>
+        {savedIdeas.length === 0 ? (
+          <div className="tiny muted">
+            No saved ideas yet. Pick an idea and hit "Save to idea bank" to build your stash.
+          </div>
+        ) : (
+          <div className="col" style={{ gap: 8 }}>
+            {savedIdeas.slice(0, 8).map(idea => (
+              <div className="row between" key={idea.id} style={{ fontSize: 13, gap: 8 }}>
+                <span
+                  style={{
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={idea.title}
+                >
+                  {idea.title}
+                </span>
+                <div className="row" style={{ gap: 4 }}>
+                  {onPickSaved && (
+                    <button
+                      className="btn sm ghost"
+                      title="Use this idea"
+                      onClick={() =>
+                        onPickSaved({
+                          title: idea.title,
+                          hook: idea.hook ?? '',
+                          angle: idea.angle ?? '',
+                          format: idea.format ?? '',
+                          reasoning: idea.reasoning ?? '',
+                        })
+                      }
+                    >
+                      <Icon name="arrowRight" size={12} />
+                    </button>
+                  )}
+                  <button
+                    className="btn sm ghost"
+                    title="Remove"
+                    onClick={() => deleteIdea.mutate(idea.id)}
+                  >
+                    <Icon name="x" size={12} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {channelData?.recent_videos?.length ? (
@@ -72,22 +128,7 @@ export default function IdeaSidebar({ channelData }: Props) {
             ))}
           </div>
         </div>
-      ) : (
-        <div className="card">
-          <div className="card-title">
-            <h3 className="h2">Idea bank</h3>
-            <span className="small muted">23 saved</span>
-          </div>
-          <div className="col" style={{ gap: 8 }}>
-            {['"Why free tools beat paid ones"', '"30 days of Claude"', '"Editing in 1 hour"'].map(idea => (
-              <div className="row between" key={idea} style={{ fontSize: 13 }}>
-                <span>{idea}</span>
-                <button className="btn sm ghost"><Icon name="arrowRight" size={12} /></button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      ) : null}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import PageHeader from '../components/layout/PageHeader'
 import Icon from '../components/shared/Icon'
 import { useWorkflow } from '../context/WorkflowContext'
 import { useFetchChannel, useGenerateIdeas } from '../api/useWorkflow'
+import { useSaveIdea } from '../api/useSavedIdeas'
 import type { VideoIdea } from '../types/workflow'
 import { getApiErrorMessage } from '../types/api'
 import BackgroundGenerationBanner from '../components/pipeline/BackgroundGenerationBanner'
@@ -28,6 +29,28 @@ export default function VideoIdeaGenerator() {
 
   const fetchChannel = useFetchChannel()
   const generateIdeas = useGenerateIdeas()
+  const saveIdea = useSaveIdea()
+  const [savedFlash, setSavedFlash] = useState(false)
+
+  const handleSaveIdea = () => {
+    if (!selectedIdea) return
+    saveIdea.mutate(
+      {
+        title: selectedIdea.title,
+        hook: selectedIdea.hook || null,
+        angle: selectedIdea.angle || null,
+        format: selectedIdea.format || null,
+        reasoning: selectedIdea.reasoning || null,
+        source_prompt: topic || null,
+      },
+      {
+        onSuccess: () => {
+          setSavedFlash(true)
+          window.setTimeout(() => setSavedFlash(false), 2000)
+        },
+      },
+    )
+  }
 
   const handleFetch = () => {
     if (!channelUrl.trim()) return
@@ -68,8 +91,13 @@ export default function VideoIdeaGenerator() {
         subtitle="Brainstorm hook-scored, trend-aware ideas — ranked by what's most likely to pop in your niche right now."
         actions={
           <>
-            <button className="btn" disabled={!selectedIdea}>
-              <Icon name="save" size={14} /> Save to idea bank
+            <button
+              className="btn"
+              disabled={!selectedIdea || saveIdea.isPending}
+              onClick={handleSaveIdea}
+            >
+              <Icon name={savedFlash ? 'check' : 'save'} size={14} />
+              {savedFlash ? 'Saved' : saveIdea.isPending ? 'Saving…' : 'Save to idea bank'}
             </button>
             <Link to="/script" className={'btn primary' + (!selectedIdea ? ' disabled' : '')}
               style={!selectedIdea ? { opacity: 0.4, pointerEvents: 'none' } : {}}>
@@ -255,7 +283,7 @@ export default function VideoIdeaGenerator() {
           )}
         </div>
 
-        <IdeaSidebar channelData={channelData} />
+        <IdeaSidebar channelData={channelData} onPickSaved={pickIdea} />
       </section>
     </div>
   )
