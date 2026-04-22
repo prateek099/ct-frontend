@@ -36,11 +36,16 @@ client.interceptors.response.use(
     console.error(`[API] ERROR ${error.response?.status ?? "network"} ${error.config?.method?.toUpperCase()} ${error.config?.baseURL}${error.config?.url}`, error.response?.data);
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Only attempt refresh for 401 on non-auth endpoints
+    // Only attempt refresh for 401 on non-auth endpoints.
+    // /login is the workflow-login endpoint — never refresh on its own 401,
+    // otherwise a bad password triggers a redirect that wipes the form state.
+    const url = original.url ?? "";
+    const isAuthEndpoint =
+      url.includes("/auth/") || url === "/login" || url.endsWith("/login");
     if (
       error.response?.status === 401 &&
       !original._retry &&
-      !original.url?.includes("/auth/")
+      !isAuthEndpoint
     ) {
       if (isRefreshing) {
         // Queue concurrent requests while refresh is in flight
