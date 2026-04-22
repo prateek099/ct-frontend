@@ -1,12 +1,31 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Icon from '../components/shared/Icon'
 import { useAuth } from '../context/AuthContext'
+import { useProjects } from '../api/useProjects'
+import { useWorkflow } from '../context/WorkflowContext'
+import type { Project } from '../types/project'
 
-const IN_FLIGHT = [
-  { title: 'Why I quit my 9–5 (and what I do now)', step: 3, total: 6, steps: ['Idea', 'Script', 'Title', 'Thumb', 'Tags', 'Publish'], due: 'Tue · Apr 21', thumb: 'coral' },
-  { title: '5 AI tools that changed my channel',    step: 5, total: 6, steps: ['Idea', 'Script', 'Title', 'Thumb', 'Tags', 'Publish'], due: 'Thu · Apr 23', thumb: 'violet' },
-  { title: 'My $0 editing setup (Premiere free)',   step: 2, total: 6, steps: ['Idea', 'Script', 'Title', 'Thumb', 'Tags', 'Publish'], due: 'Sat · Apr 25', thumb: 'mint' },
-]
+const PIPELINE_STEPS = ['Idea', 'Script', 'Title', 'SEO'] as const
+const THUMB_PALETTE = ['coral', 'violet', 'mint', 'sky'] as const
+
+// Prateek: Derive pipeline progress from which JSON blobs have been filled.
+function projectProgress(p: Project): number {
+  let done = 0
+  if (p.idea_json?.selectedIdea) done = Math.max(done, 1)
+  if (p.script_json?.script)     done = Math.max(done, 2)
+  if (p.title_json?.selectedTitle || p.title_json?.suggestedTitles?.length) done = Math.max(done, 3)
+  if (p.seo_json?.seo)           done = Math.max(done, 4)
+  return done
+}
+
+function projectTitle(p: Project): string {
+  return (
+    p.title ||
+    p.idea_json?.selectedIdea?.title ||
+    p.idea_json?.ideas?.[0]?.title ||
+    'Untitled draft'
+  )
+}
 
 const QUICK_TOOLS = [
   { path: '/idea',      icon: 'lightbulb', label: 'New idea',       sub: 'Hook-scored, trend-aware' },
@@ -41,6 +60,16 @@ function greeting(name: string) {
 export default function DashboardPage() {
   const { user } = useAuth()
   const name = user?.name ?? 'Creator'
+  const navigate = useNavigate()
+  const { loadProject } = useWorkflow()
+  const { data: projects, isLoading } = useProjects({ status: 'draft', limit: 10 })
+
+  const inFlight = projects ?? []
+
+  const handleResume = (p: Project) => {
+    loadProject(p)
+    navigate('/idea')
+  }
 
   return (
     <div className="stack-24">
@@ -96,37 +125,54 @@ export default function DashboardPage() {
             <Link to="/calendar" className="btn sm ghost">See all <Icon name="arrowRight" size={12} /></Link>
           </div>
           <div className="stack-12">
-            {IN_FLIGHT.map(v => (
-              <div className="row" key={v.title} style={{ gap: 16, padding: 12, border: '1px solid var(--line)', borderRadius: 14 }}>
-                <div className={'thumb ' + v.thumb} style={{ width: 140, flex: '0 0 140px' }}>
-                  {v.title.split(' ').slice(0, 3).join(' ')}
-                  <span className="corner">{v.thumb.toUpperCase()}</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="row between">
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>{v.title}</div>
-                    <span className="muted small">{v.due}</span>
-                  </div>
-                  <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                    {v.steps.map((s, i) => {
-                      const done = i < v.step, active = i === v.step
-                      return (
-                        <span key={s} className={'chip sm ' + (done ? 'filled' : active ? 'accent' : '')}>
-                          {done && <Icon name="check" size={10} />}{s}
-                        </span>
-                      )
-                    })}
-                  </div>
-                  <div className="row" style={{ marginTop: 10, gap: 12 }}>
-                    <div className="bar accent" style={{ flex: 1 }}>
-                      <i style={{ width: `${(v.step / v.total) * 100}%` }} />
-                    </div>
-                    <span className="small muted" style={{ minWidth: 60 }}>Step {v.step}/{v.total}</span>
-                    <Link to="/idea" className="btn sm">Continue <Icon name="arrowRight" size={12} /></Link>
-                  </div>
-                </div>
+            {isLoading && <div className="muted small">Loading…</div>}
+            {!isLoading && inFlight.length === 0 && (
+              <div className="muted small" style={{ padding: 12 }}>
+                No drafts yet. <Link to="/idea">Start your first video</Link>.
               </div>
-            ))}
+            )}
+            {inFlight.map((p, idx) => {
+              const title = projectTitle(p)
+              const step = projectProgress(p)
+              const total = PIPELINE_STEPS.length
+              const thumb = THUMB_PALETTE[idx % THUMB_PALETTE.length]
+              const updated = new Date(p.updated_at).toLocaleDateString(undefined, {
+                weekday: 'short', month: 'short', day: 'numeric',
+              })
+              return (
+                <div className="row" key={p.id} style={{ gap: 16, padding: 12, border: '1px solid var(--line)', borderRadius: 14 }}>
+                  <div className={'thumb ' + thumb} style={{ width: 140, flex: '0 0 140px' }}>
+                    {title.split(' ').slice(0, 3).join(' ')}
+                    <span className="corner">{thumb.toUpperCase()}</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="row between">
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>{title}</div>
+                      <span className="muted small">Updated · {updated}</span>
+                    </div>
+                    <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                      {PIPELINE_STEPS.map((s, i) => {
+                        const done = i < step, active = i === step
+                        return (
+                          <span key={s} className={'chip sm ' + (done ? 'filled' : active ? 'accent' : '')}>
+                            {done && <Icon name="check" size={10} />}{s}
+                          </span>
+                        )
+                      })}
+                    </div>
+                    <div className="row" style={{ marginTop: 10, gap: 12 }}>
+                      <div className="bar accent" style={{ flex: 1 }}>
+                        <i style={{ width: `${(step / total) * 100}%` }} />
+                      </div>
+                      <span className="small muted" style={{ minWidth: 60 }}>Step {step}/{total}</span>
+                      <button onClick={() => handleResume(p)} className="btn sm">
+                        Resume <Icon name="arrowRight" size={12} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
 
