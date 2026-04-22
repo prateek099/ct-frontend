@@ -9,6 +9,7 @@ import { useGenerateTitles } from '../api/useWorkflow'
 import { getApiErrorMessage } from '../types/api'
 import BackgroundGenerationBanner from '../components/pipeline/BackgroundGenerationBanner'
 import NoIdeaSelectedCard from '../components/pipeline/NoIdeaSelectedCard'
+import { useABTests, useCreateABTest } from '../api/useABTests'
 import type { TitleItem } from '../types/workflow'
 
 const ANGLE_COLORS: Record<string, string> = {
@@ -23,11 +24,54 @@ export default function TitleSuggestor() {
     suggestedTitles, selectedTitle, setSelectedTitle,
     resetFromTitles, titlesPending,
     startTitles, stopTitles,
+    currentProjectId,
   } = useWorkflow()
 
   const [steer, setSteer] = useState('')
   const generateTitles = useGenerateTitles()
   const isGenerating = titlesPending || generateTitles.isPending
+
+  const [abOpen, setAbOpen] = useState(false)
+  const [abA, setAbA] = useState<string>('')
+  const [abB, setAbB] = useState<string>('')
+  const [abError, setAbError] = useState<string | null>(null)
+
+  const createABTest = useCreateABTest()
+  const { data: abTests = [] } = useABTests(
+    currentProjectId != null ? { project_id: currentProjectId } : {},
+  )
+  const runningTest = abTests.find(t => t.status === 'running') || null
+
+  const openAbModal = () => {
+    setAbA(selectedTitle?.title || suggestedTitles[0]?.title || '')
+    setAbB(suggestedTitles[1]?.title || '')
+    setAbError(null)
+    setAbOpen(true)
+  }
+
+  const submitAbTest = () => {
+    if (!currentProjectId) {
+      setAbError('Save your project first — generate an idea to start a draft.')
+      return
+    }
+    if (!abA.trim() || !abB.trim()) {
+      setAbError('Pick two titles.')
+      return
+    }
+    if (abA.trim() === abB.trim()) {
+      setAbError('Pick two different titles.')
+      return
+    }
+    setAbError(null)
+    createABTest.mutate(
+      { project_id: currentProjectId, title_a: abA.trim(), title_b: abB.trim() },
+      {
+        onSuccess: () => setAbOpen(false),
+        onError: (err: unknown) =>
+          setAbError(getApiErrorMessage(err, 'Failed to create A/B test.')),
+      },
+    )
+  }
 
   const handleGenerate = () => {
     if (!selectedIdea) return
@@ -236,15 +280,87 @@ export default function TitleSuggestor() {
 
             <div className="card tinted">
               <div className="card-title"><h3 className="h2">A/B test</h3><span className="chip sm accent">NEW</span></div>
-              <div className="small muted" style={{ marginBottom: 10 }}>
-                Run two titles for 48hrs — we'll auto-pick the winner.
-              </div>
-              <button className="btn" style={{ width: '100%', justifyContent: 'center' }}>
-                <Icon name="split" size={14} /> Set up A/B test
-              </button>
+              {runningTest ? (
+                <>
+                  <div className="small muted" style={{ marginBottom: 10 }}>
+                    A live test is already running for this project.
+                  </div>
+                  <div className="card flat" style={{ padding: 10, fontSize: 12, lineHeight: 1.4 }}>
+                    <div><b>A:</b> {runningTest.title_a}</div>
+                    <div style={{ marginTop: 4 }}><b>B:</b> {runningTest.title_b}</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="small muted" style={{ marginBottom: 10 }}>
+                    Run two titles — pick a winner when you have data.
+                  </div>
+                  <button
+                    className="btn"
+                    style={{ width: '100%', justifyContent: 'center' }}
+                    onClick={openAbModal}
+                    disabled={suggestedTitles.length < 2 || !currentProjectId}
+                    title={
+                      !currentProjectId
+                        ? 'Generate an idea first to start a project draft.'
+                        : suggestedTitles.length < 2
+                          ? 'Generate at least two titles first.'
+                          : ''
+                    }
+                  >
+                    <Icon name="split" size={14} /> Set up A/B test
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </section>
+      )}
+
+      {abOpen && (
+        <div
+          onClick={() => !createABTest.isPending && setAbOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="card"
+            style={{ width: 480, maxWidth: '90vw' }}
+          >
+            <div className="card-title"><h3 className="h2">Set up A/B test</h3></div>
+            <div className="col" style={{ gap: 12 }}>
+              <label className="field-label">Title A</label>
+              <select className="input" value={abA} onChange={e => setAbA(e.target.value)}>
+                {suggestedTitles.map((t, i) => (
+                  <option key={i} value={t.title}>{t.title}</option>
+                ))}
+              </select>
+              <label className="field-label">Title B</label>
+              <select className="input" value={abB} onChange={e => setAbB(e.target.value)}>
+                {suggestedTitles.map((t, i) => (
+                  <option key={i} value={t.title}>{t.title}</option>
+                ))}
+              </select>
+              {abError && <div className="error-row"><Icon name="x" size={13} /> {abError}</div>}
+              <div className="row between" style={{ marginTop: 6 }}>
+                <button className="btn ghost" onClick={() => setAbOpen(false)} disabled={createABTest.isPending}>
+                  Cancel
+                </button>
+                <button className="btn accent" onClick={submitAbTest} disabled={createABTest.isPending}>
+                  {createABTest.isPending ? 'Creating…' : 'Start test'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
