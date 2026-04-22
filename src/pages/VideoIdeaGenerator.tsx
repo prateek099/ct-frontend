@@ -7,7 +7,13 @@ import Icon from '../components/shared/Icon'
 import { useWorkflow } from '../context/WorkflowContext'
 import { useFetchChannel, useGenerateIdeas } from '../api/useWorkflow'
 import { useSaveIdea } from '../api/useSavedIdeas'
-import type { VideoIdea } from '../types/workflow'
+import {
+  useChannels,
+  useCreateChannel,
+  useDeleteChannel,
+} from '../api/useChannels'
+import type { SavedChannel } from '../types/channel'
+import type { ChannelData, VideoIdea } from '../types/workflow'
 import { getApiErrorMessage } from '../types/api'
 import BackgroundGenerationBanner from '../components/pipeline/BackgroundGenerationBanner'
 import IdeaSidebar from './idea/IdeaSidebar'
@@ -30,7 +36,36 @@ export default function VideoIdeaGenerator() {
   const fetchChannel = useFetchChannel()
   const generateIdeas = useGenerateIdeas()
   const saveIdea = useSaveIdea()
+  const { data: savedChannels = [] } = useChannels()
+  const createChannel = useCreateChannel()
+  const deleteChannel = useDeleteChannel()
   const [savedFlash, setSavedFlash] = useState(false)
+
+  const savedChannelToWorkflow = (c: SavedChannel): ChannelData => ({
+    channel_id: c.youtube_channel_id,
+    channel_name: c.channel_name,
+    handle: c.handle ?? '',
+    description: c.description ?? '',
+    subscriber_count: c.subscriber_count ?? 0,
+    total_views: c.total_views ?? 0,
+    video_count: c.video_count ?? 0,
+    thumbnail_url: c.thumbnail_url ?? '',
+    recent_videos: c.recent_videos ?? [],
+    average_duration_seconds: c.average_duration_seconds ?? 0,
+  })
+
+  const handleSelectSaved = (id: string) => {
+    if (!id) return
+    const match = savedChannels.find(c => String(c.id) === id)
+    if (match) setChannelData(savedChannelToWorkflow(match))
+  }
+
+  const handleSaveChannel = () => {
+    if (!channelUrl.trim()) return
+    createChannel.mutate(channelUrl.trim(), {
+      onSuccess: data => setChannelData(savedChannelToWorkflow(data)),
+    })
+  }
 
   const handleSaveIdea = () => {
     if (!selectedIdea) return
@@ -123,6 +158,51 @@ export default function VideoIdeaGenerator() {
           {/* Channel card */}
           <div className="card">
             <div className="field-label"><Icon name="chart" size={12} /> Channel context (optional)</div>
+
+            {savedChannels.length > 0 && (
+              <div className="row" style={{ gap: 8, marginBottom: 10 }}>
+                <select
+                  className="input"
+                  value={
+                    channelData
+                      ? String(
+                          savedChannels.find(
+                            c => c.youtube_channel_id === channelData.channel_id,
+                          )?.id ?? '',
+                        )
+                      : ''
+                  }
+                  onChange={e => handleSelectSaved(e.target.value)}
+                >
+                  <option value="">Use a saved channel…</option>
+                  {savedChannels.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.channel_name} {c.handle ? `(${c.handle})` : ''}
+                    </option>
+                  ))}
+                </select>
+                {channelData && savedChannels.some(
+                  c => c.youtube_channel_id === channelData.channel_id,
+                ) && (
+                  <button
+                    className="btn sm ghost"
+                    title="Remove from saved"
+                    onClick={() => {
+                      const match = savedChannels.find(
+                        c => c.youtube_channel_id === channelData.channel_id,
+                      )
+                      if (match) {
+                        deleteChannel.mutate(match.id)
+                        setChannelData(null)
+                      }
+                    }}
+                  >
+                    <Icon name="x" size={12} />
+                  </button>
+                )}
+              </div>
+            )}
+
             <div className="row" style={{ gap: 8 }}>
               <input
                 className="input"
@@ -138,6 +218,17 @@ export default function VideoIdeaGenerator() {
                 style={{ flexShrink: 0 }}
               >
                 {fetchChannel.isPending ? <><Icon name="refresh" size={14} className="spin" /> Fetching…</> : <><Icon name="search" size={14} /> Fetch</>}
+              </button>
+              <button
+                className="btn"
+                onClick={handleSaveChannel}
+                disabled={createChannel.isPending || !channelUrl.trim()}
+                style={{ flexShrink: 0 }}
+                title="Fetch + save for next time"
+              >
+                {createChannel.isPending
+                  ? <><Icon name="refresh" size={14} className="spin" /> Saving…</>
+                  : <><Icon name="save" size={14} /> Save</>}
               </button>
             </div>
 
