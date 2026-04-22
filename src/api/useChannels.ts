@@ -1,8 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "./client";
-import type { SavedChannel } from "../types/channel";
+import type { ChannelStats, SavedChannel } from "../types/channel";
 
 const CHANNELS_KEY = ["channels"] as const;
+const CHANNEL_STATS_KEY = ["channels", "stats"] as const;
+
+export function useChannelStats(channelId: number | null) {
+  return useQuery<ChannelStats>({
+    queryKey: [...CHANNEL_STATS_KEY, channelId],
+    enabled: channelId != null,
+    queryFn: async () => {
+      const { data } = await client.get<ChannelStats>(
+        `/channels/${channelId}/stats`,
+      );
+      return data;
+    },
+  });
+}
 
 export function useChannels() {
   return useQuery<SavedChannel[]>({

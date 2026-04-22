@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Read(//usr/local/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(command -v bun)",
+      "Bash(command -v pnpm)",
+      "Bash(command -v yarn)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code} %{url_effective}\\\\n\" http://127.0.0.1:8765/)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code} %{url_effective}\\\\n\" http://127.0.0.1:8765/index.html)",
+      "Bash(curl -sS -I http://127.0.0.1:8765/index.html)",
+      "Bash(mkdir -p /tmp/creator-os)",
+      "Bash(cp -R /Users/ajaysinghbisht/Desktop/Claude/V1/creator-os/. /tmp/creator-os/)",
+      "Read(//tmp/**)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:8765/)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:8765/src/styles.css)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:8765/src/runtime/bundle.jsx)"
+    ]
+  }
+}

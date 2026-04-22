@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "creator-os",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-I",
+        "-c",
+        "from functools import partial\nfrom http.server import HTTPServer, SimpleHTTPRequestHandler\nSimpleHTTPRequestHandler.extensions_map['.jsx'] = 'application/javascript'\nH = partial(SimpleHTTPRequestHandler, directory='/tmp/creator-os')\nHTTPServer(('127.0.0.1', 8765), H).serve_forever()"
+      ],
+      "port": 8765
+    }
+  ]
+}
