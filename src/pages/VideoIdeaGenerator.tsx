@@ -44,8 +44,7 @@ export default function VideoIdeaGenerator() {
   const [regenDesc, setRegenDesc] = useState('')
   const [regenTone, setRegenTone] = useState('Casual')
 
-  // Per-idea reasoning expansion
-  const [expandedReasoning, setExpandedReasoning] = useState<number | null>(null)
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
   const fetchChannel = useFetchChannel()
   const generateIdeas = useGenerateIdeas()
@@ -309,61 +308,110 @@ export default function VideoIdeaGenerator() {
               <div className="stack-8">
                 {ideas.map((idea, i) => {
                   const picked = selectedIdea?.title === idea.title
-                  const reasoningOpen = expandedReasoning === i
+                  const pickedIdx = ideas.findIndex(id => id.title === selectedIdea?.title)
+                  const isActive = hoveredIdx !== null ? hoveredIdx === i : pickedIdx === i
+
+                  const cardStyle: React.CSSProperties = {
+                    padding: '14px 16px',
+                    borderColor: isActive || picked ? 'var(--accent)' : 'var(--line)',
+                    borderWidth: isActive ? '1.5px' : '1px',
+                    background: picked
+                      ? 'var(--accent-tint)'
+                      : isActive
+                        ? 'var(--bg-elev)'
+                        : 'var(--bg-elev)',
+                    boxShadow: isActive
+                      ? 'inset 3px 0 0 var(--accent), 0 8px 32px -8px rgba(0,0,0,0.18)'
+                      : picked
+                        ? 'inset 3px 0 0 var(--accent)'
+                        : 'none',
+                    transform: isActive ? 'translateY(-2px)' : 'none',
+                    transition: 'box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease',
+                    cursor: 'default',
+                    position: 'relative',
+                    zIndex: isActive ? 1 : 'auto',
+                  }
+
                   return (
                     <div
                       key={i}
                       className="card"
-                      style={{
-                        padding: 14,
-                        borderColor: picked ? 'var(--accent)' : 'var(--line)',
-                        background: picked ? 'var(--accent-tint)' : 'var(--bg-elev)',
-                      }}
+                      style={cardStyle}
+                      onMouseEnter={() => setHoveredIdx(i)}
+                      onMouseLeave={() => setHoveredIdx(null)}
                     >
-                      <div className="row between" style={{ alignItems: 'flex-start', gap: 12 }}>
+                      <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+
+                        {/* Left: content */}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div className="row" style={{ gap: 10 }}>
-                            <span className="muted small" style={{ width: 18 }}>{i + 1}.</span>
-                            <div style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.005em' }}>
+                            <span style={{
+                              width: 22,
+                              flexShrink: 0,
+                              fontWeight: 700,
+                              fontSize: isActive ? 14 : 12,
+                              color: isActive ? 'var(--accent)' : 'var(--ink-4)',
+                              transition: 'color 0.15s ease, font-size 0.15s ease',
+                            }}>{i + 1}.</span>
+                            <div style={{
+                              fontWeight: 700,
+                              fontSize: isActive ? 16 : 15,
+                              letterSpacing: '-0.01em',
+                              lineHeight: 1.3,
+                              transition: 'font-size 0.15s ease',
+                            }}>
                               {picked ? <span className="underline-accent">{idea.title}</span> : idea.title}
                             </div>
                           </div>
+
                           {idea.hook && (
-                            <div className="small muted" style={{ marginTop: 6, marginLeft: 28, lineHeight: 1.4 }}>
+                            <div className="small muted" style={{ marginTop: 6, marginLeft: 32, lineHeight: 1.45 }}>
                               {idea.hook}
                             </div>
                           )}
                           {idea.angle && (
-                            <div className="small muted" style={{ marginTop: 4, marginLeft: 28, lineHeight: 1.4, fontStyle: 'italic' }}>
+                            <div className="small muted" style={{ marginTop: 3, marginLeft: 32, lineHeight: 1.4, fontStyle: 'italic' }}>
                               {idea.angle}
                             </div>
                           )}
-                          <div className="row" style={{ gap: 6, marginTop: 8, marginLeft: 28, flexWrap: 'wrap' }}>
-                            {idea.format && <span className="chip sm"><Icon name="film" size={11} /> {idea.format}</span>}
+                          <div className="row" style={{ gap: 6, marginTop: 8, marginLeft: 32, flexWrap: 'wrap' }}>
+                            {idea.format && (
+                              <span className="chip sm"><Icon name="film" size={11} /> {idea.format}</span>
+                            )}
                           </div>
-                          {reasoningOpen && idea.reasoning && (
-                            <div className="small" style={{ marginTop: 10, marginLeft: 28, padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: 8, lineHeight: 1.55, color: 'var(--ink-2)' }}>
-                              <b style={{ color: 'var(--ink)' }}>Why this works: </b>{idea.reasoning}
-                            </div>
-                          )}
                         </div>
-                        <div className="row" style={{ gap: 6, flexShrink: 0 }}>
-                          {idea.reasoning && (
-                            <button
-                              className={'btn sm ghost' + (reasoningOpen ? ' accent' : '')}
-                              title={reasoningOpen ? 'Hide reasoning' : 'Show reasoning'}
-                              onClick={() => setExpandedReasoning(reasoningOpen ? null : i)}
-                            >
-                              <Icon name="lightbulb" size={13} />
-                            </button>
-                          )}
+
+                        {/* Right: action + reasoning */}
+                        <div style={{ width: 152, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
                           <button
                             className={'btn sm ' + (picked ? 'accent' : '')}
                             onClick={() => pickIdea(idea)}
                           >
                             {picked ? <>Picked <Icon name="check" size={12} /></> : '→ Script'}
                           </button>
+
+                          {isActive && idea.reasoning && (
+                            <div style={{
+                              width: '100%',
+                              padding: '9px 11px',
+                              borderRadius: 9,
+                              background: 'var(--bg)',
+                              border: '1px solid var(--line)',
+                              textAlign: 'left',
+                            }}>
+                              <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 5 }}>
+                                <Icon name="lightbulb" size={10} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                                <span style={{ fontWeight: 700, fontSize: 10, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                  Why this works
+                                </span>
+                              </div>
+                              <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.55, color: 'var(--ink-2)' }}>
+                                {idea.reasoning}
+                              </p>
+                            </div>
+                          )}
                         </div>
+
                       </div>
                     </div>
                   )
