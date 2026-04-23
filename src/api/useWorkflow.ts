@@ -36,6 +36,8 @@ interface ChannelContext {
 
 interface GenerateIdeasPayload {
   prompt: string;
+  input_type?: "channel" | "niche";
+  count?: number;
   channel_context?: ChannelContext;
   signal?: AbortSignal;
 }
@@ -69,6 +71,10 @@ interface GenerateScriptPayload {
   angle: string;
   format: string;
   flavor?: string;
+  tone?: string;
+  audience?: string;
+  length?: "short" | "medium" | "long";
+  pov_structure?: "first_person_story" | "narrator_tutorial" | "listicle" | "review";
   channel_context?: ScriptChannelContext;
   signal?: AbortSignal;
 }
