@@ -37,7 +37,7 @@ export default function ThumbnailLab() {
   return (
     <div className="stack-24">
       <PageHeader
-        eyebrow="Step 5 of 6 · Design"
+        eyebrow="Step 5 of 5 · Design"
         code="T5"
         icon="image"
         title={<>Thumbnail <em>lab</em></>}
@@ -45,7 +45,7 @@ export default function ThumbnailLab() {
         actions={
           <>
             <Link to="/description" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
-            <Link to="/tags" className="btn primary">Next: Tags <Icon name="arrowRight" size={14} /></Link>
+            <Link to="/" className="btn primary">Done <Icon name="check" size={14} /></Link>
           </>
         }
       />
