@@ -23,6 +23,7 @@ interface WorkflowContextValue {
   // Step 3: Generated script
   generatedScript: GeneratedScript | null;
   setGeneratedScript: (script: GeneratedScript | null) => void;
+  setGeneratedScriptAndSave: (script: GeneratedScript | null) => void;
   // Step 4: Titles
   suggestedTitles: TitleItem[];
   setSuggestedTitles: (titles: TitleItem[]) => void;
@@ -308,6 +309,18 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggestedTitles]);
 
+  const setGeneratedScriptAndSave = useCallback((script: GeneratedScript | null) => {
+    setGeneratedScript(script);
+    if (currentProjectIdRef.current != null && script != null) {
+      updateProjectMutation.mutate({
+        id: currentProjectIdRef.current,
+        script_json: { script },
+        title: script.title,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Prateek: Resume flow — rehydrate context from a server-side project row.
   const loadProject = useCallback((p: Project) => {
     setCurrentProjectId(p.id);
@@ -345,7 +358,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         channelData, setChannelData,
         ideas, setIdeas,
         selectedIdea, setSelectedIdea: setSelectedIdeaAndSave,
-        generatedScript, setGeneratedScript,
+        generatedScript, setGeneratedScript, setGeneratedScriptAndSave,
         suggestedTitles, setSuggestedTitles,
         selectedTitle, setSelectedTitle: setSelectedTitleAndSave,
         seoDescription, setSeoDescription,
