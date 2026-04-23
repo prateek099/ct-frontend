@@ -1,9 +1,9 @@
-// LoginPage.tsx
+// SignupPage.tsx
 
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { useLogin, useGoogleUrl } from "../api/useAuth";
+import { useRegister, useLogin, useGoogleUrl } from "../api/useAuth";
 import Icon from "../components/shared/Icon";
 import { getApiErrorMessage } from "../types/api";
 
@@ -14,15 +14,15 @@ const FEATURES = [
   { icon: "align", text: "SEO description + hashtags in one click" },
 ];
 
-export default function LoginPage() {
+export default function SignupPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  // const [password, setPassword] = useState('')
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  const register = useRegister();
   const login = useLogin();
   const { data: googleData } = useGoogleUrl();
 
@@ -30,16 +30,21 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     try {
+      // 1. Register the user
+      await register.mutateAsync({ name, email, password });
+      // 2. Automatically log them in
       await login.mutateAsync({ email, password });
       window.location.replace("/");
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Invalid username or password."));
+      setError(getApiErrorMessage(err, "Failed to create account."));
     }
   };
 
+  const isPending = register.isPending || login.isPending;
+
   return (
     <div className="login-page">
-      {/* Enhanced Left Panel */}
+      {/* Enhanced Left Panel - Consistent with LoginPage */}
       <div
         className="login-panel"
         style={{
@@ -242,7 +247,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Enhanced Right Form Side */}
+      {/* Enhanced Right Form Side - Consistent with LoginPage */}
       <div
         className="login-form-side"
         style={{
@@ -269,7 +274,7 @@ export default function LoginPage() {
                 color: "white",
               }}
             >
-              Welcome back
+              Create your account
             </h2>
             <p
               className="muted small"
@@ -279,7 +284,7 @@ export default function LoginPage() {
                 color: "rgba(255,255,255,0.5)",
               }}
             >
-              Sign in to your Creator OS workspace
+              Start your Creator OS workspace
             </p>
           </div>
 
@@ -310,6 +315,58 @@ export default function LoginPage() {
             <div className="form-group" style={{ marginBottom: 20 }}>
               <label
                 className="field-label"
+                htmlFor="name"
+                style={{
+                  display: "block",
+                  marginBottom: 8,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "rgba(255,255,255,0.7)",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                Full Name
+              </label>
+              <div
+                style={{
+                  position: "relative",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <input
+                  id="name"
+                  className="input"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onFocus={() => setFocusedField("name")}
+                  onBlur={() => setFocusedField(null)}
+                  autoFocus
+                  autoComplete="name"
+                  placeholder="Jane Doe"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "14px 16px",
+                    background: "rgba(255,255,255,0.04)",
+                    border:
+                      focusedField === "name"
+                        ? "1.5px solid var(--accent)"
+                        : "1.5px solid rgba(255,255,255,0.1)",
+                    borderRadius: 12,
+                    color: "white",
+                    fontSize: 15,
+                    outline: "none",
+                    transition: "all 0.2s ease",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label
+                className="field-label"
                 htmlFor="email"
                 style={{
                   display: "block",
@@ -336,7 +393,6 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setFocusedField("email")}
                   onBlur={() => setFocusedField(null)}
-                  autoFocus
                   autoComplete="email"
                   placeholder="your@email.com"
                   required
@@ -360,44 +416,20 @@ export default function LoginPage() {
             </div>
 
             <div className="form-group" style={{ marginBottom: 24 }}>
-              <div
+              <label
+                className="field-label"
+                htmlFor="password"
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                  display: "block",
                   marginBottom: 8,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "rgba(255,255,255,0.7)",
+                  letterSpacing: "0.02em",
                 }}
               >
-                <label
-                  className="field-label"
-                  htmlFor="password"
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: "rgba(255,255,255,0.7)",
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  Password
-                </label>
-                <Link
-                  to="/forgot-password"
-                  style={{
-                    fontSize: 12,
-                    color: "rgba(255,255,255,0.4)",
-                    textDecoration: "none",
-                    transition: "color 0.2s ease",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "var(--accent)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "rgba(255,255,255,0.4)")
-                  }
-                >
-                  Forgot?
-                </Link>
-              </div>
+                Password
+              </label>
               <div className="input-wrap" style={{ position: "relative" }}>
                 <input
                   id="password"
@@ -407,7 +439,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   placeholder="••••••••"
                   required
                   style={{
@@ -459,7 +491,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={login.isPending}
+              disabled={isPending}
               className="btn primary"
               style={{
                 width: "100%",
@@ -472,14 +504,14 @@ export default function LoginPage() {
                 color: "white",
                 fontSize: 16,
                 fontWeight: 600,
-                cursor: login.isPending ? "not-allowed" : "pointer",
-                opacity: login.isPending ? 0.7 : 1,
+                cursor: isPending ? "not-allowed" : "pointer",
+                opacity: isPending ? 0.7 : 1,
                 transition: "all 0.2s ease",
                 boxShadow: "0 4px 12px rgba(255,77,46,0.3)",
                 letterSpacing: "0.02em",
               }}
               onMouseEnter={(e) => {
-                if (!login.isPending) {
+                if (!isPending) {
                   e.currentTarget.style.transform = "translateY(-2px)";
                   e.currentTarget.style.boxShadow =
                     "0 6px 16px rgba(255,77,46,0.4)";
@@ -491,8 +523,15 @@ export default function LoginPage() {
                   "0 4px 12px rgba(255,77,46,0.3)";
               }}
             >
-              {login.isPending ? (
-                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {isPending ? (
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                >
                   <span
                     className="spinner"
                     style={{
@@ -504,10 +543,10 @@ export default function LoginPage() {
                       animation: "spin 0.8s linear infinite",
                     }}
                   />
-                  Signing in…
+                  Creating account…
                 </span>
               ) : (
-                "Sign in →"
+                "Create account →"
               )}
             </button>
 
@@ -590,9 +629,9 @@ export default function LoginPage() {
                 color: "rgba(255,255,255,0.5)",
               }}
             >
-              Don't have an account?{" "}
+              Already have an account?{" "}
               <Link
-                to="/signup"
+                to="/login"
                 style={{
                   color: "var(--accent)",
                   textDecoration: "none",
@@ -607,7 +646,7 @@ export default function LoginPage() {
                   e.currentTarget.style.borderBottomColor = "transparent";
                 }}
               >
-                Sign up
+                Sign in
               </Link>
             </p>
           </form>

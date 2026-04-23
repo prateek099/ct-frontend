@@ -62,6 +62,33 @@ export function useRegister() {
   });
 }
 
+export function useGoogleUrl() {
+  return useQuery<{ url: string }>({
+    queryKey: ["auth", "google", "url"],
+    queryFn: async () => {
+      const { data } = await client.get<{ url: string }>("/auth/google/url");
+      return data;
+    },
+    staleTime: Infinity,
+  });
+}
+
+export function useGoogleLogin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (code: string) => {
+      const { data } = await client.post<TokenResponse>("/auth/google", { code });
+      return data;
+    },
+    onSuccess: (data) => {
+      Cookies.set("access_token", data.access_token, { expires: 1 / 48 });
+      Cookies.set("refresh_token", data.refresh_token, { expires: 7 });
+      if (data.name) Cookies.set("user_name", data.name, { expires: 7 });
+      queryClient.invalidateQueries({ queryKey: AUTH_ME_KEY });
+    },
+  });
+}
+
 export function useLogout() {
   const queryClient = useQueryClient();
   return () => {
