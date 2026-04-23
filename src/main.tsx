@@ -22,7 +22,6 @@ import SeoDescription from './pages/SeoDescription'
 
 // Static tool pages
 import ThumbnailLab from './pages/ThumbnailLab'
-import TagsGenerator from './pages/TagsGenerator'
 import Voiceover from './pages/Voiceover'
 import VideoGenerator from './pages/VideoGenerator'
 import ReviewScript from './pages/ReviewScript'
@@ -73,9 +72,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="/title"       element={<Shell><TitleSuggestor /></Shell>} />
               <Route path="/description" element={<Shell><SeoDescription /></Shell>} />
 
-              {/* Create — static (T5, T6, T11, T13) */}
+              {/* Create — static (T5, T11, T13) */}
               <Route path="/thumbnail" element={<Shell><ThumbnailLab /></Shell>} />
-              <Route path="/tags"      element={<Shell><TagsGenerator /></Shell>} />
               <Route path="/voiceover" element={<Shell><Voiceover /></Shell>} />
               <Route path="/video"     element={<Shell><VideoGenerator /></Shell>} />
 

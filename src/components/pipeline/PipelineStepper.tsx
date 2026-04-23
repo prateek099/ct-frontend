@@ -7,7 +7,6 @@ const STEPS = [
   { id: 3, label: 'Title',       path: '/title' },
   { id: 4, label: 'Description', path: '/description' },
   { id: 5, label: 'Thumbnail',   path: '/thumbnail' },
-  { id: 6, label: 'Tags',        path: '/tags' },
 ]
 
 export default function PipelineStepper({ active }: { active: number }) {

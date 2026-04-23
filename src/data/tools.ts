@@ -19,7 +19,6 @@ export const TOOLS: Tool[] = [
   { code: 'T3',  id: 'title',       name: 'Title Generator',          path: '/title',                  icon: 'tag',       group: 'create' },
   { code: 'T4',  id: 'description', name: 'Description + Hashtags',   path: '/description',            icon: 'align',     group: 'create' },
   { code: 'T5',  id: 'thumbnail',   name: 'Thumbnail Lab',            path: '/thumbnail',              icon: 'image',     group: 'create' },
-  { code: 'T6',  id: 'tags',        name: 'Tags Generator',           path: '/tags',                   icon: 'hash',      group: 'create' },
   { code: 'T11', id: 'voiceover',   name: 'AI Voiceover',             path: '/voiceover',              icon: 'mic',       group: 'create' },
   { code: 'T13', id: 'video',       name: 'Video Generator',          path: '/video',                  icon: 'film',      group: 'create' },
 

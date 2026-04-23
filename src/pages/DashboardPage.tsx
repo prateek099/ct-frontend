@@ -4,8 +4,9 @@ import { useAuth } from '../context/AuthContext'
 import { useProjects } from '../api/useProjects'
 import { useWorkflow } from '../context/WorkflowContext'
 import type { Project } from '../types/project'
+import { TOOLS } from '../data/tools'
 
-const PIPELINE_STEPS = ['Idea', 'Script', 'Title', 'SEO'] as const
+const PIPELINE_STEPS = ['Idea', 'Script', 'Title', 'SEO', 'Thumbnail'] as const
 const THUMB_PALETTE = ['coral', 'violet', 'mint', 'sky'] as const
 
 // Prateek: Derive pipeline progress from which JSON blobs have been filled.
@@ -57,6 +58,12 @@ function greeting(name: string) {
   return `Good ${time}, ${name.split(' ')[0]}.`
 }
 
+function ovenPhrase(count: number): string {
+  if (count === 0) return "Let's Create !!!"
+  if (count === 1) return 'One video in the oven.'
+  return `${count} videos in the oven.`
+}
+
 export default function DashboardPage() {
   const { user } = useAuth()
   const name = user?.name ?? 'Creator'
@@ -80,7 +87,7 @@ export default function DashboardPage() {
         </svg>
         <div className="eyebrow">Creator OS · Workspace</div>
         <h1 className="h-display" style={{ marginTop: 6 }}>
-          {greeting(name)} <em>Three videos</em> in the oven.
+          {greeting(name)} <em>{ovenPhrase(inFlight.length)}</em>
         </h1>
         <p className="muted" style={{ maxWidth: 560, marginTop: 10, fontSize: 14 }}>
           Use the pipeline to take your next video from idea to publish — one step at a time.
@@ -181,7 +188,7 @@ export default function DashboardPage() {
           <div className="card">
             <div className="card-title">
               <h3 className="h2">Quick tools</h3>
-              <span className="small muted">19 total</span>
+              <span className="small muted">{TOOLS.length} total</span>
             </div>
             <div className="grid-2" style={{ gap: 10 }}>
               {QUICK_TOOLS.map(q => (
@@ -221,7 +228,7 @@ export default function DashboardPage() {
           <div className="card-title">
             <div>
               <h3 className="h2">AI copilot</h3>
-              <div className="small muted" style={{ marginTop: 4 }}>Any of your 19 tools, one line away</div>
+              <div className="small muted" style={{ marginTop: 4 }}>Any of your {TOOLS.length} tools, one line away</div>
             </div>
             <span className="chip sm"><Icon name="sparkles" size={11} /> Claude 4.7</span>
           </div>
