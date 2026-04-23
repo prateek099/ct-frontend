@@ -12,6 +12,8 @@ import AdminRoute from './components/auth/AdminRoute'
 import AppShell from './components/layout/AppShell'
 
 import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
+import GoogleCallback from './pages/GoogleCallback'
 import DashboardPage from './pages/DashboardPage'
 
 // Pipeline — live API
@@ -63,6 +65,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Routes>
               {/* Public */}
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/oauth/google/callback" element={<GoogleCallback />} />
 
               {/* Dashboard */}
               <Route path="/" element={<Shell><DashboardPage /></Shell>} />
