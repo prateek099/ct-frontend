@@ -17,7 +17,7 @@ const FEATURES = [
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   // const [password, setPassword] = useState('')
-  const [username, setUsername] = useState("");
+  // const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
