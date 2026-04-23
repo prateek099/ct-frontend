@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "./client";
-import type { Project, ProjectCreate, ProjectStatus, ProjectUpdate } from "../types/project";
+import type { Project, ProjectCreate, ProjectUpdate } from "../types/project";
 
 const PROJECTS_KEY = ["projects"] as const;
 
 interface ListOptions {
-  status?: ProjectStatus;
+  status?: string;
   limit?: number;
   offset?: number;
 }
@@ -68,5 +68,19 @@ export function useDeleteProject() {
       await client.delete(`/projects/${id}`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: PROJECTS_KEY }),
+  });
+}
+
+export function usePublishProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await client.post<Project>(`/projects/${id}/publish`);
+      return data;
+    },
+    onSuccess: (proj) => {
+      qc.invalidateQueries({ queryKey: PROJECTS_KEY });
+      qc.setQueryData([...PROJECTS_KEY, "detail", proj.id], proj);
+    },
   });
 }

@@ -22,6 +22,7 @@ import SeoDescription from './pages/SeoDescription'
 
 // Static tool pages
 import ThumbnailLab from './pages/ThumbnailLab'
+import PublishPage from './pages/PublishPage'
 import Voiceover from './pages/Voiceover'
 import VideoGenerator from './pages/VideoGenerator'
 import ReviewScript from './pages/ReviewScript'
@@ -74,6 +75,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
               {/* Create — static (T5, T11, T13) */}
               <Route path="/thumbnail" element={<Shell><ThumbnailLab /></Shell>} />
+              <Route path="/publish/:id" element={<Shell><PublishPage /></Shell>} />
               <Route path="/voiceover" element={<Shell><Voiceover /></Shell>} />
               <Route path="/video"     element={<Shell><VideoGenerator /></Shell>} />
 
