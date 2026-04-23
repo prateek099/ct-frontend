@@ -16,6 +16,7 @@ function projectProgress(p: Project): number {
   if (p.script_json?.script)     done = Math.max(done, 2)
   if (p.title_json?.selectedTitle || p.title_json?.suggestedTitles?.length) done = Math.max(done, 3)
   if (p.seo_json?.seo)           done = Math.max(done, 4)
+  if (p.thumbnail_json)          done = Math.max(done, 5)
   return done
 }
 
@@ -64,14 +65,21 @@ function ovenPhrase(count: number): string {
   return `${count} videos in the oven.`
 }
 
+function formatPublishedAt(iso: string | null): string {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
 export default function DashboardPage() {
   const { user } = useAuth()
   const name = user?.name ?? 'Creator'
   const navigate = useNavigate()
   const { loadProject } = useWorkflow()
-  const { data: projects, isLoading } = useProjects({ status: 'draft', limit: 10 })
+  const { data: inFlightData, isLoading: inFlightLoading } = useProjects({ status: 'draft,saved', limit: 10 })
+  const { data: publishedData, isLoading: publishedLoading } = useProjects({ status: 'published', limit: 5 })
 
-  const inFlight = projects ?? []
+  const inFlight = inFlightData ?? []
+  const published = publishedData ?? []
 
   const handleResume = (p: Project) => {
     loadProject(p)
@@ -132,8 +140,8 @@ export default function DashboardPage() {
             <Link to="/calendar" className="btn sm ghost">See all <Icon name="arrowRight" size={12} /></Link>
           </div>
           <div className="stack-12">
-            {isLoading && <div className="muted small">Loading…</div>}
-            {!isLoading && inFlight.length === 0 && (
+            {inFlightLoading && <div className="muted small">Loading…</div>}
+            {!inFlightLoading && inFlight.length === 0 && (
               <div className="muted small" style={{ padding: 12 }}>
                 No drafts yet. <Link to="/idea">Start your first video</Link>.
               </div>
@@ -221,6 +229,40 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {/* Published section */}
+      {(publishedLoading || published.length > 0) && (
+        <section className="card">
+          <div className="card-title">
+            <div>
+              <h3 className="h2">Published</h3>
+              <div className="small muted" style={{ marginTop: 4 }}>Videos you've shipped</div>
+            </div>
+          </div>
+          {publishedLoading && <div className="muted small">Loading…</div>}
+          <div className="stack-12">
+            {published.map((p, idx) => {
+              const title = projectTitle(p)
+              const thumb = THUMB_PALETTE[idx % THUMB_PALETTE.length]
+              return (
+                <div className="row" key={p.id} style={{ gap: 16, padding: 12, border: '1px solid var(--line)', borderRadius: 14, opacity: 0.85 }}>
+                  <div className={'thumb ' + thumb} style={{ width: 100, flex: '0 0 100px' }}>
+                    {title.split(' ').slice(0, 3).join(' ')}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="row between">
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>{title}</div>
+                      <span className="badge mint">
+                        <Icon name="check" size={11} /> Published · {formatPublishedAt(p.published_at)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* AI copilot + recent activity */}
       <section className="grid-2">

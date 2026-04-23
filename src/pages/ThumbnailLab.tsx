@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import Icon from '../components/shared/Icon'
+import { useWorkflow } from '../context/WorkflowContext'
+import { useUpdateProject } from '../api/useProjects'
 
 const TEMPLATES = [
   { id: 'tmpl-1', color: 'coral',  label: 'Bold Text',    text: 'THE TRUTH ABOUT' },
@@ -27,12 +29,42 @@ const DNA_BARS = [
   { label: 'Colour pop', v: 95 },
 ]
 
+function defaultTitle(ideaTitle: string | undefined): string {
+  const base = (ideaTitle ?? 'Draft').slice(0, 10).trim()
+  const now = new Date()
+  const mon = now.toLocaleString('default', { month: 'short' })
+  const day = now.getDate()
+  return `${base} ${mon} ${day}`
+}
+
 export default function ThumbnailLab() {
-  const [tab, setTab]         = useState<'Template' | 'Custom' | 'AI-generate'>('Template')
+  const [tab, setTab]           = useState<'Template' | 'Custom' | 'AI-generate'>('Template')
   const [selected, setSelected] = useState('tmpl-1')
   const [titleText, setTitleText] = useState('The Truth About YouTube Growth')
-  const [face, setFace]       = useState('None')
-  const [style, setStyle]     = useState('Bold')
+  const [face, setFace]         = useState('None')
+  const [style, setStyle]       = useState('Bold')
+  const [saving, setSaving]     = useState(false)
+
+  const navigate = useNavigate()
+  const { currentProjectId, selectedIdea } = useWorkflow()
+  const updateProject = useUpdateProject()
+
+  const selectedTemplate = TEMPLATES.find(t => t.id === selected)
+
+  const handleFinish = () => {
+    const thumbnailJson = { templateId: selected, titleText, face, style }
+    const title = defaultTitle(selectedIdea?.title)
+
+    if (currentProjectId != null) {
+      setSaving(true)
+      updateProject.mutate(
+        { id: currentProjectId, thumbnail_json: thumbnailJson, status: 'saved', title },
+        { onSuccess: () => navigate('/'), onError: () => setSaving(false) },
+      )
+    } else {
+      navigate('/')
+    }
+  }
 
   return (
     <div className="stack-24">
@@ -44,8 +76,27 @@ export default function ThumbnailLab() {
         subtitle="Design scroll-stopping thumbnails. 4 AI variants in 10 seconds."
         actions={
           <>
-            <Link to="/description" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
-            <Link to="/" className="btn primary">Done <Icon name="check" size={14} /></Link>
+            <button
+              className="btn"
+              onClick={() => navigate('/description')}
+            >
+              <Icon name="arrowLeft" size={14} /> Back
+            </button>
+            {currentProjectId != null && (
+              <button
+                className="btn"
+                onClick={() => navigate(`/publish/${currentProjectId}`)}
+              >
+                Publish <Icon name="arrowRight" size={14} />
+              </button>
+            )}
+            <button
+              className="btn primary"
+              onClick={handleFinish}
+              disabled={saving}
+            >
+              {saving ? 'Saving…' : <><Icon name="check" size={14} /> Finish</>}
+            </button>
           </>
         }
       />
@@ -158,11 +209,15 @@ export default function ThumbnailLab() {
             </div>
           </div>
 
-          <div className="card tinted">
-            <div className="small" style={{ lineHeight: 1.55 }}>
-              <b>Tip:</b> Thumbnails with a face in the left 40% and bold text on the right outperform by <b style={{ color: 'var(--accent)' }}>+31%</b> on your channel.
+          {selectedTemplate && (
+            <div className="card tinted">
+              <div className="small" style={{ lineHeight: 1.55 }}>
+                <b>Selected:</b> {selectedTemplate.label} template.{' '}
+                Thumbnails with a face in the left 40% and bold text on the right outperform by{' '}
+                <b style={{ color: 'var(--accent)' }}>+31%</b> on your channel.
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
     </div>

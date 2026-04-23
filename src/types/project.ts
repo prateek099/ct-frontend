@@ -1,6 +1,6 @@
 import type { ChannelData, VideoIdea, GeneratedScript, TitleItem, SeoData } from "./workflow";
 
-export type ProjectStatus = "draft" | "published" | "archived";
+export type ProjectStatus = "draft" | "saved" | "published" | "archived";
 
 // The JSON blobs in a Project are versioned-at-write snapshots of what the
 // workflow generated. We keep them structurally wide so older projects still
@@ -35,7 +35,9 @@ export interface Project {
   script_json: ProjectScriptJson | null;
   title_json: ProjectTitleJson | null;
   seo_json: ProjectSeoJson | null;
+  thumbnail_json: Record<string, unknown> | null;
   slug: string | null;
+  published_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +50,7 @@ export interface ProjectCreate {
   script_json?: ProjectScriptJson | null;
   title_json?: ProjectTitleJson | null;
   seo_json?: ProjectSeoJson | null;
+  thumbnail_json?: Record<string, unknown> | null;
   slug?: string | null;
 }
 
