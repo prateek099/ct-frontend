@@ -1,4 +1,6 @@
-// Step 2 — script generation. Auto-generates 5 flavour variants; user picks one.
+// Step 2 — script generation. Auto-generates a single script using a flavor
+// inferred from the idea's format. Regenerating opens a modal to steer
+// flavor + tone/audience/length/POV.
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import PipelineStepper from '../components/pipeline/PipelineStepper'
@@ -11,13 +13,13 @@ import BackgroundGenerationBanner from '../components/pipeline/BackgroundGenerat
 import NoIdeaSelectedCard from '../components/pipeline/NoIdeaSelectedCard'
 import ContextBanner from '../components/pipeline/ContextBanner'
 import ReviewPanel from './script/ReviewPanel'
-import client from '../api/client'
-import type { GeneratedScript } from '../types/workflow'
+import type { VideoIdea } from '../types/workflow'
 
 const FLAVORS = ['educational', 'entertaining', 'storytelling', 'documentary', 'review'] as const
-type Flavor = typeof FLAVORS[number]
+type Flavor = typeof FLAVORS[number] | 'auto'
 
 const FLAVOR_LABELS: Record<Flavor, string> = {
+  auto:          'Auto-detected',
   educational:   'Educational',
   entertaining:  'Entertaining',
   storytelling:  'Story-driven',
@@ -25,8 +27,12 @@ const FLAVOR_LABELS: Record<Flavor, string> = {
   review:        'Review',
 }
 
-const TONES     = ['Casual', 'Professional', 'Funny', 'Dramatic', 'Urgent']
-const LENGTHS   = [{ key: 'short', label: 'Short (~3 min)' }, { key: 'medium', label: 'Medium (~7 min)' }, { key: 'long', label: 'Long (~15 min)' }] as const
+const TONES   = ['Casual', 'Professional', 'Funny', 'Dramatic', 'Urgent']
+const LENGTHS = [
+  { key: 'short',  label: 'Short (~3 min)' },
+  { key: 'medium', label: 'Medium (~7 min)' },
+  { key: 'long',   label: 'Long (~15 min)' },
+] as const
 const POV_OPTIONS = [
   { key: 'first_person_story', label: 'First-person story' },
   { key: 'narrator_tutorial',  label: 'Narrator / tutorial' },
@@ -34,99 +40,108 @@ const POV_OPTIONS = [
   { key: 'review',             label: 'Review' },
 ] as const
 
+// First-pass flavor = 'auto': the LLM infers the mood from the idea's
+// title/hook/angle/reasoning instead of us guessing from the format string.
+// Users can still override via the regen modal.
+function defaultFlavorForIdea(_idea: VideoIdea): Flavor {
+  return 'auto'
+}
+
+interface Steering {
+  tone?: string
+  audience?: string
+  length?: 'short' | 'medium' | 'long'
+  pov?: 'first_person_story' | 'narrator_tutorial' | 'listicle' | 'review'
+}
+
 export default function ScriptGenerator() {
   const {
     selectedIdea, generatedScript, channelData,
-    setGeneratedScriptAndSave,
+    setGeneratedScript,
     resetFromScript, scriptPending,
     startScript, stopScript,
   } = useWorkflow()
 
-  // Variant picker state (5 parallel auto-generated flavours)
-  const [variants, setVariants] = useState<(GeneratedScript | null)[]>(FLAVORS.map(() => null))
-  const [variantsLoading, setVariantsLoading] = useState(false)
-  const [variantsError, setVariantsError] = useState<string | null>(null)
-  const [pickedFlavor, setPickedFlavor] = useState<Flavor | null>(null)
-  const autoFiredRef = useRef(false)
-
-  // Regen modal
-  const [showRegenModal, setShowRegenModal] = useState(false)
-  const [regenTone, setRegenTone]       = useState('Casual')
-  const [regenAudience, setRegenAudience] = useState('')
-  const [regenLength, setRegenLength]   = useState<'short' | 'medium' | 'long' | ''>('')
-  const [regenPov, setRegenPov]         = useState<string>('')
-
-  // Script editor (after picking a variant or from regen)
-  const [editableScript, setEditableScript] = useState(generatedScript?.script?.full_script || '')
-
   const generateScript = useGenerateScript()
   const isGenerating = scriptPending || generateScript.isPending
 
-  // Sync editor to generated script
+  const [currentFlavor, setCurrentFlavor] = useState<Flavor>(
+    (generatedScript?.flavor as Flavor) || 'educational',
+  )
+  const initialSections = generatedScript?.script?.sections ?? []
+  const [sectionContents, setSectionContents] = useState<string[]>(
+    initialSections.length
+      ? initialSections.map(s => s.content || '')
+      : generatedScript?.script?.full_script
+        ? [generatedScript.script.full_script]
+        : [],
+  )
+  const [activeIdx, setActiveIdx] = useState(0)
+  const sectionRefs = useRef<Array<HTMLDivElement | null>>([])
+
+  // Regen modal
+  const [showRegenModal, setShowRegenModal] = useState(false)
+  const [regenFlavor, setRegenFlavor]       = useState<Flavor>(currentFlavor)
+  const [regenTone, setRegenTone]           = useState('Casual')
+  const [regenAudience, setRegenAudience]   = useState('')
+  const [regenLength, setRegenLength]       = useState<'short' | 'medium' | 'long' | ''>('')
+  const [regenPov, setRegenPov]             = useState<string>('')
+
+  // Sync editor when a new script arrives (mutation success, project resume, etc.)
   useEffect(() => {
-    if (generatedScript?.script?.full_script) {
-      setEditableScript(generatedScript.script.full_script)
+    const secs = generatedScript?.script?.sections ?? []
+    if (secs.length) {
+      setSectionContents(secs.map(s => s.content || ''))
+    } else if (generatedScript?.script?.full_script) {
+      setSectionContents([generatedScript.script.full_script])
+    }
+    if (generatedScript?.flavor) {
+      setCurrentFlavor(generatedScript.flavor as Flavor)
     }
   }, [generatedScript])
 
-  const buildScriptPayload = (flavor: Flavor) => ({
-    title:  selectedIdea!.title,
-    hook:   selectedIdea!.hook || '',
-    angle:  selectedIdea!.angle || selectedIdea!.title,
-    format: selectedIdea!.format || 'educational',
-    flavor,
-    channel_context: channelData ? {
-      channel_name: channelData.channel_name,
-      average_duration_seconds: channelData.average_duration_seconds,
-      recent_video_titles: channelData.recent_videos?.map(v => v.title) || [],
-    } : undefined,
-  })
-
-  // Auto-fire 5 parallel variants on mount if idea selected + no script yet
+  // Auto-fire once per idea on arrival. Ref-based guard survives StrictMode's
+  // double-invocation AND covers the "pick a new idea" case.
+  const firedForRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!selectedIdea || generatedScript || autoFiredRef.current || variantsLoading) return
-    autoFiredRef.current = true
-    setVariantsLoading(true)
-    setVariantsError(null)
+    if (!selectedIdea) return
+    if (firedForRef.current === selectedIdea.title) return
+    firedForRef.current = selectedIdea.title
 
-    const calls = FLAVORS.map(flavor =>
-      client.post<GeneratedScript>('/script-generator', buildScriptPayload(flavor))
-        .then(r => r.data)
-        .catch(() => null)
-    )
+    // Resume case — script already loaded for this idea. Nothing to do.
+    if (generatedScript?.title === selectedIdea.title) return
 
-    Promise.allSettled(calls).then(results => {
-      const resolved = results.map(r => (r.status === 'fulfilled' ? r.value : null))
-      setVariants(resolved)
-      setVariantsLoading(false)
-      const allFailed = resolved.every(v => v === null)
-      if (allFailed) setVariantsError('All script variants failed to generate. Try regenerating.')
-    })
+    // Switching to a different idea → clear the prior idea's script.
+    if (generatedScript) {
+      setGeneratedScript(null)
+      setSectionContents([])
+      setActiveIdx(0)
+    }
+
+    // Cancel any in-flight generation for a previous idea.
+    if (scriptPending) stopScript()
+
+    const flavor = defaultFlavorForIdea(selectedIdea)
+    setCurrentFlavor(flavor)
+    fireScriptGeneration(flavor)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIdea?.title])
 
-  const handlePickVariant = (v: GeneratedScript, flavor: Flavor) => {
-    setPickedFlavor(flavor)
-    setGeneratedScriptAndSave(v)
-  }
-
-  const handleRegen = () => {
+  const fireScriptGeneration = (flavor: Flavor, steering?: Steering) => {
     if (!selectedIdea) return
-    setShowRegenModal(false)
-    resetFromScript()
-    setEditableScript('')
     const controller = new AbortController()
     startScript(controller)
     generateScript.mutate({
-      title:  selectedIdea.title,
-      hook:   selectedIdea.hook || '',
-      angle:  selectedIdea.angle || selectedIdea.title,
-      format: selectedIdea.format || 'educational',
-      flavor: pickedFlavor || 'educational',
-      tone:   regenTone !== 'Casual' ? regenTone : undefined,
-      audience: regenAudience || undefined,
-      length: (regenLength as 'short' | 'medium' | 'long') || undefined,
-      pov_structure: (regenPov as 'first_person_story' | 'narrator_tutorial' | 'listicle' | 'review') || undefined,
+      title:     selectedIdea.title,
+      hook:      selectedIdea.hook || '',
+      angle:     selectedIdea.angle || selectedIdea.title,
+      format:    selectedIdea.format || 'educational',
+      reasoning: selectedIdea.reasoning || undefined,
+      flavor,
+      tone:     steering?.tone && steering.tone !== 'Casual' ? steering.tone : undefined,
+      audience: steering?.audience || undefined,
+      length:   steering?.length || undefined,
+      pov_structure: steering?.pov || undefined,
       channel_context: channelData ? {
         channel_name: channelData.channel_name,
         average_duration_seconds: channelData.average_duration_seconds,
@@ -136,9 +151,48 @@ export default function ScriptGenerator() {
     })
   }
 
-  const sections = generatedScript?.script?.sections || []
-  const wordCount = editableScript ? editableScript.trim().split(/\s+/).filter(Boolean).length : 0
-  const estMins = Math.round(wordCount / 140)
+  const openRegenModal = () => {
+    setRegenFlavor(currentFlavor === 'auto' ? 'educational' : currentFlavor)
+    setRegenTone('Casual')
+    setRegenAudience('')
+    setRegenLength('')
+    setRegenPov('')
+    setShowRegenModal(true)
+  }
+
+  const handleRegen = () => {
+    if (!selectedIdea) return
+    setShowRegenModal(false)
+    resetFromScript()
+    setGeneratedScript(null)
+    setSectionContents([])
+    setActiveIdx(0)
+    setCurrentFlavor(regenFlavor)
+    fireScriptGeneration(regenFlavor, {
+      tone: regenTone,
+      audience: regenAudience,
+      length: (regenLength as 'short' | 'medium' | 'long') || undefined,
+      pov: (regenPov as Steering['pov']) || undefined,
+    })
+  }
+
+  const sections  = generatedScript?.script?.sections || []
+  const fullScript = sectionContents.join('\n\n')
+  const wordCount = fullScript ? fullScript.trim().split(/\s+/).filter(Boolean).length : 0
+  const estMins   = Math.round(wordCount / 140)
+
+  const scrollToSection = (i: number) => {
+    setActiveIdx(i)
+    sectionRefs.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const updateSection = (i: number, val: string) => {
+    setSectionContents(prev => {
+      const next = [...prev]
+      next[i] = val
+      return next
+    })
+  }
 
   return (
     <div className="stack-24">
@@ -147,7 +201,7 @@ export default function ScriptGenerator() {
         code="T2"
         icon="pencil"
         title={<>Script <em>writer</em></>}
-        subtitle="Draft, outline, and score your script. Pick from 5 AI-generated style variants."
+        subtitle="One script at a time, tuned to your idea. Regenerate to steer flavor, tone, length, or structure."
         actions={
           <>
             <Link to="/idea" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
@@ -183,87 +237,71 @@ export default function ScriptGenerator() {
               subtitle={selectedIdea.hook}
             />
 
-            {/* Variant picker — shown when no script picked yet */}
-            {!generatedScript && (
-              <div className="card">
-                <div className="card-title">
-                  <div>
-                    <h3 className="h2">Pick a style</h3>
-                    <div className="small muted" style={{ marginTop: 4 }}>5 variants generated in parallel — choose the one that fits</div>
-                  </div>
+            {selectedIdea.reasoning && (
+              <div className="card" style={{ padding: '12px 14px' }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                  <Icon name="lightbulb" size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                  <span style={{ fontWeight: 700, fontSize: 11, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Why this works
+                  </span>
                 </div>
+                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: 'var(--ink-2)' }}>
+                  {selectedIdea.reasoning}
+                </p>
+              </div>
+            )}
 
-                {variantsError && (
-                  <div className="error-row" style={{ marginBottom: 12 }}>
-                    <Icon name="x" size={13} /> {variantsError}
+            {/* Loading state — first generation, no script yet */}
+            {!generatedScript && isGenerating && (
+              <div className="card">
+                <div className="row" style={{ gap: 10, alignItems: 'center' }}>
+                  <Icon name="refresh" size={16} className="spin" />
+                  <div>
+                    <div style={{ fontWeight: 600 }}>
+                      Writing a <span style={{ textTransform: 'lowercase' }}>{FLAVOR_LABELS[currentFlavor]}</span> script…
+                    </div>
+                    <div className="small muted" style={{ marginTop: 2 }}>
+                      Tailoring it to "{selectedIdea.title}". This usually takes 15–30 seconds.
+                    </div>
                   </div>
-                )}
-
-                <div className="col" style={{ gap: 10 }}>
-                  {FLAVORS.map((flavor, i) => {
-                    const variant = variants[i]
-                    const loading = variantsLoading && !variant
-                    return (
-                      <div
-                        key={flavor}
-                        className="card"
-                        style={{ padding: 14, background: 'var(--bg-elev)', border: '1px solid var(--line)' }}
-                      >
-                        <div className="row between" style={{ alignItems: 'flex-start', gap: 12 }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div className="row" style={{ gap: 8, marginBottom: 6 }}>
-                              <span className="chip sm accent">{FLAVOR_LABELS[flavor]}</span>
-                              {variant && (
-                                <span className="chip sm">{variant.script.word_count} words · ~{Math.round(variant.script.estimated_duration_seconds / 60)} min</span>
-                              )}
-                            </div>
-                            {loading && (
-                              <div className="small muted row" style={{ gap: 6 }}>
-                                <Icon name="refresh" size={12} className="spin" /> Generating…
-                              </div>
-                            )}
-                            {!loading && variant && (
-                              <div className="small muted" style={{ lineHeight: 1.5, WebkitLineClamp: 3, overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical' }}>
-                                {variant.script.sections[0]?.content?.slice(0, 160)}…
-                              </div>
-                            )}
-                            {!loading && !variant && !variantsLoading && (
-                              <div className="small muted">Generation failed for this style.</div>
-                            )}
-                          </div>
-                          <button
-                            className="btn sm"
-                            disabled={!variant}
-                            onClick={() => variant && handlePickVariant(variant, flavor)}
-                          >
-                            Use this <Icon name="arrowRight" size={12} />
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
                 </div>
               </div>
             )}
 
-            {/* Script editor — shown after variant is picked */}
+            {/* Error — first generation failed */}
+            {!generatedScript && !isGenerating && generateScript.isError && (
+              <div className="card">
+                <div className="error-row" style={{ marginBottom: 12 }}>
+                  <Icon name="x" size={13} />
+                  {getApiErrorMessage(generateScript.error, 'Failed to generate script.')}
+                </div>
+                <button
+                  className="btn accent"
+                  onClick={() => fireScriptGeneration(currentFlavor)}
+                >
+                  <Icon name="refresh" size={13} /> Try again
+                </button>
+              </div>
+            )}
+
+            {/* Editor — shown once a script exists */}
             {generatedScript && (
               <div className="card">
                 <div className="row between" style={{ marginBottom: 12 }}>
-                  <div className="row" style={{ gap: 8 }}>
+                  <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
                     <span className="chip"><Icon name="clock" size={11} /> ~{estMins} min</span>
                     <span className="chip">{wordCount} words</span>
-                    {pickedFlavor && <span className="chip accent">{FLAVOR_LABELS[pickedFlavor] ?? pickedFlavor}</span>}
+                    <span className="chip accent">{FLAVOR_LABELS[currentFlavor] ?? currentFlavor}</span>
                     <span className="chip mint"><Icon name="check" size={11} /> Generated</span>
                   </div>
                   <div className="row" style={{ gap: 8 }}>
                     <button className="btn sm ghost"><Icon name="copy" size={12} /> Copy</button>
                     <button
                       className="btn sm"
-                      onClick={() => setShowRegenModal(true)}
+                      onClick={openRegenModal}
                       disabled={isGenerating}
                     >
-                      <Icon name="refresh" size={12} /> Regenerate
+                      <Icon name="refresh" size={12} className={isGenerating ? 'spin' : ''} /> Regenerate
                     </button>
                   </div>
                 </div>
@@ -271,34 +309,80 @@ export default function ScriptGenerator() {
                 {generateScript.isError && (
                   <div className="error-row" style={{ marginBottom: 10 }}>
                     <Icon name="x" size={13} />
-                    {getApiErrorMessage(generateScript.error, 'Failed to generate script.')}
+                    {getApiErrorMessage(generateScript.error, 'Failed to regenerate script.')}
                   </div>
                 )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: sections.length ? '180px 1fr' : '1fr', gap: 20 }}>
                   {sections.length > 0 && (
-                    <div>
+                    <div style={{ position: 'sticky', top: 16, alignSelf: 'start' }}>
                       <div className="eyebrow" style={{ marginBottom: 8 }}>Outline</div>
                       <div className="col" style={{ gap: 2 }}>
-                        {sections.map((s, i) => (
-                          <div key={i} className="row"
-                            style={{ padding: '7px 10px', borderRadius: 8, background: i === 0 ? 'var(--ink)' : 'transparent', color: i === 0 ? 'var(--bg)' : 'inherit', gap: 8 }}>
-                            <span className="tiny" style={{ color: i === 0 ? 'var(--accent)' : 'var(--ink-4)', width: 24 }}>{i + 1}.</span>
-                            <span style={{ fontSize: 12.5, fontWeight: i === 0 ? 700 : 500 }}>{s.name}</span>
-                          </div>
-                        ))}
+                        {sections.map((s, i) => {
+                          const isActive = i === activeIdx
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => scrollToSection(i)}
+                              className="row"
+                              style={{
+                                padding: '7px 10px',
+                                borderRadius: 8,
+                                background: isActive ? 'var(--ink)' : 'transparent',
+                                color: isActive ? 'var(--bg)' : 'inherit',
+                                gap: 8,
+                                border: 'none',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                width: '100%',
+                                transition: 'background 0.15s ease, color 0.15s ease',
+                              }}
+                            >
+                              <span className="tiny" style={{ color: isActive ? 'var(--accent)' : 'var(--ink-4)', width: 24 }}>{i + 1}.</span>
+                              <span style={{ fontSize: 12.5, fontWeight: isActive ? 700 : 500 }}>{s.name}</span>
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
                   )}
                   <div>
                     <div className="eyebrow" style={{ marginBottom: 8 }}>Script</div>
-                    <textarea
-                      className="textarea"
-                      style={{ minHeight: 380, fontFamily: 'var(--font-serif)', fontSize: 16, lineHeight: 1.65 }}
-                      value={editableScript}
-                      onChange={e => setEditableScript(e.target.value)}
-                      placeholder="Your generated script will appear here…"
-                    />
+                    {sections.length > 0 ? (
+                      <div className="col" style={{ gap: 18 }}>
+                        {sections.map((s, i) => (
+                          <div
+                            key={i}
+                            ref={el => { sectionRefs.current[i] = el }}
+                            style={{ scrollMarginTop: 16 }}
+                          >
+                            <div className="row" style={{ alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+                              <span className="tiny" style={{ color: 'var(--ink-4)', fontWeight: 700, letterSpacing: '0.05em' }}>
+                                {String(i + 1).padStart(2, '0')}
+                              </span>
+                              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em' }}>{s.name}</h4>
+                            </div>
+                            <textarea
+                              className="textarea"
+                              style={{ minHeight: 140, fontFamily: 'var(--font-serif)', fontSize: 16, lineHeight: 1.65 }}
+                              value={sectionContents[i] ?? ''}
+                              onChange={e => updateSection(i, e.target.value)}
+                              onFocus={() => setActiveIdx(i)}
+                              placeholder={`Write the ${s.name.toLowerCase()} here…`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <textarea
+                        className="textarea"
+                        style={{ minHeight: 380, fontFamily: 'var(--font-serif)', fontSize: 16, lineHeight: 1.65 }}
+                        value={sectionContents[0] ?? ''}
+                        onChange={e => setSectionContents([e.target.value])}
+                        placeholder="Your generated script will appear here…"
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -309,16 +393,31 @@ export default function ScriptGenerator() {
         </section>
       )}
 
-      {/* Regen modal */}
+      {/* Regen modal — flavor first, then steering knobs */}
       {showRegenModal && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={e => e.target === e.currentTarget && setShowRegenModal(false)}
         >
-          <div className="card" style={{ width: 520, padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="card" style={{ width: 560, padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div className="row between">
               <div className="h2">Regenerate script</div>
               <button className="btn sm ghost" onClick={() => setShowRegenModal(false)}><Icon name="x" size={14} /></button>
+            </div>
+
+            <div>
+              <div className="field-label" style={{ marginBottom: 8 }}>Flavor</div>
+              <div className="row wrap" style={{ gap: 6 }}>
+                {FLAVORS.map(f => (
+                  <button
+                    key={f}
+                    className={'chip' + (regenFlavor === f ? ' accent' : '')}
+                    onClick={() => setRegenFlavor(f)}
+                  >
+                    {FLAVOR_LABELS[f]}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>
@@ -354,7 +453,13 @@ export default function ScriptGenerator() {
               <div className="field-label" style={{ marginBottom: 8 }}>Structure / POV</div>
               <div className="row wrap" style={{ gap: 6 }}>
                 {POV_OPTIONS.map(p => (
-                  <button key={p.key} className={'chip' + (regenPov === p.key ? ' accent' : '')} onClick={() => setRegenPov(regenPov === p.key ? '' : p.key)}>{p.label}</button>
+                  <button
+                    key={p.key}
+                    className={'chip' + (regenPov === p.key ? ' accent' : '')}
+                    onClick={() => setRegenPov(regenPov === p.key ? '' : p.key)}
+                  >
+                    {p.label}
+                  </button>
                 ))}
               </div>
             </div>

@@ -70,6 +70,7 @@ interface GenerateScriptPayload {
   hook: string;
   angle: string;
   format: string;
+  reasoning?: string;
   flavor?: string;
   tone?: string;
   audience?: string;

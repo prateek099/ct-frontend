@@ -340,91 +340,86 @@ export default function VideoIdeaGenerator() {
                       onMouseEnter={() => setHoveredIdx(i)}
                       onMouseLeave={() => setHoveredIdx(null)}
                     >
-                      <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
 
-                        {/* Left: content */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div className="row" style={{ gap: 10 }}>
-                            <span style={{
-                              width: 22,
-                              flexShrink: 0,
-                              fontWeight: 700,
-                              fontSize: isActive ? 14 : 12,
-                              color: isActive ? 'var(--accent)' : 'var(--ink-4)',
-                              transition: 'color 0.15s ease, font-size 0.15s ease',
-                            }}>{i + 1}.</span>
-                            <div style={{
-                              fontWeight: 700,
-                              fontSize: isActive ? 16 : 15,
-                              letterSpacing: '-0.01em',
-                              lineHeight: 1.3,
-                              transition: 'font-size 0.15s ease',
-                            }}>
-                              {picked ? <span className="underline-accent">{idea.title}</span> : idea.title}
-                            </div>
-                          </div>
-
-                          {idea.hook && (
-                            <div className="small muted" style={{ marginTop: 6, marginLeft: 32, lineHeight: 1.45 }}>
-                              {idea.hook}
-                            </div>
-                          )}
-                          {idea.angle && (
-                            <div className="small muted" style={{ marginTop: 3, marginLeft: 32, lineHeight: 1.4, fontStyle: 'italic' }}>
-                              {idea.angle}
-                            </div>
-                          )}
-                          <div className="row" style={{ gap: 6, marginTop: 8, marginLeft: 32, flexWrap: 'wrap' }}>
-                            {idea.format && (
-                              <span className="chip sm"><Icon name="film" size={11} /> {idea.format}</span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Right: action + reasoning */}
-                        <div style={{ width: 152, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
-                          <button
-                            className={'btn sm ' + (picked ? 'accent' : '')}
-                            onClick={() => pickIdea(idea)}
-                          >
-                            {picked ? <>Picked <Icon name="check" size={12} /></> : '→ Script'}
-                          </button>
-
-                          {isActive && idea.reasoning && (
-                            <div style={{
-                              width: '100%',
-                              padding: '9px 11px',
-                              borderRadius: 9,
-                              background: 'var(--bg)',
-                              border: '1px solid var(--line)',
-                              textAlign: 'left',
-                            }}>
-                              <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 5 }}>
-                                <Icon name="lightbulb" size={10} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                                <span style={{ fontWeight: 700, fontSize: 10, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                  Why this works
-                                </span>
+                          {/* Left: content */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="row" style={{ gap: 10 }}>
+                              <span style={{
+                                width: 22,
+                                flexShrink: 0,
+                                fontWeight: 700,
+                                fontSize: isActive ? 14 : 12,
+                                color: isActive ? 'var(--accent)' : 'var(--ink-4)',
+                                transition: 'color 0.15s ease, font-size 0.15s ease',
+                              }}>{i + 1}.</span>
+                              <div style={{
+                                fontWeight: 700,
+                                fontSize: isActive ? 16 : 15,
+                                letterSpacing: '-0.01em',
+                                lineHeight: 1.3,
+                                transition: 'font-size 0.15s ease',
+                              }}>
+                                {picked ? <span className="underline-accent">{idea.title}</span> : idea.title}
                               </div>
-                              <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.55, color: 'var(--ink-2)' }}>
-                                {idea.reasoning}
-                              </p>
                             </div>
-                          )}
+
+                            {idea.hook && (
+                              <div className="small muted" style={{ marginTop: 6, marginLeft: 32, lineHeight: 1.45 }}>
+                                {idea.hook}
+                              </div>
+                            )}
+                            {idea.angle && (
+                              <div className="small muted" style={{ marginTop: 3, marginLeft: 32, lineHeight: 1.4, fontStyle: 'italic' }}>
+                                {idea.angle}
+                              </div>
+                            )}
+                            <div className="row" style={{ gap: 6, marginTop: 8, marginLeft: 32, flexWrap: 'wrap' }}>
+                              {idea.format && (
+                                <span className="chip sm"><Icon name="film" size={11} /> {idea.format}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Right: action */}
+                          <div style={{ flexShrink: 0 }}>
+                            <button
+                              className={'btn sm ' + (picked ? 'accent' : '')}
+                              onClick={() => pickIdea(idea)}
+                            >
+                              {picked ? <>Picked <Icon name="check" size={12} /></> : '→ Script'}
+                            </button>
+                          </div>
                         </div>
 
+                        {/* Reasoning: full-width below */}
+                        {isActive && idea.reasoning && (
+                          <div style={{
+                            marginLeft: 32,
+                            padding: '10px 12px',
+                            borderRadius: 9,
+                            background: 'var(--bg)',
+                            border: '1px solid var(--line)',
+                            textAlign: 'left',
+                          }}>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
+                              <Icon name="lightbulb" size={11} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                              <span style={{ fontWeight: 700, fontSize: 10, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                Why this works
+                              </span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: 'var(--ink-2)' }}>
+                              {idea.reasoning}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
                 })}
               </div>
 
-              {selectedIdea && (
-                <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
-                  <Link to="/script" className="btn primary" style={{ width: '100%', justifyContent: 'center' }}>
-                    Continue with "{selectedIdea.title.slice(0, 40)}{selectedIdea.title.length > 40 ? '…' : ''}" <Icon name="arrowRight" size={14} />
-                  </Link>
-                </div>
-              )}
             </div>
           )}
         </div>
