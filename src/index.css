@@ -43,6 +43,33 @@
 
   --font-sans: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Live Studio (auth) palette */
+  --coral:        #FF5A36;
+  --coral-soft:   #FFE7E0;
+  --night:        #181412;
+  --night-2:      #1A1614;
+  --night-line:   rgba(255,255,255,0.08);
+  --plum:         #6B4BFF;
+  --plum-soft:    rgba(107,75,255,0.18);
+  --mint-bright:  #19C37D;
+  --r-pill:       999px;
+  --sh-cta:       0 8px 28px rgba(255,90,54,0.35);
+}
+
+/* Live Studio (auth) keyframes */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+@keyframes marquee {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 * { box-sizing: border-box; }
@@ -69,10 +96,12 @@ button { font-family: inherit; }
 
 .app {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 76px 1fr;
   min-height: 100vh;
 }
 
+/* Legacy .sidebar class — kept for any non-redesigned consumers; new sidebar
+   uses inline styles + the .icon-rail class below. */
 .sidebar {
   position: sticky; top: 0;
   height: 100vh;
@@ -107,7 +136,6 @@ button { font-family: inherit; }
 }
 
 @media (max-width: 1100px) {
-  .app { grid-template-columns: 220px 1fr; }
   .content { padding: 24px 22px 48px; }
 }
 

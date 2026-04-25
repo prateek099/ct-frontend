@@ -1,8 +1,13 @@
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import Icon from '../shared/Icon'
 import { TOOLS } from '../../data/tools'
 
-export default function TopBar() {
+interface Props {
+  onOpenProjects?: () => void
+  projectsCount?: number
+}
+
+export default function TopBar({ onOpenProjects, projectsCount = 0 }: Props) {
   const loc = useLocation()
   const tool = TOOLS.find(t => t.path === loc.pathname)
   const onDashboard = loc.pathname === '/'
@@ -39,10 +44,28 @@ export default function TopBar() {
         <Icon name="bell" />
         <span className="dot" />
       </button>
-      <button className="btn accent">
+      {onOpenProjects && (
+        <button
+          onClick={onOpenProjects}
+          className="btn"
+          style={{ position: 'relative' }}
+          title="Saved projects"
+        >
+          <Icon name="grid" size={14} />
+          Projects
+          {projectsCount > 0 && (
+            <span style={{
+              background: 'var(--coral)', color: 'white',
+              fontSize: 10, fontWeight: 800, padding: '1px 6px',
+              borderRadius: 99, marginLeft: 2,
+            }}>{projectsCount}</span>
+          )}
+        </button>
+      )}
+      <Link to="/idea" className="btn accent">
         <Icon name="plus" size={14} />
         New video
-      </button>
+      </Link>
     </header>
   )
 }
