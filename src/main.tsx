@@ -7,6 +7,8 @@ import './index.css'
 
 import { AuthProvider } from './context/AuthContext'
 import { WorkflowProvider } from './context/WorkflowContext'
+import { ThemeProvider } from './context/ThemeContext'
+import ThemeToggle from './components/shared/ThemeToggle'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AdminRoute from './components/auth/AdminRoute'
 import AppShell from './components/layout/AppShell'
@@ -15,6 +17,15 @@ import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import GoogleCallback from './pages/GoogleCallback'
 import DashboardPage from './pages/DashboardPage'
+
+// Marketing — public, standalone pages
+import HomePage from './pages/marketing/HomePage'
+import ProductsPage from './pages/marketing/ProductsPage'
+import FeaturesPage from './pages/marketing/FeaturesPage'
+import PricingPage from './pages/marketing/PricingPage'
+import AboutPage from './pages/marketing/AboutPage'
+import BlogPage from './pages/marketing/BlogPage'
+import ContactPage from './pages/marketing/ContactPage'
 
 // Pipeline — live API
 import VideoIdeaGenerator from './pages/VideoIdeaGenerator'
@@ -59,17 +70,29 @@ function Shell({ children }: { children: React.ReactNode }) {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <WorkflowProvider>
-            <Routes>
+      <ThemeProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <WorkflowProvider>
+              <Routes>
               {/* Public */}
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/signin" element={<Navigate to="/login" replace />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/oauth/google/callback" element={<GoogleCallback />} />
 
-              {/* Dashboard */}
-              <Route path="/" element={<Shell><DashboardPage /></Shell>} />
+              {/* Marketing — public. `/` is the homepage; the workspace lives at `/dashboard`. */}
+              <Route path="/"         element={<HomePage />} />
+              <Route path="/home"     element={<Navigate to="/" replace />} />
+              <Route path="/products" element={<ProductsPage />} />
+              <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/pricing"  element={<PricingPage />} />
+              <Route path="/about"    element={<AboutPage />} />
+              <Route path="/blog"     element={<BlogPage />} />
+              <Route path="/contact"  element={<ContactPage />} />
+
+              {/* Dashboard (protected) */}
+              <Route path="/dashboard" element={<Shell><DashboardPage /></Shell>} />
 
               {/* Pipeline — live API (T1–T4) */}
               <Route path="/idea"        element={<Shell><VideoIdeaGenerator /></Shell>} />
@@ -122,12 +145,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="/title-suggestor"      element={<Navigate to="/title" replace />} />
               <Route path="/seo-description"      element={<Navigate to="/description" replace />} />
 
-              {/* Fallback */}
+              {/* Fallback — unknown URLs land on the marketing homepage */}
               <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </WorkflowProvider>
-        </AuthProvider>
-      </BrowserRouter>
+              </Routes>
+              <ThemeToggle />
+            </WorkflowProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>,
 )

@@ -12,7 +12,7 @@ export default function LoginPage() {
     setError("");
     try {
       await login.mutateAsync({ email, password });
-      window.location.replace("/");
+      window.location.replace("/dashboard");
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Invalid username or password."));
     }

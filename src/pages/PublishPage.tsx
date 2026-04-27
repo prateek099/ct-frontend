@@ -16,7 +16,7 @@ export default function PublishPage() {
   const handlePublish = () => {
     if (!projectId) return
     publishMutation.mutate(projectId, {
-      onSuccess: () => navigate('/'),
+      onSuccess: () => navigate('/dashboard'),
     })
   }
 
@@ -28,7 +28,7 @@ export default function PublishPage() {
     return (
       <div className="stack-24">
         <div className="card" style={{ padding: 24 }}>
-          <div className="muted">Project not found. <Link to="/">Go to dashboard</Link></div>
+          <div className="muted">Project not found. <Link to="/dashboard">Go to dashboard</Link></div>
         </div>
       </div>
     )

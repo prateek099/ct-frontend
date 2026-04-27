@@ -56,6 +56,93 @@
   --mint-bright:  #19C37D;
   --r-pill:       999px;
   --sh-cta:       0 8px 28px rgba(255,90,54,0.35);
+
+  /* Always-light text for use on dark surfaces (--night/--ink-as-surface) */
+  --ink-on-night: #FFF1E8;
+}
+
+/* ======== Dark mode override ======== */
+:root[data-theme="dark"] {
+  --bg:            #0F1012;
+  --bg-elev:       #1A1B1E;
+  --bg-soft:       #1F2024;
+  --bg-sunken:     #15161A;
+  --ink:           #E8E6E1;
+  --ink-2:         #C2BFB7;
+  --ink-3:         #8E8B83;
+  --ink-4:         #5E5B55;
+  --line:          #2A2B30;
+  --line-strong:   #3A3B40;
+
+  --accent:        #FF6B47;
+  --accent-ink:    #FFA98A;
+  --accent-soft:   rgba(255,107,71,0.18);
+  --accent-tint:   rgba(255,107,71,0.10);
+
+  --violet:        #8E78FF;
+  --violet-soft:   rgba(142,120,255,0.18);
+  --mint:          #34D199;
+  --mint-soft:     rgba(52,209,153,0.18);
+  --amber:         #FBBF24;
+  --amber-soft:    rgba(251,191,36,0.18);
+  --sky:           #60A5FA;
+  --sky-soft:      rgba(96,165,250,0.18);
+
+  --coral:         #FF6B47;
+  --coral-soft:    rgba(255,107,71,0.18);
+  --night:         #0A0A0C;
+  --night-2:       #131318;
+  --night-line:    rgba(255,255,255,0.06);
+  --plum:          #8E78FF;
+  --plum-soft:     rgba(142,120,255,0.20);
+  --mint-bright:   #34D199;
+  --sh-cta:        0 8px 28px rgba(255,107,71,0.40);
+
+  --shadow-sm:     0 1px 0 rgba(0,0,0,0.30), 0 1px 2px rgba(0,0,0,0.40);
+  --shadow-md:     0 1px 0 rgba(0,0,0,0.40), 0 6px 20px -6px rgba(0,0,0,0.50);
+  --shadow-lg:     0 2px 0 rgba(0,0,0,0.40), 0 24px 40px -16px rgba(0,0,0,0.60);
+
+  --ink-on-night:  #E8E6E1;
+}
+
+/* ======== Girly mode override ======== */
+:root[data-theme="girly"] {
+  --bg:            #FFF0F6;
+  --bg-elev:       #FFFFFF;
+  --bg-soft:       #FFE4F1;
+  --bg-sunken:     #FBD0E5;
+  --ink:           #3B0A2F;
+  --ink-2:         #5C1A4A;
+  --ink-3:         #8A4A77;
+  --ink-4:         #B884A8;
+  --line:          #F8C8DC;
+  --line-strong:   #E89BBE;
+
+  --accent:        #EC4899;
+  --accent-ink:    #BE185D;
+  --accent-soft:   #FCE7F3;
+  --accent-tint:   #FFF1F7;
+
+  --violet:        #A855F7;
+  --violet-soft:   #F3E8FF;
+  --mint:          #DB2777;
+  --mint-soft:     #FCE7F3;
+  --amber:         #D946EF;
+  --amber-soft:    #FAE8FF;
+  --sky:           #9333EA;
+  --sky-soft:      #EDE9FE;
+
+  --coral:         #F472B6;
+  --coral-soft:    #FCE7F3;
+  --night:         #2A0F22;
+  --night-2:       #3B1233;
+  --night-line:    rgba(255,200,225,0.12);
+  --plum:          #C026D3;
+  --plum-soft:     rgba(192,38,211,0.22);
+  --mint-bright:   #F472B6;
+  --sh-cta:        0 8px 28px rgba(236,72,153,0.40);
+
+  --ink-on-night:  #FFE8F4;
 }
 
 /* Live Studio (auth) keyframes */

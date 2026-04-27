@@ -53,7 +53,7 @@ const LIVE_TICKS = [
   { chip: "THUMBNAIL LAB",    title: "4 variants ready",        status: "Bold-text · Cinematic · Minimal · Meme",  progress: 74, tone: "plum"  as const },
 ];
 
-const TONE_COLOR = { coral: "var(--coral)", mint: "var(--mint-bright)", plum: "#9B83FF" };
+const TONE_COLOR = { coral: "var(--coral)", mint: "var(--mint-bright)", plum: "var(--plum)" };
 
 export default function LiveStudioAuth({ mode, onSubmit, onGoogle, submitting, error }: Props) {
   const [name, setName] = useState("");
@@ -502,7 +502,7 @@ function FormPanel(p: FormPanelProps) {
           color: "rgba(255,255,255,0.5)", fontSize: 11,
         }}>
           <div style={{ display: "flex" }}>
-            {(["#FF5A36", "#6B4BFF", "#19C37D", "#F4A724"] as const).map((c, i) => (
+            {(["var(--coral)", "var(--violet)", "var(--mint)", "var(--amber)"] as const).map((c, i) => (
               <div key={i} style={{
                 width: 22, height: 22, borderRadius: "50%",
                 background: c, border: "2px solid var(--night-2)",
@@ -587,7 +587,7 @@ function PrimaryBtn({ children, disabled, type = "button", onClick }: {
       style={{
         width: "100%", padding: "14px 16px",
         borderRadius: "var(--r-md)", border: "none",
-        background: "linear-gradient(180deg, #FF6E4D 0%, var(--coral) 100%)",
+        background: "linear-gradient(180deg, var(--accent) 0%, var(--coral) 100%)",
         color: "white", fontWeight: 600, fontSize: 14, letterSpacing: "0.01em",
         boxShadow: "var(--sh-cta)",
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -611,7 +611,7 @@ function GoogleBtn({ onClick }: { onClick: () => void }) {
       style={{
         width: "100%", padding: "14px 16px",
         borderRadius: "var(--r-md)", border: "none",
-        background: "white", color: "#1a1410",
+        background: "var(--bg-elev)", color: "var(--ink)",
         fontWeight: 600, fontSize: 14,
         display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
         cursor: "pointer",

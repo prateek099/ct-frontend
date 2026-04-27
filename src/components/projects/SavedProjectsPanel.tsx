@@ -26,11 +26,11 @@ const PIPELINE_STEPS = [
 
 const PALETTE = ["coral", "violet", "mint", "amber", "rose"] as const;
 const COLOR_MAP: Record<typeof PALETTE[number], { bg: string; soft: string; ink: string }> = {
-  coral:  { bg: "#FF5A36", soft: "#FFE7E0",        ink: "#fff" },
-  violet: { bg: "#6B4BFF", soft: "rgba(107,75,255,0.12)", ink: "#fff" },
-  mint:   { bg: "#19C37D", soft: "rgba(25,195,125,0.14)", ink: "#fff" },
-  amber:  { bg: "#F4A724", soft: "rgba(244,167,36,0.14)",  ink: "#1a1410" },
-  rose:   { bg: "#FF477E", soft: "rgba(255,71,126,0.14)",  ink: "#fff" },
+  coral:  { bg: "var(--coral)",  soft: "var(--coral-soft)",  ink: "var(--ink-on-night)" },
+  violet: { bg: "var(--violet)", soft: "var(--violet-soft)", ink: "var(--ink-on-night)" },
+  mint:   { bg: "var(--mint)",   soft: "var(--mint-soft)",   ink: "var(--ink-on-night)" },
+  amber:  { bg: "var(--amber)",  soft: "var(--amber-soft)",  ink: "var(--ink)" },
+  rose:   { bg: "#FF477E",       soft: "rgba(255,71,126,0.14)", ink: "var(--ink-on-night)" },
 };
 
 function projectProgress(p: Project): number {
@@ -170,8 +170,8 @@ export default function SavedProjectsPanel({ open, onClose, focusedProjectId }: 
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
             <FilterChip label="All"               count={counts.all}            active={filter === "all"}         onClick={() => setFilter("all")} />
-            <FilterChip label="In progress"       count={counts["in-progress"]} active={filter === "in-progress"} onClick={() => setFilter("in-progress")} dot="#F4A724" />
-            <FilterChip label="Ready to publish"  count={counts.ready}          active={filter === "ready"}       onClick={() => setFilter("ready")}      dot="#19C37D" />
+            <FilterChip label="In progress"       count={counts["in-progress"]} active={filter === "in-progress"} onClick={() => setFilter("in-progress")} dot="var(--amber)" />
+            <FilterChip label="Ready to publish"  count={counts.ready}          active={filter === "ready"}       onClick={() => setFilter("ready")}      dot="var(--mint)" />
           </div>
         </header>
 
@@ -299,7 +299,7 @@ function ProjectCard({ project, ready, palette, focused, onOpen }: {
             <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
               <span style={{
                 width: 6, height: 6, borderRadius: 99,
-                background: ready ? "var(--mint-bright)" : "#F4A724",
+                background: ready ? "var(--mint-bright)" : "var(--amber)",
               }} />
               {ready ? "Ready to publish" : `Step ${step}/5`}
             </span>

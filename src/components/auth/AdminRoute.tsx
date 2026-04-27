@@ -22,7 +22,7 @@ export default function AdminRoute({ children }: Props) {
   }
 
   if (!user?.is_admin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

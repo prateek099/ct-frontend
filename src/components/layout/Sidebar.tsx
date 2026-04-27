@@ -36,34 +36,34 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: "improve", label: "Improve", blurb: "Polish & adapt", color: "#6B4BFF",
+    id: "improve", label: "Improve", blurb: "Polish & adapt", color: "var(--violet)",
     tools: [
       { code: "T12", name: "Review Script", path: "/review",    icon: "sparkles" },
       { code: "T14", name: "Repurpose",     path: "/repurpose", icon: "split"    },
     ],
   },
   {
-    id: "research", label: "Research", blurb: "Spot what's working", color: "#19C37D",
+    id: "research", label: "Research", blurb: "Spot what's working", color: "var(--mint)",
     tools: [
       { code: "T7", name: "Trending Finder", path: "/trending", icon: "trend" },
       { code: "T8", name: "Channel Stats",   path: "/stats",    icon: "chart" },
     ],
   },
   {
-    id: "plan", label: "Plan", blurb: "Schedule your week", color: "#F4A724",
+    id: "plan", label: "Plan", blurb: "Schedule your week", color: "var(--amber)",
     tools: [
       { code: "T10", name: "Content Calendar", path: "/calendar", icon: "calendar" },
     ],
   },
   {
-    id: "publish", label: "Publish", blurb: "Take it live", color: "#FF477E",
+    id: "publish", label: "Publish", blurb: "Take it live", color: "var(--accent)",
     tools: [
       { code: "T15", name: "Link in Bio", path: "/linkinbio", icon: "link" },
       { code: "T16", name: "My Shop",     path: "/shop",      icon: "bag"  },
     ],
   },
   {
-    id: "utilities", label: "Utilities", blurb: "Helpers & admin", color: "#A39E93",
+    id: "utilities", label: "Utilities", blurb: "Helpers & admin", color: "var(--ink-4)",
     tools: [
       { code: "T17", name: "Thumbnail Downloader", path: "/thumbnail-downloader", icon: "download" },
       { code: "T18", name: "Subtitles Downloader", path: "/subtitles-downloader", icon: "download" },
@@ -105,7 +105,7 @@ export default function Sidebar({ onOpenProjects, projectsOpen = false, projects
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const onHome = location.pathname === "/";
+  const onHome = location.pathname === "/dashboard";
   const initials = (user?.name ?? "C").split(" ").map(s => s[0]).join("").toUpperCase().slice(0, 2);
 
   return (
@@ -142,7 +142,7 @@ export default function Sidebar({ onOpenProjects, projectsOpen = false, projects
       </button>
 
       {/* Home */}
-      <RailButton icon="home" label="Home" active={onHome} onClick={() => navigate("/")} />
+      <RailButton icon="home" label="Home" active={onHome} onClick={() => navigate("/dashboard")} />
 
       <Divider />
 
@@ -197,7 +197,7 @@ export default function Sidebar({ onOpenProjects, projectsOpen = false, projects
           title={user?.name ?? "Account"}
           style={{
             width: 36, height: 36, borderRadius: "50%", border: "none",
-            background: "linear-gradient(135deg, #FF5A36, #FF477E)",
+            background: "linear-gradient(135deg, var(--coral), var(--accent))",
             color: "white", fontWeight: 700, fontSize: 13,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer",

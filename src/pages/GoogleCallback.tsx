@@ -38,7 +38,7 @@ export default function GoogleCallback() {
               Cookies.set("refresh_token", data.refresh_token, { expires: 7 });
               if (data.name) Cookies.set("user_name", data.name, { expires: 7 });
               // Force a hard reload to the dashboard so auth context properly refreshes.
-              window.location.replace('/');
+              window.location.replace('/dashboard');
             });
           })
           .catch((err: any) => {
@@ -61,7 +61,7 @@ export default function GoogleCallback() {
         <div style={{ textAlign: 'center', maxWidth: 400, background: 'rgba(255,255,255,0.05)', padding: 40, borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)' }}>
           {error ? (
             <>
-              <div style={{ color: '#FF4D2E', marginBottom: 16 }}>
+              <div style={{ color: 'var(--accent)', marginBottom: 16 }}>
                 <Icon name="alertCircle" size={48} />
               </div>
               <h2 className="h2" style={{ marginBottom: 12 }}>Authentication Failed</h2>

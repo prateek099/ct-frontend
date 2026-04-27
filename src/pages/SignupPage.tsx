@@ -14,7 +14,7 @@ export default function SignupPage() {
     try {
       await register.mutateAsync({ name: name || "", email, password });
       await login.mutateAsync({ email, password });
-      window.location.replace("/");
+      window.location.replace("/dashboard");
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Failed to create account."));
     }

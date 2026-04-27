@@ -22,11 +22,11 @@ const PIPELINE_STEPS = [
 
 const PALETTE = ["coral", "violet", "mint", "amber", "rose"] as const;
 const COLOR_MAP: Record<typeof PALETTE[number], { bg: string; ink: string }> = {
-  coral:  { bg: "#FF5A36", ink: "#fff" },
-  violet: { bg: "#6B4BFF", ink: "#fff" },
-  mint:   { bg: "#19C37D", ink: "#fff" },
-  amber:  { bg: "#F4A724", ink: "#1a1410" },
-  rose:   { bg: "#FF477E", ink: "#fff" },
+  coral:  { bg: "var(--coral)",  ink: "var(--ink-on-night)" },
+  violet: { bg: "var(--violet)", ink: "var(--ink-on-night)" },
+  mint:   { bg: "var(--mint)",   ink: "var(--ink-on-night)" },
+  amber:  { bg: "var(--amber)",  ink: "var(--ink)" },
+  rose:   { bg: "#FF477E",       ink: "var(--ink-on-night)" },
 };
 
 const STATS = [
@@ -43,8 +43,8 @@ const TRENDING_HOOKS = [
 ];
 
 const COLLAPSE_ROW = [
-  { id: "calendar", title: "This week",       subtitle: "Tue · publish AI tools · Thu · record 9-5", icon: "calendar", color: "#6B4BFF", path: "/calendar" },
-  { id: "review",   title: "Recent activity", subtitle: "Script v2 reviewed · 78 / 100",             icon: "check",    color: "#19C37D", path: "/review"   },
+  { id: "calendar", title: "This week",       subtitle: "Tue · publish AI tools · Thu · record 9-5", icon: "calendar", color: "var(--violet)", path: "/calendar" },
+  { id: "review",   title: "Recent activity", subtitle: "Script v2 reviewed · 78 / 100",             icon: "check",    color: "var(--mint)",   path: "/review"   },
   { id: "tools",    title: "Quick tools",     subtitle: "18 tools, one ⌘K away",                     icon: "sparkles", color: "var(--coral)", path: "/idea" },
 ];
 
@@ -163,10 +163,10 @@ function CopilotHero({ firstName, focusTitle, stepNum, onPickUp, onNewVideo }: {
     <div style={{
       position: "relative",
       padding: "44px 48px",
-      background: "linear-gradient(135deg, #FFF5F1 0%, #FFEDE6 60%, #FFE4D9 100%)",
+      background: "linear-gradient(135deg, var(--accent-tint) 0%, var(--accent-soft) 60%, var(--bg-soft) 100%)",
       borderRadius: 28,
       overflow: "hidden",
-      border: "1px solid #F8D8C8",
+      border: "1px solid var(--line)",
     }}>
       <svg style={{ position: "absolute", bottom: 28, right: 36, opacity: 0.55, pointerEvents: "none" }}
         width="180" height="48" viewBox="0 0 220 60" fill="none" aria-hidden>
@@ -181,7 +181,7 @@ function CopilotHero({ firstName, focusTitle, stepNum, onPickUp, onNewVideo }: {
       <div style={{ position: "relative" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 10, background: "var(--ink)", color: "white",
+            width: 32, height: 32, borderRadius: 10, background: "var(--night)", color: "var(--ink-on-night)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <Icon name="sparkles" size={16} />
@@ -193,7 +193,7 @@ function CopilotHero({ firstName, focusTitle, stepNum, onPickUp, onNewVideo }: {
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 4,
             padding: "3px 8px", borderRadius: 99,
-            background: "rgba(25,195,125,0.14)", color: "#0A8B53",
+            background: "var(--mint-soft)", color: "var(--mint)",
             fontSize: 11, fontWeight: 600,
           }}>
             <span style={{ width: 5, height: 5, borderRadius: 99, background: "var(--mint-bright)", animation: "pulse-dot 1.6s infinite" }} />

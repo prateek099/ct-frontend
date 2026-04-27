@@ -14,7 +14,7 @@ export default function WorkInProgress() {
         This tool is currently under construction. Check back soon!
       </p>
       <button
-        onClick={() => navigate("/")}
+        onClick={() => navigate("/dashboard")}
         className="mt-8 flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 px-6 rounded-lg text-sm transition-colors"
       >
         <ArrowLeft size={15} /> Back to Dashboard

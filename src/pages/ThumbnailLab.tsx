@@ -59,10 +59,10 @@ export default function ThumbnailLab() {
       setSaving(true)
       updateProject.mutate(
         { id: currentProjectId, thumbnail_json: thumbnailJson, status: 'saved', title },
-        { onSuccess: () => navigate('/'), onError: () => setSaving(false) },
+        { onSuccess: () => navigate('/dashboard'), onError: () => setSaving(false) },
       )
     } else {
-      navigate('/')
+      navigate('/dashboard')
     }
   }
 
