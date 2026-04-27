@@ -15,6 +15,8 @@ import AppShell from './components/layout/AppShell'
 
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import GoogleCallback from './pages/GoogleCallback'
 import DashboardPage from './pages/DashboardPage'
 
@@ -79,6 +81,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signin" element={<Navigate to="/login" replace />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/oauth/google/callback" element={<GoogleCallback />} />
 
               {/* Marketing — public. `/` is the homepage; the workspace lives at `/dashboard`. */}
