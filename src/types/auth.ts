@@ -28,3 +28,12 @@ export interface WorkflowLoginRequest {
   username: string; // base64-encoded
   password: string; // base64-encoded
 }
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  new_password: string;
+}

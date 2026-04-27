@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 import client from "./client";
-import type { AuthUser, LoginRequest, RegisterRequest, TokenResponse, WorkflowLoginRequest } from "../types/auth";
+import type { AuthUser, ForgotPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest, TokenResponse, WorkflowLoginRequest } from "../types/auth";
 
 export const AUTH_ME_KEY = ["auth", "me"];
 
@@ -99,4 +99,22 @@ export function useLogout() {
     queryClient.clear();
     window.location.href = "/login";
   };
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: async (payload: ForgotPasswordRequest) => {
+      const { data } = await client.post<{ message: string }>("/auth/forgot-password", payload);
+      return data;
+    },
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: async (payload: ResetPasswordRequest) => {
+      const { data } = await client.post<{ message: string }>("/auth/reset-password", payload);
+      return data;
+    },
+  });
 }
