@@ -37,7 +37,7 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      await resetPassword.mutateAsync({ token, new_password: password });
+      await resetPassword.mutateAsync({ token: token.trim(), new_password: password });
       setSubmitted(true);
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Failed to reset password."));
