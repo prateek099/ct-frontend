@@ -10,7 +10,7 @@ interface Props {
 export default function TopBar({ onOpenProjects, projectsCount = 0 }: Props) {
   const loc = useLocation()
   const tool = TOOLS.find(t => t.path === loc.pathname)
-  const onDashboard = loc.pathname === '/'
+  const onDashboard = loc.pathname === '/dashboard'
   const onUsers = loc.pathname === '/users'
 
   return (

@@ -4,12 +4,8 @@ import { useAuth } from "../../context/AuthContext";
 interface NavItem { label: string; href: string; }
 
 const NAV: NavItem[] = [
-  { label: "Product",       href: "/#product" },
-  { label: "Tools",         href: "/#tools" },
-  { label: "How it works",  href: "/#how" },
-  { label: "Creators",      href: "/#proof" },
-  { label: "Pricing",       href: "/pricing" },
-  { label: "FAQ",           href: "/#faq" },
+  { label: "Tools",   href: "/#tools" },
+  { label: "Pricing", href: "/pricing" },
 ];
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {

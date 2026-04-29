@@ -3,7 +3,7 @@
 // Home + Search + Projects + Avatar.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Icon from "../shared/Icon";
 import { useAuth } from "../../context/AuthContext";
 
@@ -120,13 +120,18 @@ export default function Sidebar({ onOpenProjects, projectsOpen = false, projects
         zIndex: 5,
       }}
     >
-      {/* Logo */}
-      <div style={{ marginBottom: 20 }}>
+      {/* Logo — always navigates to the marketing homepage */}
+      <Link
+        to="/"
+        title="Creator OS — home"
+        aria-label="Creator OS home"
+        style={{ marginBottom: 20, display: "inline-flex", borderRadius: 8 }}
+      >
         <svg width={34} height={34} viewBox="0 0 32 32" aria-hidden>
           <rect width="32" height="32" rx="8" fill="var(--coral)" />
           <path d="M12 10.2l9 5.8-9 5.8z" fill="#fff" />
         </svg>
-      </div>
+      </Link>
 
       {/* Search → command palette */}
       <button
