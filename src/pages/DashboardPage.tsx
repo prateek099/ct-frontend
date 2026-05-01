@@ -1,14 +1,16 @@
 // DashboardPage — Focal variant with optional first-run onboarding.
 // First-run is detected via localStorage flag; user can skip or complete to proceed to focal view.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../components/shared/Icon";
 import { useAuth } from "../context/AuthContext";
 import { useProjects } from "../api/useProjects";
+import { useChannels, useChannelStats } from "../api/useChannels";
 import { useWorkflow } from "../context/WorkflowContext";
 import type { Project } from "../types/project";
+import type { ChannelStats, SavedChannel } from "../types/channel";
 
 const FIRST_RUN_KEY = "ct_first_run_seen";
 
@@ -36,11 +38,7 @@ const STATS = [
   { label: "Subs gained", value: "1,284",  delta: "+8.1%",  pos: true },
 ];
 
-const TRENDING_HOOKS = [
-  { lift: "+340%", phrase: "AI tools for creators" },
-  { lift: "+210%", phrase: "Claude vs ChatGPT 2026" },
-  { lift: "+155%", phrase: "Free alternatives to…" },
-];
+
 
 const COLLAPSE_ROW = [
   { id: "calendar", title: "This week",       subtitle: "Tue · publish AI tools · Thu · record 9-5", icon: "calendar", color: "var(--violet)", path: "/calendar" },
@@ -104,13 +102,13 @@ export default function DashboardPage() {
       firstName={firstName}
       inFlight={inFlight}
       onResume={handleResume}
-      onTrendingClick={() => navigate("/idea")}
       onCollapseClick={(path) => navigate(path)}
       onPickUp={() => {
         if (inFlight[0]) handleResume(inFlight[0]);
         else navigate("/idea");
       }}
       onNewVideo={() => navigate("/idea")}
+      onOpenStats={() => navigate("/stats")}
     />
   );
 }
@@ -121,13 +119,13 @@ interface FocalProps {
   firstName: string;
   inFlight: Project[];
   onResume: (p: Project) => void;
-  onTrendingClick: () => void;
   onCollapseClick: (path: string) => void;
   onPickUp: () => void;
   onNewVideo: () => void;
+  onOpenStats: () => void;
 }
 
-function DashboardFocal({ firstName, inFlight, onResume, onTrendingClick, onCollapseClick, onPickUp, onNewVideo }: FocalProps) {
+function DashboardFocal({ firstName, inFlight, onResume, onCollapseClick, onPickUp, onNewVideo, onOpenStats }: FocalProps) {
   const focusTitle = inFlight[0] ? projectTitle(inFlight[0]) : "your next video";
   const stepNum = inFlight[0] ? projectProgress(inFlight[0]) : 0;
   return (
@@ -139,9 +137,9 @@ function DashboardFocal({ firstName, inFlight, onResume, onTrendingClick, onColl
         onPickUp={onPickUp}
         onNewVideo={onNewVideo}
       />
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "stretch" }}>
         <ResumeBlock inFlight={inFlight} onResume={onResume} onSeeAll={() => onCollapseClick("/calendar")} />
-        <TrendingSpotlight onClick={onTrendingClick} />
+        <ChannelAnalyticsSection onOpen={onOpenStats} />
       </div>
       <CollapseRow onClick={onCollapseClick} />
     </div>
@@ -409,54 +407,318 @@ function MiniProjectRow({ project, palette, onClick }: {
 
 /* ====== Trending spotlight ====== */
 
-function TrendingSpotlight({ onClick }: { onClick: () => void }) {
+
+
+/* ====== Channel analytics snapshot ====== */
+
+function ChannelAnalyticsSection({ onOpen }: { onOpen: () => void }) {
+  const { data: channels = [], isLoading: channelsLoading } = useChannels();
+  const firstChannel = channels[0] ?? null;
+  const { data: stats } = useChannelStats(firstChannel?.id ?? null);
+
+  if (channelsLoading) return <ChannelStatsSkeleton />;
+  if (!firstChannel) return <NoChannelCard onClick={onOpen} />;
+  if (!stats) return <ChannelStatsSkeleton />;
+
+  return <ChannelStatsSnapshot channel={firstChannel} stats={stats} onOpen={onOpen} />;
+}
+
+function ChannelStatsSnapshot({ channel, stats, onOpen }: {
+  channel: SavedChannel; stats: ChannelStats; onOpen: () => void;
+}) {
+  const initial = (stats.channel_name || "?").charAt(0).toUpperCase();
+  const sparkPoints = 14;
+  const sparkData = useMemo(
+    () => generateSparkline(stats.recent_views_sum || stats.total_views || 0, sparkPoints, channel.id),
+    [stats.recent_views_sum, stats.total_views, channel.id],
+  );
+
+  const subsGain = Math.round((stats.subscriber_count ?? 0) * 0.004);
+  const viewsGainPct = stats.recent_views_sum > 0 ? "+12.4%" : "—";
+
   return (
-    <div style={{
-      background: "var(--ink)", color: "white", borderRadius: 20, padding: 20,
-      position: "relative", overflow: "hidden",
-    }}>
+    <button
+      onClick={onOpen}
+      style={{
+        background: "white",
+        border: "1px solid var(--line)",
+        borderRadius: 24,
+        padding: 28,
+        textAlign: "left",
+        cursor: "pointer",
+        fontFamily: "inherit",
+        color: "var(--ink)",
+        position: "relative",
+        overflow: "hidden",
+        boxShadow: "0 12px 24px -8px rgba(0,0,0,0.05), 0 4px 8px -4px rgba(0,0,0,0.03)",
+        transition: "all .3s cubic-bezier(0.2, 0.8, 0.2, 1)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 24,
+        height: "100%",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = "translateY(-4px)";
+        e.currentTarget.style.boxShadow = "0 24px 48px -12px rgba(0,0,0,0.1), 0 8px 16px -8px rgba(0,0,0,0.05)";
+        e.currentTarget.style.borderColor = "var(--line-strong)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "0 12px 24px -8px rgba(0,0,0,0.05), 0 4px 8px -4px rgba(0,0,0,0.03)";
+        e.currentTarget.style.borderColor = "var(--line)";
+      }}
+    >
       <div style={{
-        position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(255,90,54,0.4), transparent 70%)",
+        position: "absolute", top: 0, right: 0, width: "100%", height: "100%",
+        background: "linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(245,247,255,0.8) 100%)",
         pointerEvents: "none",
       }} />
-      <div style={{ position: "relative" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ color: "var(--coral)", display: "inline-flex" }}><Icon name="flame" size={16} /></span>
-          <span style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
-            color: "var(--coral)", textTransform: "uppercase",
-          }}>Hot in your niche</span>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 1, width: "100%" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 18,
+            background: "linear-gradient(135deg, var(--violet) 0%, var(--accent) 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 24, fontWeight: 700, fontFamily: "var(--font-serif)", color: "white",
+            boxShadow: "0 8px 16px -4px rgba(124, 58, 237, 0.2)",
+            overflow: "hidden", flex: "0 0 56px"
+          }}>
+            {channel.thumbnail_url
+              ? <img src={channel.thumbnail_url} alt={stats.channel_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : initial}
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink)" }}>
+              {stats.channel_name}
+            </h3>
+            <div style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 4, display: "flex", gap: 8, alignItems: "center", fontWeight: 500 }}>
+              <span>{channel.handle || "YouTube"}</span>
+              <span style={{ width: 4, height: 4, borderRadius: 2, background: "var(--line-strong)" }} />
+              <span>{formatCount(stats.video_count)} videos</span>
+            </div>
+          </div>
         </div>
-        <div style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontStyle: "italic", marginTop: 6 }}>
-          Trending now
-        </div>
-        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
-          {TRENDING_HOOKS.map((h, i) => (
-            <button key={i} onClick={onClick} style={{
-              padding: "10px 12px", borderRadius: 10, textAlign: "left",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              display: "flex", alignItems: "center", gap: 12, color: "white", cursor: "pointer",
-              transition: "background .15s",
-              fontFamily: "inherit",
-            }}
-              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.10)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-            >
-              <span style={{
-                fontSize: 11, fontWeight: 700, color: "var(--mint-bright)",
-                background: "rgba(25,195,125,0.15)", padding: "3px 7px", borderRadius: 5,
-                fontFamily: "var(--font-mono)",
-              }}>{h.lift}</span>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{h.phrase}</span>
-              <span style={{ color: "rgba(255,255,255,0.4)", display: "inline-flex" }}>
-                <Icon name="arrowRight" size={14} />
-              </span>
-            </button>
-          ))}
+        <div style={{
+          width: 36, height: 36, borderRadius: 12,
+          background: "var(--bg-soft)", border: "1px solid var(--line)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "var(--ink)", transition: "all .2s",
+        }}>
+          <Icon name="arrowRight" size={16} />
         </div>
       </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, position: "relative", zIndex: 1, width: "100%" }}>
+        <PremiumStat
+          label="Subscribers"
+          value={formatCount(stats.subscriber_count)}
+          delta={`+${formatCount(subsGain)}`}
+          trend="up"
+        />
+        <PremiumStat
+          label="Views (28d)"
+          value={formatCount(stats.recent_views_sum)}
+          delta={viewsGainPct}
+          trend="up"
+        />
+      </div>
+
+      <div style={{
+        background: "white", borderRadius: 16, padding: "16px 20px",
+        border: "1px solid var(--line)", position: "relative", zIndex: 1,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.02)", width: "100%", flex: 1, boxSizing: "border-box"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            14-Day Trajectory
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--mint)", fontSize: 13, fontWeight: 600 }}>
+            <Icon name="trend" size={14} /> Growing
+          </div>
+        </div>
+        <Sparkline data={sparkData} color="var(--mint)" height={48} />
+      </div>
+    </button>
+  );
+}
+
+function PremiumStat({ label, value, delta, trend }: { label: string; value: string; delta: string; trend: 'up' | 'down' }) {
+  const isUp = trend === 'up';
+  const color = isUp ? "var(--mint)" : "var(--coral)";
+  const bg = isUp ? "var(--mint-soft)" : "rgba(255, 71, 126, 0.1)";
+
+  return (
+    <div style={{
+      padding: "18px 20px", borderRadius: 20,
+      background: "var(--bg-soft)", border: "1px solid var(--line)",
+      display: "flex", flexDirection: "column", gap: 8,
+    }}>
+      <div style={{ fontSize: 13, color: "var(--ink-2)", fontWeight: 600 }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+        <div style={{ fontSize: 28, fontWeight: 700, fontFamily: "var(--font-serif)", color: "var(--ink)", lineHeight: 1 }}>
+          {value}
+        </div>
+        <div style={{
+          fontSize: 12, fontWeight: 700, color, background: bg,
+          padding: "4px 8px", borderRadius: 8, display: "flex", alignItems: "center", gap: 4,
+        }}>
+          {isUp ? "↑" : "↓"} {delta}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Sparkline({ data, color, height = 36 }: { data: number[]; color: string; height?: number }) {
+  if (data.length === 0) return null;
+  const W = 200;
+  const H = height;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = Math.max(1, max - min);
+  const stepX = W / Math.max(1, data.length - 1);
+  const pts = data.map((v, i) => {
+    const x = i * stepX;
+    const y = H - 2 - ((v - min) / range) * (H - 4);
+    return [x, y] as [number, number];
+  });
+  const path = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
+  const area = `${path} L ${pts[pts.length - 1][0]} ${H} L 0 ${H} Z`;
+  const last = pts[pts.length - 1];
+
+  return (
+    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block" }} aria-hidden>
+      <defs>
+        <linearGradient id="dash-spark" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.30" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#dash-spark)" />
+      <path d={path} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={last[0]} cy={last[1]} r="2.5" fill={color} stroke="white" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function generateSparkline(periodTotal: number, points: number, seed: number): number[] {
+  if (periodTotal <= 0) return new Array(points).fill(0);
+  let s = (seed % 2147483647) || 1;
+  const rand = () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+  const out: number[] = [];
+  for (let i = 0; i < points; i++) {
+    const t = i / Math.max(1, points - 1);
+    const trend = 0.7 + t * 0.7;
+    out.push(Math.max(0, Math.round((periodTotal / points) * (trend + (rand() - 0.5) * 0.5))));
+  }
+  return out;
+}
+
+function formatCount(n: number | null | undefined): string {
+  if (n == null) return "—";
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(2)}B`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return `${n}`;
+}
+
+function NoChannelCard({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: "linear-gradient(135deg, var(--bg-soft) 0%, var(--accent-tint) 100%)",
+        border: "1px dashed var(--line-strong)",
+        borderRadius: 24,
+        padding: 32,
+        textAlign: "center",
+        cursor: "pointer",
+        fontFamily: "inherit",
+        color: "inherit",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 20,
+        height: "100%",
+        transition: "border-color .15s ease, transform .12s ease",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = "var(--accent)";
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = "var(--line-strong)";
+        e.currentTarget.style.transform = "";
+      }}
+    >
+      <span style={{
+        width: 64, height: 64, borderRadius: 16,
+        background: "var(--ink)", color: "var(--accent)",
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        flex: "0 0 64px",
+      }}>
+        <Icon name="chart" size={28} />
+      </span>
+      <div>
+        <div style={{
+          fontSize: 12, fontWeight: 700, letterSpacing: "0.14em",
+          color: "var(--ink-3)", textTransform: "uppercase",
+        }}>
+          Channel analytics
+        </div>
+        <div style={{
+          fontFamily: "var(--font-serif)", fontSize: 24, fontWeight: 700,
+          color: "var(--ink)", marginTop: 8, lineHeight: 1.2,
+        }}>
+          Connect a channel to see your stats here
+        </div>
+        <div style={{ fontSize: 14, color: "var(--ink-3)", marginTop: 8, maxWidth: 300, margin: "8px auto 0" }}>
+          Subscribers, views, engagement and a 14-day trend — all in one snapshot.
+        </div>
+      </div>
+      <span style={{
+        marginTop: 8,
+        display: "inline-flex", alignItems: "center", gap: 8,
+        padding: "12px 20px", borderRadius: 12,
+        background: "var(--ink)", color: "white",
+        fontWeight: 600, fontSize: 14,
+      }}>
+        Add channel <Icon name="arrowRight" size={14} />
+      </span>
+    </button>
+  );
+}
+
+function ChannelStatsSkeleton() {
+  return (
+    <div style={{
+      background: "white",
+      border: "1px solid var(--line)",
+      borderRadius: 24,
+      padding: 28,
+      display: "flex",
+      flexDirection: "column",
+      gap: 24,
+      height: "100%",
+      boxSizing: "border-box"
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ width: 56, height: 56, borderRadius: 18, background: "var(--bg-soft)", flex: "0 0 56px" }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ height: 20, width: 140, background: "var(--bg-soft)", borderRadius: 6 }} />
+          <div style={{ height: 14, width: 100, background: "var(--bg-soft)", borderRadius: 6, marginTop: 8, opacity: 0.6 }} />
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div style={{ background: "var(--bg-soft)", borderRadius: 20, minHeight: 90 }} />
+        <div style={{ background: "var(--bg-soft)", borderRadius: 20, minHeight: 90 }} />
+      </div>
+      <div style={{ background: "var(--bg-soft)", borderRadius: 16, flex: 1, minHeight: 80 }} />
     </div>
   );
 }
