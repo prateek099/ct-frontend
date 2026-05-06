@@ -3,9 +3,11 @@
 @tailwind utilities;
 
 /* Premium typography:
-   - Bricolage Grotesque (heavy display) for headings and big titles.
-   - Inter (variable, slick) for body text and UI. */
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+   - Harlow Solid Italic (decorative display) for headings and big titles.
+   - SF Pro Display (clean, modern) for body text and UI. */
+@import url('https://fonts.cdnfonts.com/css/harlow-solid-italic');
+@import url('https://fonts.cdnfonts.com/css/sf-pro-display');
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 /* =========================================================
    Creator OS — Design System
@@ -96,11 +98,10 @@
 
   /* ── Typography ────────────────────────────────────────── */
   --font-sans:
-    "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
-    "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+    "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
   --font-heading:
-    "Bricolage Grotesque", "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
-    sans-serif;
+    "Harlow Solid Italic", "Georgia", cursive;
   --font-display: var(--font-heading);
   --font-serif: var(--font-heading);
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
@@ -183,23 +184,24 @@ body {
   transition: background 200ms ease, color 200ms ease;
 }
 
-/* ======== Headings: heavy, tight, premium ======== */
+/* ======== Headings: decorative Harlow display ======== */
 h1, h2, h3, h4, h5, h6,
 .h-display,
 .h2 {
   font-family: var(--font-heading);
   color: var(--text);
-  letter-spacing: -0.035em;
-  line-height: 1.04;
-  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  font-weight: 400;
+  font-style: italic;
 }
 
 .h-display {
   font-family: var(--font-heading);
   font-size: clamp(2.6rem, 5vw, 4.6rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 0.98;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.08;
   margin: 0;
 }
 .h-display em {
@@ -210,15 +212,15 @@ h1, h2, h3, h4, h5, h6,
 .h2 {
   font-family: var(--font-heading);
   font-size: clamp(1.6rem, 2.6vw, 2.2rem);
-  font-weight: 800;
-  letter-spacing: -0.025em;
+  font-weight: 400;
+  letter-spacing: 0.005em;
   margin: 0;
 }
 .h3 {
   font-family: var(--font-heading);
   font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: -0.012em;
+  font-weight: 400;
+  letter-spacing: 0.005em;
   margin: 0;
 }
 
@@ -312,9 +314,9 @@ button, input, textarea, select { font: inherit; color: inherit; }
 }
 .brand-name {
   font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 15.5px;
-  letter-spacing: -0.018em;
+  font-weight: 400;
+  font-size: 17px;
+  letter-spacing: 0.01em;
 }
 .brand-tag {
   font-size: 10.5px;
@@ -547,8 +549,10 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .card-title h3 {
   margin: 0;
   font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.012em;
+  font-weight: 600;
+  letter-spacing: 0;
+  font-family: var(--font-sans);
+  font-style: normal;
 }
 .card-title .sub { font-size: 12px; color: var(--ink-3); }
 
@@ -1067,8 +1071,8 @@ button, input, textarea, select { font: inherit; color: inherit; }
     font-family: var(--font-heading);
     font-size: 34px;
     margin: 0 0 10px;
-    font-weight: 800;
-    letter-spacing: -0.03em;
+    font-weight: 400;
+    letter-spacing: 0.01em;
   }
   .mobile-guard p {
     color: var(--ink-3);
@@ -1110,7 +1114,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
   place-items: center;
   font-family: var(--font-heading);
   font-size: 42px;
-  font-weight: 800;
+  font-weight: 400;
   flex: 0 0 96px;
   box-shadow: 0 0 0 4px var(--bg-elev), 0 0 0 5px var(--line);
 }
@@ -1119,9 +1123,9 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .ct-hero-name {
   font-family: var(--font-heading);
   font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
   color: var(--ink);
 }
 .ct-hero-desc {
@@ -1151,9 +1155,9 @@ button, input, textarea, select { font: inherit; color: inherit; }
   font-weight: 600;
 }
 .ct-stat-value {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: 30px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
   margin-top: 6px;
   color: var(--ink);
@@ -1254,12 +1258,12 @@ button, input, textarea, select { font: inherit; color: inherit; }
   color: var(--accent-ink);
 }
 .ct-kpi-value {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: 32px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   color: var(--ink);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
 }
 .ct-kpi-delta {
   display: inline-flex;
@@ -1424,9 +1428,9 @@ button, input, textarea, select { font: inherit; color: inherit; }
 }
 .ct-range-title {
   font-family: var(--font-heading);
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
   color: var(--ink);
   margin-top: 2px;
 }
@@ -1543,10 +1547,10 @@ button, input, textarea, select { font: inherit; color: inherit; }
 
 .ct-detail-title {
   font-family: var(--font-heading);
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
   color: var(--ink);
   margin-top: 14px;
 }
@@ -1591,13 +1595,13 @@ button, input, textarea, select { font: inherit; color: inherit; }
   font-weight: 600;
 }
 .ct-detail-stat-value {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
   margin-top: 2px;
   color: var(--ink);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .ct-compare {
@@ -1716,10 +1720,10 @@ button, input, textarea, select { font: inherit; color: inherit; }
 /* ======== Section title (used by Projections & About) ======== */
 .ct-section-title {
   font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 30px;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
   margin: 0;
   color: var(--ink);
 }
@@ -1805,13 +1809,13 @@ button, input, textarea, select { font: inherit; color: inherit; }
   color: var(--ink-3);
 }
 .ct-projection-value {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: 38px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   margin-top: 6px;
   color: var(--ink);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 .ct-projection-sub {
   display: inline-flex;
@@ -1851,11 +1855,11 @@ button, input, textarea, select { font: inherit; color: inherit; }
 }
 .ct-milestone-h {
   font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.1;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.15;
   margin-top: 4px;
-  letter-spacing: -0.022em;
+  letter-spacing: 0.01em;
 }
 .ct-milestone-highlight .eyebrow { color: var(--ink-4); }
 .ct-milestone-highlight .muted { color: rgba(255, 255, 255, 0.7); }
@@ -1928,11 +1932,11 @@ button, input, textarea, select { font: inherit; color: inherit; }
   gap: 8px;
 }
 .ct-milestone-cell b {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.018em;
+  letter-spacing: -0.01em;
 }
 .ct-mint-pill,
 .ct-accent-pill {
@@ -2001,13 +2005,13 @@ button, input, textarea, select { font: inherit; color: inherit; }
   font-weight: 600;
 }
 .ct-about-stat-value {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
   color: var(--ink);
   margin-top: 2px;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.015em;
 }
 
 /* ======== About — info list ======== */
