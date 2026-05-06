@@ -172,7 +172,7 @@ function CopilotHero({ firstName, focusTitle, stepNum, onPickUp, onNewVideo }: {
       </svg>
       <div style={{
         position: "absolute", bottom: -60, right: -60, width: 240, height: 240, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(255,90,54,0.18), transparent 70%)",
+        background: "radial-gradient(circle, var(--accent-soft), transparent 70%)",
         pointerEvents: "none",
       }} />
 
@@ -206,19 +206,19 @@ function CopilotHero({ firstName, focusTitle, stepNum, onPickUp, onNewVideo }: {
         </div>
 
         <h1 style={{
-          margin: 0, fontFamily: "var(--font-serif)", fontWeight: 400,
-          fontSize: 60, lineHeight: 1.0, letterSpacing: "-0.025em", color: "var(--ink)",
+          margin: 0, fontFamily: "var(--font-heading)", fontWeight: 800,
+          fontSize: 60, lineHeight: 1.0, letterSpacing: "-0.04em", color: "var(--ink)",
         }}>
           Good {greeting()}, {firstName}.<br />
           <span style={{ opacity: phase ? 1 : 0, transition: "opacity .5s" }}>
-            Let's finish <i style={{ color: "var(--coral)" }}>"{focusTitle}"</i>.
+            Let's finish <i style={{ color: "var(--accent)", fontStyle: "italic" }}>"{focusTitle}"</i>.
           </span>
         </h1>
 
         <div style={{
           marginTop: 28, padding: "12px 16px", borderRadius: 12,
-          background: "rgba(255,255,255,0.7)",
-          border: "1px solid rgba(20,17,15,0.06)",
+          background: "var(--bg-elev)",
+          border: "1px solid var(--line)",
           maxWidth: 640,
           display: "flex", gap: 10, alignItems: "flex-start",
           position: "relative", zIndex: 1,
@@ -235,17 +235,17 @@ function CopilotHero({ firstName, focusTitle, stepNum, onPickUp, onNewVideo }: {
         <div style={{ marginTop: 22, display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button onClick={onPickUp} style={{
             padding: "14px 22px", borderRadius: 12, border: "none",
-            background: "var(--ink)", color: "white", fontWeight: 600, fontSize: 14,
+            background: "var(--accent)", color: "#ffffff", fontWeight: 600, fontSize: 14,
             display: "inline-flex", alignItems: "center", gap: 10, cursor: "pointer",
-            boxShadow: "0 8px 22px -10px rgba(0,0,0,0.4)",
+            boxShadow: "var(--sh-cta)",
           }}>
             <Icon name="sparkles" size={16} /> Pick up where I left off
             <span style={{
-              background: "rgba(255,255,255,0.15)", padding: "2px 8px", borderRadius: 6, fontSize: 11,
+              background: "rgba(255,255,255,0.18)", padding: "2px 8px", borderRadius: 6, fontSize: 11,
             }}>~6 min · Step {stepNum}/5</span>
           </button>
           <button onClick={onNewVideo} style={{
-            padding: "14px 18px", borderRadius: 12, background: "white", color: "var(--ink)",
+            padding: "14px 18px", borderRadius: 12, background: "var(--bg-elev)", color: "var(--ink)",
             fontWeight: 600, fontSize: 14, border: "1px solid var(--line-strong)",
             display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer",
           }}>
@@ -262,7 +262,7 @@ function CopilotHero({ firstName, focusTitle, stepNum, onPickUp, onNewVideo }: {
 
         <div style={{
           marginTop: 32, display: "flex", gap: 32,
-          paddingTop: 20, borderTop: "1px solid rgba(20,17,15,0.08)",
+          paddingTop: 20, borderTop: "1px solid var(--line)",
           flexWrap: "wrap",
         }}>
           {STATS.map(s => (
@@ -288,12 +288,12 @@ function Stat({ label, value, delta, pos }: { label: string; value: string; delt
         color: "var(--ink-3)", textTransform: "uppercase",
       }}>{label}</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-        <span style={{ fontFamily: "var(--font-serif)", fontSize: 30, fontWeight: 400, color: "var(--ink)" }}>
+        <span style={{ fontFamily: "var(--font-heading)", fontSize: 30, fontWeight: 800, letterSpacing: "-0.025em", color: "var(--ink)" }}>
           {value}
         </span>
         <span style={{
           fontSize: 11, fontWeight: 600,
-          color: pos ? "var(--mint-bright)" : "var(--accent-ink)",
+          color: pos ? "var(--accent-ink)" : "var(--danger-ink)",
         }}>{delta}</span>
       </div>
     </div>
@@ -309,7 +309,7 @@ function ResumeBlock({ inFlight, onResume, onSeeAll }: {
   const total = inFlight.length;
   return (
     <div style={{
-      background: "white", borderRadius: 20, border: "1px solid var(--line)", overflow: "hidden",
+      background: "var(--bg-elev)", borderRadius: 20, border: "1px solid var(--line)", overflow: "hidden",
     }}>
       <div style={{
         padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -440,7 +440,7 @@ function ChannelStatsSnapshot({ channel, stats, onOpen }: {
     <button
       onClick={onOpen}
       style={{
-        background: "white",
+        background: "var(--bg-elev)",
         border: "1px solid var(--line)",
         borderRadius: 24,
         padding: 28,
@@ -470,7 +470,6 @@ function ChannelStatsSnapshot({ channel, stats, onOpen }: {
     >
       <div style={{
         position: "absolute", top: 0, right: 0, width: "100%", height: "100%",
-        background: "linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(245,247,255,0.8) 100%)",
         pointerEvents: "none",
       }} />
 
@@ -525,7 +524,7 @@ function ChannelStatsSnapshot({ channel, stats, onOpen }: {
       </div>
 
       <div style={{
-        background: "white", borderRadius: 16, padding: "16px 20px",
+        background: "var(--bg-elev)", borderRadius: 16, padding: "16px 20px",
         border: "1px solid var(--line)", position: "relative", zIndex: 1,
         boxShadow: "0 2px 8px rgba(0,0,0,0.02)", width: "100%", flex: 1, boxSizing: "border-box"
       }}>
@@ -697,7 +696,7 @@ function NoChannelCard({ onClick }: { onClick: () => void }) {
 function ChannelStatsSkeleton() {
   return (
     <div style={{
-      background: "white",
+      background: "var(--bg-elev)",
       border: "1px solid var(--line)",
       borderRadius: 24,
       padding: 28,
@@ -730,7 +729,7 @@ function CollapseRow({ onClick }: { onClick: (path: string) => void }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
       {COLLAPSE_ROW.map(it => (
         <button key={it.id} onClick={() => onClick(it.path)} style={{
-          padding: 18, background: "white", borderRadius: 16, border: "1px solid var(--line)",
+          padding: 18, background: "var(--bg-elev)", borderRadius: 16, border: "1px solid var(--line)",
           display: "flex", alignItems: "center", gap: 14, textAlign: "left",
           transition: "all .15s", cursor: "pointer", fontFamily: "inherit",
         }}
@@ -803,7 +802,7 @@ function FirstRun({ firstName, onSkip, onLaunchScript }: FirstRunProps) {
       }}>
         <div style={{
           position: "absolute", top: -80, right: -80, width: 360, height: 360, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(255,90,54,0.5), transparent 65%)",
+          background: "radial-gradient(circle, rgba(59,130,246,0.5), transparent 65%)",
           filter: "blur(10px)",
           pointerEvents: "none",
         }} />
@@ -841,7 +840,7 @@ function FirstRun({ firstName, onSkip, onLaunchScript }: FirstRunProps) {
 
       <div style={{
         marginTop: 24, padding: 28,
-        background: "white", borderRadius: 20, border: "1px solid var(--line)",
+        background: "var(--bg-elev)", borderRadius: 20, border: "1px solid var(--line)",
       }}>
         <OnboardStep n={1} active={step === 0} done={step > 0} title="Connect your YouTube channel" hint="Used to personalize trending ideas — read-only.">
           {step === 0 && (

@@ -16,14 +16,14 @@ const CHEVRON_DOWN = (
 );
 
 const CHANNELS = [
-  { name: "Mariah",            subs: "2.4M subs", color: "#F25C3D", letter: "M" },
-  { name: "Devon Lin",         subs: "812k",      color: "#1F3D2E", letter: "D" },
-  { name: "Yuki Cuts",         subs: "540k",      color: "#3B3631", letter: "Y" },
-  { name: "Practical Pixels",  subs: "1.1M",      color: "#F25C3D", letter: "P" },
-  { name: "Ajay Builds",       subs: "320k",      color: "#1F3D2E", letter: "A" },
-  { name: "Noor Reviews",      subs: "1.8M",      color: "#3B3631", letter: "N" },
-  { name: "Kenji's Kitchen",   subs: "680k",      color: "#F25C3D", letter: "K" },
-  { name: "Sage on Tape",      subs: "410k",      color: "#1F3D2E", letter: "S" },
+  { name: "Mariah",            subs: "2.4M subs", letter: "M" },
+  { name: "Devon Lin",         subs: "812k",      letter: "D" },
+  { name: "Yuki Cuts",         subs: "540k",      letter: "Y" },
+  { name: "Practical Pixels",  subs: "1.1M",      letter: "P" },
+  { name: "Ajay Builds",       subs: "320k",      letter: "A" },
+  { name: "Noor Reviews",      subs: "1.8M",      letter: "N" },
+  { name: "Kenji's Kitchen",   subs: "680k",      letter: "K" },
+  { name: "Sage on Tape",      subs: "410k",      letter: "S" },
 ];
 
 /* Per-tool thumbnail motifs — small SVG illustrations layered on the gradient backdrop. */
@@ -62,7 +62,7 @@ const TH_SCRIPT = (
 
 const TH_TITLE = (
   <svg {...TH_PROPS}>
-    <g fontFamily="JetBrains Mono, monospace" fontSize="9" fill="rgba(255,255,255,.85)" fontWeight="700">
+    <g fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="9" fill="rgba(255,255,255,.85)" fontWeight="700">
       <text x="30" y="22">1</text>
       <text x="30" y="46">2</text>
       <text x="30" y="70">3</text>
@@ -70,10 +70,10 @@ const TH_TITLE = (
     <rect x="42" y="14" width="106" height="10" rx="3" fill="rgba(255,255,255,.95)" />
     <rect x="42" y="38" width="86" height="10" rx="3" fill="rgba(255,255,255,.7)" />
     <rect x="42" y="62" width="64" height="10" rx="3" fill="rgba(255,255,255,.5)" />
-    <g fontFamily="JetBrains Mono, monospace" fontSize="9" fill="white" fontWeight="700">
+    <g fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="9" fill="white" fontWeight="700">
       <text x="156" y="22">9.4</text>
     </g>
-    <g fontFamily="JetBrains Mono, monospace" fontSize="8" fill="rgba(255,255,255,.7)" fontWeight="600">
+    <g fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="8" fill="rgba(255,255,255,.7)" fontWeight="600">
       <text x="138" y="46">7.1</text>
       <text x="118" y="70">6.0</text>
     </g>
@@ -85,7 +85,7 @@ const TH_DESC = (
     <rect x="30" y="12" width="124" height="6" rx="3" fill="rgba(255,255,255,.85)" />
     <rect x="30" y="24" width="142" height="6" rx="3" fill="rgba(255,255,255,.6)" />
     <rect x="30" y="36" width="100" height="6" rx="3" fill="rgba(255,255,255,.45)" />
-    <g transform="translate(30, 52)" fontFamily="JetBrains Mono, monospace" fontSize="9" fontWeight="700">
+    <g transform="translate(30, 52)" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="9" fontWeight="700">
       <rect x="0" y="0" width="42" height="16" rx="8" fill="rgba(255,255,255,.22)" />
       <text x="6" y="11" fill="white">#yt</text>
       <rect x="48" y="0" width="50" height="16" rx="8" fill="rgba(255,255,255,.22)" />
@@ -100,12 +100,12 @@ const TH_THUMBLAB = (
   <svg {...TH_PROPS}>
     <rect x="22" y="18" width="74" height="50" rx="5" fill="rgba(255,255,255,.92)" />
     <rect x="30" y="46" width="40" height="6" rx="3" fill="rgba(0,0,0,.25)" />
-    <text x="28" y="34" fontFamily="JetBrains Mono, monospace" fontSize="13" fill="#1F1815" fontWeight="700">A</text>
-    <text x="76" y="64" fontFamily="JetBrains Mono, monospace" fontSize="8" fill="rgba(0,0,0,.45)" fontWeight="700">7.8%</text>
-    <text x="98" y="48" fontFamily="JetBrains Mono, monospace" fontSize="9" fill="rgba(255,255,255,.6)" fontWeight="700">VS</text>
+    <text x="28" y="34" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="13" fill="#1F1815" fontWeight="700">A</text>
+    <text x="76" y="64" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="8" fill="rgba(0,0,0,.45)" fontWeight="700">7.8%</text>
+    <text x="98" y="48" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="9" fill="rgba(255,255,255,.6)" fontWeight="700">VS</text>
     <rect x="116" y="18" width="74" height="50" rx="5" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.85)" strokeWidth="1.2" strokeDasharray="4 3" />
-    <text x="122" y="34" fontFamily="JetBrains Mono, monospace" fontSize="13" fill="white" fontWeight="700">B</text>
-    <text x="170" y="64" fontFamily="JetBrains Mono, monospace" fontSize="8" fill="white" fontWeight="700">9.1%</text>
+    <text x="122" y="34" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="13" fill="white" fontWeight="700">B</text>
+    <text x="170" y="64" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="8" fill="white" fontWeight="700">9.1%</text>
   </svg>
 );
 
@@ -142,9 +142,9 @@ const TH_REVIEW = (
     <line x1="60" y1="34" x2="132" y2="34" stroke="white" strokeWidth="1.6" strokeLinecap="round" opacity=".55" />
     <line x1="60" y1="46" x2="110" y2="46" stroke="white" strokeWidth="1.6" strokeLinecap="round" opacity=".5" />
     <line x1="60" y1="58" x2="124" y2="58" stroke="white" strokeWidth="1.6" strokeLinecap="round" opacity=".35" />
-    <rect x="60" y="32" width="44" height="4" fill="#F25C3D" opacity=".55" />
+    <rect x="60" y="32" width="44" height="4" fill="var(--accent)" opacity=".55" />
     <g transform="translate(150, 26)">
-      <circle r="11" fill="#F25C3D" />
+      <circle r="11" fill="var(--accent)" />
       <path d="M-5 0 L-1 4 L6 -4" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
     </g>
   </svg>
@@ -156,7 +156,7 @@ const TH_TREND = (
     <path d="M20 70 L50 60 L80 50 L110 32 L150 18 L180 10" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
     <circle cx="180" cy="10" r="4" fill="white" />
     <circle cx="180" cy="10" r="8" fill="white" opacity=".25" />
-    <g fontFamily="JetBrains Mono, monospace" fontSize="10" fill="white" fontWeight="700">
+    <g fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="10" fill="white" fontWeight="700">
       <text x="146" y="32">↑24%</text>
     </g>
   </svg>
@@ -193,7 +193,7 @@ const TH_SHOP = (
     <g transform="translate(146, 34)">
       <path d="M0 0 L26 0 L36 12 L26 24 L0 24 Z" fill="white" />
       <circle cx="6.5" cy="12" r="2.6" fill="rgba(31,24,21,.9)" />
-      <text x="14" y="16" fontFamily="JetBrains Mono, monospace" fontSize="9" fontWeight="700" fill="rgba(31,24,21,.9)">$24</text>
+      <text x="14" y="16" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="9" fontWeight="700" fill="rgba(31,24,21,.9)">$24</text>
     </g>
   </svg>
 );
@@ -201,11 +201,11 @@ const TH_SHOP = (
 const TH_MCS = (
   <svg {...TH_PROPS}>
     <rect x="20" y="14" width="48" height="36" rx="4" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.55)" strokeWidth="1" />
-    <text x="26" y="32" fontFamily="JetBrains Mono, monospace" fontSize="8" fill="rgba(255,255,255,.7)" fontWeight="700">CAM 1</text>
+    <text x="26" y="32" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="8" fill="rgba(255,255,255,.7)" fontWeight="700">CAM 1</text>
     <rect x="76" y="22" width="48" height="36" rx="4" fill="rgba(255,255,255,.92)" />
-    <text x="82" y="40" fontFamily="JetBrains Mono, monospace" fontSize="8" fill="rgba(31,24,21,.9)" fontWeight="700">CAM 2</text>
+    <text x="82" y="40" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="8" fill="rgba(31,24,21,.9)" fontWeight="700">CAM 2</text>
     <rect x="132" y="14" width="48" height="36" rx="4" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.55)" strokeWidth="1" />
-    <text x="138" y="32" fontFamily="JetBrains Mono, monospace" fontSize="8" fill="rgba(255,255,255,.7)" fontWeight="700">CAM 3</text>
+    <text x="138" y="32" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="8" fill="rgba(255,255,255,.7)" fontWeight="700">CAM 3</text>
     <g transform="translate(78, 64)">
       {[3, 6, 9, 5, 8, 4, 7, 5, 6].map((h, i) => (
         <rect key={i} x={i * 5} y={-h / 2} width="2.5" height={h} rx="1" fill="white" opacity=".75" />
@@ -297,8 +297,8 @@ export default function HomePage() {
                 </div>
                 <div className="pipe-row">
                   <div className="pipe-col"><div className="pipe-card"><div className="stripe" /><span>Tier list · keyboards</span></div></div>
-                  <div className="pipe-col"><div className="pipe-card"><div className="stripe" style={{ background: "repeating-linear-gradient(135deg,#F25C3D 0 4px,#D44E32 4px 8px)" }} /><span>Shorts · 3 hacks</span></div></div>
-                  <div className="pipe-col"><div className="pipe-card"><div className="stripe" style={{ background: "repeating-linear-gradient(135deg,#1F3D2E 0 4px,#264735 4px 8px)" }} /><span>9-to-5 vlog</span></div></div>
+                  <div className="pipe-col"><div className="pipe-card"><div className="stripe" style={{ background: "repeating-linear-gradient(135deg,var(--accent) 0 4px,var(--accent-strong) 4px 8px)" }} /><span>Shorts · 3 hacks</span></div></div>
+                  <div className="pipe-col"><div className="pipe-card"><div className="stripe" style={{ background: "repeating-linear-gradient(135deg,var(--ink) 0 4px,var(--ink-2) 4px 8px)" }} /><span>9-to-5 vlog</span></div></div>
                   <div className="pipe-col"><div className="pipe-card cur"><div className="stripe" /><span>AI tools that replaced…</span></div></div>
                   <div className="pipe-col" />
                   <div className="pipe-col" />
@@ -341,7 +341,7 @@ export default function HomePage() {
         <div className="marquee-inner">
           {[...CHANNELS, ...CHANNELS].map((c, i) => (
             <span className="ch" key={i}>
-              <span className="ch-mark" style={{ background: c.color }}>{c.letter}</span>
+              <span className="ch-mark">{c.letter}</span>
               {c.name} · <span className="mono">{c.subs}</span>
             </span>
           ))}
@@ -386,7 +386,7 @@ export default function HomePage() {
               <Link to="/signup" className="btn btn-primary btn-lg">
                 Start free — connect YouTube {ARROW}
               </Link>
-              <span style={{ fontSize: 12, color: "rgba(255,241,232,.5)" }}>14-day trial · no credit card</span>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>14-day trial · no credit card</span>
             </div>
           </div>
         </div>
