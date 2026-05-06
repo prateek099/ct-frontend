@@ -1,5 +1,3 @@
-// Saved Projects panel — slide-in from the right.
-// Reads real projects from useProjects, derives pipeline progress, and resumes via WorkflowContext.
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -130,7 +128,7 @@ export default function SavedProjectsPanel({ open, onClose, focusedProjectId }: 
       <aside style={{
         position: "fixed", top: 0, right: 0, bottom: 0,
         width: 460, maxWidth: "92vw",
-        background: "white",
+        background: "var(--bg-elev)",
         borderLeft: "1px solid var(--line)",
         zIndex: 40,
         display: "flex", flexDirection: "column",
@@ -206,7 +204,7 @@ export default function SavedProjectsPanel({ open, onClose, focusedProjectId }: 
             onClick={() => { onClose(); navigate("/idea"); }}
             style={{
               width: "100%", padding: "12px 16px", borderRadius: "var(--r-md)", border: "none",
-              background: "var(--ink)", color: "white",
+              background: "var(--ink)", color: "var(--bg)",
               fontWeight: 600, fontSize: 14,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               cursor: "pointer", fontFamily: "inherit",
@@ -229,7 +227,7 @@ function FilterChip({ active, label, count, dot, onClick }: {
       style={{
         padding: "6px 12px", borderRadius: 99, border: "none",
         background: active ? "var(--ink)" : "var(--bg-soft)",
-        color: active ? "white" : "var(--ink-2)",
+        color: active ? "var(--bg)" : "var(--ink-2)",
         fontSize: 12, fontWeight: 600,
         display: "inline-flex", alignItems: "center", gap: 6,
         cursor: "pointer", fontFamily: "inherit",
@@ -257,7 +255,7 @@ function ProjectCard({ project, ready, palette, focused, onOpen }: {
       onClick={onOpen}
       style={{
         padding: 14, borderRadius: "var(--r-lg)",
-        background: focused ? c.soft : "white",
+        background: focused ? c.soft : "var(--bg-elev)",
         border: focused ? `1.5px solid ${c.bg}` : "1px solid var(--line)",
         cursor: "pointer", transition: "all .15s",
       }}

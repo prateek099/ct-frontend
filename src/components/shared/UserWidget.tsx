@@ -29,7 +29,7 @@ export default function UserWidget() {
         borderRadius: "2rem",
         padding: "0.35rem 0.5rem 0.35rem 1rem",
         boxShadow: "0 4px 20px rgba(0, 0, 0, 0.35)",
-        fontFamily: "sans-serif",
+        fontFamily: "var(--font-sans)",
       }}
     >
       {displayName && (

@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
-export type Theme = "default" | "girly" | "dark";
+export type Theme = "default" | "dark";
 
 export interface ThemeMeta {
   id: Theme;
@@ -16,8 +16,7 @@ export interface ThemeMeta {
 }
 
 export const THEMES: ThemeMeta[] = [
-  { id: "default", label: "Default", icon: "sparkle" },
-  { id: "girly", label: "Girly", icon: "heart" },
+  { id: "default", label: "Light", icon: "sun" },
   { id: "dark", label: "Dark", icon: "moon" },
 ];
 

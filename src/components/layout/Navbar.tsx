@@ -12,7 +12,7 @@ export default function Navbar() {
         padding: "0.75rem 2rem",
         background: "#2d3748",
         color: "#fff",
-        fontFamily: "sans-serif",
+        fontFamily: "var(--font-sans)",
       }}
     >
       <span style={{ fontWeight: 700, fontSize: "1.1rem" }}>Creator Tools</span>
