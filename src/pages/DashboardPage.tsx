@@ -206,8 +206,8 @@ function CopilotHero({ firstName, focusTitle, stepNum, onPickUp, onNewVideo }: {
         </div>
 
         <h1 style={{
-          margin: 0, fontFamily: "var(--font-heading)", fontWeight: 800,
-          fontSize: 60, lineHeight: 1.0, letterSpacing: "-0.04em", color: "var(--ink)",
+          margin: 0, fontFamily: "var(--font-heading)", fontWeight: 400,
+          fontSize: 60, lineHeight: 1.08, letterSpacing: "0.01em", color: "var(--ink)",
         }}>
           Good {greeting()}, {firstName}.<br />
           <span style={{ opacity: phase ? 1 : 0, transition: "opacity .5s" }}>
@@ -288,7 +288,7 @@ function Stat({ label, value, delta, pos }: { label: string; value: string; delt
         color: "var(--ink-3)", textTransform: "uppercase",
       }}>{label}</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-        <span style={{ fontFamily: "var(--font-heading)", fontSize: 30, fontWeight: 800, letterSpacing: "-0.025em", color: "var(--ink)" }}>
+        <span style={{ fontFamily: "var(--font-sans)", fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--ink)" }}>
           {value}
         </span>
         <span style={{
