@@ -1,8 +1,8 @@
-// DashboardPage — Focal variant with optional first-run onboarding.
-// First-run is detected via localStorage flag; user can skip or complete to proceed to focal view.
+// DashboardPage — clean focal layout: Continue on Video, Channel Analytics, Streak.
+// First-run onboarding is preserved on first visit.
 
-import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import { useMemo, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../components/shared/Icon";
 import { useAuth } from "../context/AuthContext";
@@ -15,42 +15,12 @@ import type { ChannelStats, SavedChannel } from "../types/channel";
 const FIRST_RUN_KEY = "ct_first_run_seen";
 
 const PIPELINE_STEPS = [
-  { id: "idea",   name: "Idea" },
-  { id: "script", name: "Script" },
-  { id: "title",  name: "Title" },
-  { id: "seo",    name: "SEO" },
-  { id: "thumb",  name: "Thumbnail" },
+  { id: "idea",   name: "Idea",      icon: "lightbulb" },
+  { id: "script", name: "Script",    icon: "pencil" },
+  { id: "title",  name: "Title",     icon: "tag" },
+  { id: "seo",    name: "SEO",       icon: "hash" },
+  { id: "thumb",  name: "Thumbnail", icon: "image" },
 ] as const;
-
-const PALETTE = ["coral", "violet", "mint", "amber", "rose"] as const;
-const COLOR_MAP: Record<typeof PALETTE[number], { bg: string; ink: string }> = {
-  coral:  { bg: "var(--coral)",  ink: "var(--ink-on-night)" },
-  violet: { bg: "var(--violet)", ink: "var(--ink-on-night)" },
-  mint:   { bg: "var(--mint)",   ink: "var(--ink-on-night)" },
-  amber:  { bg: "var(--amber)",  ink: "var(--ink)" },
-  rose:   { bg: "#FF477E",       ink: "var(--ink-on-night)" },
-};
-
-const STATS = [
-  { label: "7-day views", value: "184.2k", delta: "+12.4%", pos: true },
-  { label: "Avg watch",   value: "4:12",   delta: "+0:18",  pos: true },
-  { label: "CTR",         value: "6.4%",   delta: "−0.3%",  pos: false },
-  { label: "Subs gained", value: "1,284",  delta: "+8.1%",  pos: true },
-];
-
-
-
-const COLLAPSE_ROW = [
-  { id: "calendar", title: "This week",       subtitle: "Tue · publish AI tools · Thu · record 9-5", icon: "calendar", color: "var(--violet)", path: "/calendar" },
-  { id: "review",   title: "Recent activity", subtitle: "Script v2 reviewed · 78 / 100",             icon: "check",    color: "var(--mint)",   path: "/review"   },
-  { id: "tools",    title: "Quick tools",     subtitle: "18 tools, one ⌘K away",                     icon: "sparkles", color: "var(--coral)", path: "/idea" },
-];
-
-const COPILOT_THOUGHTS = [
-  'I\'d finish "10 Secrets to Viral" first — it\'s 80% done and ready to publish today.',
-  'Your Tuesday slot is empty. "AI tools for creators" is up +340% — perfect fit for your niche.',
-  'Your Avg watch is up +0:18 this week. Your audience is locking in — let\'s ride the momentum.',
-];
 
 function projectProgress(p: Project): number {
   let done = 0;
@@ -97,319 +67,399 @@ export default function DashboardPage() {
   if (firstRun) {
     return <FirstRun firstName={firstName} onSkip={completeFirstRun} onLaunchScript={() => { completeFirstRun(); navigate("/script"); }} />;
   }
+
   return (
     <DashboardFocal
       firstName={firstName}
       inFlight={inFlight}
       onResume={handleResume}
-      onCollapseClick={(path) => navigate(path)}
-      onPickUp={() => {
-        if (inFlight[0]) handleResume(inFlight[0]);
-        else navigate("/idea");
-      }}
       onNewVideo={() => navigate("/idea")}
       onOpenStats={() => navigate("/stats")}
     />
   );
 }
 
-/* ====== Focal ====== */
+/* ====== Focal layout ====== */
 
 interface FocalProps {
   firstName: string;
   inFlight: Project[];
   onResume: (p: Project) => void;
-  onCollapseClick: (path: string) => void;
-  onPickUp: () => void;
   onNewVideo: () => void;
   onOpenStats: () => void;
 }
 
-function DashboardFocal({ firstName, inFlight, onResume, onCollapseClick, onPickUp, onNewVideo, onOpenStats }: FocalProps) {
-  const focusTitle = inFlight[0] ? projectTitle(inFlight[0]) : "your next video";
-  const stepNum = inFlight[0] ? projectProgress(inFlight[0]) : 0;
+function DashboardFocal({ firstName, inFlight, onResume, onNewVideo, onOpenStats }: FocalProps) {
+  const focusProject = inFlight[0] ?? null;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32, maxWidth: 1100, margin: "0 auto" }}>
-      <CopilotHero
+    <div style={{ display: "flex", flexDirection: "column", gap: 22, maxWidth: 1280, margin: "0 auto", width: "100%" }}>
+      <DashboardHero
         firstName={firstName}
-        focusTitle={focusTitle}
-        stepNum={stepNum}
-        onPickUp={onPickUp}
+        hasInFlight={!!focusProject}
+        onResume={() => focusProject && onResume(focusProject)}
         onNewVideo={onNewVideo}
       />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "stretch" }}>
-        <ResumeBlock inFlight={inFlight} onResume={onResume} onSeeAll={() => onCollapseClick("/calendar")} />
-        <ChannelAnalyticsSection onOpen={onOpenStats} />
+
+      <div className="dash-row-2">
+        <ContinueVideoCard project={focusProject} onResume={onResume} onNewVideo={onNewVideo} />
+        <StreakSection />
       </div>
-      <CollapseRow onClick={onCollapseClick} />
+
+      <ChannelAnalyticsSection onOpen={onOpenStats} />
     </div>
   );
 }
 
-function CopilotHero({ firstName, focusTitle, stepNum, onPickUp, onNewVideo }: {
-  firstName: string; focusTitle: string; stepNum: number; onPickUp: () => void; onNewVideo: () => void;
+/* ====== Hero ====== */
+
+function DashboardHero({ firstName, hasInFlight, onResume, onNewVideo }: {
+  firstName: string; hasInFlight: boolean; onResume: () => void; onNewVideo: () => void;
 }) {
-  const [phase, setPhase] = useState(0);
-  const [thought, setThought] = useState(0);
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 350);
-    const t2 = setInterval(() => setThought(i => (i + 1) % COPILOT_THOUGHTS.length), 4000);
-    return () => { clearTimeout(t1); clearInterval(t2); };
-  }, []);
-  const stepLeft = Math.max(1, 5 - stepNum);
   return (
-    <div style={{
-      position: "relative",
-      padding: "44px 48px",
-      background: "linear-gradient(135deg, var(--accent-tint) 0%, var(--accent-soft) 60%, var(--bg-soft) 100%)",
-      borderRadius: 28,
-      overflow: "hidden",
-      border: "1px solid var(--line)",
-    }}>
-      <svg style={{ position: "absolute", bottom: 28, right: 36, opacity: 0.55, pointerEvents: "none" }}
-        width="180" height="48" viewBox="0 0 220 60" fill="none" aria-hidden>
-        <path d="M2 30 Q 22 5, 42 30 T 82 30 T 122 30 T 162 30 T 218 30" stroke="var(--coral)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-      </svg>
-      <div style={{
-        position: "absolute", bottom: -60, right: -60, width: 240, height: 240, borderRadius: "50%",
-        background: "radial-gradient(circle, var(--accent-soft), transparent 70%)",
-        pointerEvents: "none",
-      }} />
+    <div className="dash-hero">
+      {/* Layered backgrounds */}
+      <div className="dash-hero-dots" aria-hidden />
+      <div className="dash-hero-orb dash-hero-orb-1" aria-hidden />
+      <div className="dash-hero-orb dash-hero-orb-2" aria-hidden />
 
-      <div style={{ position: "relative" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 10, background: "var(--night)", color: "var(--ink-on-night)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Icon name="sparkles" size={16} />
+      <div className="dash-hero-body">
+        <div className="dash-hero-text">
+          <div className="dash-hero-pill">
+            <span className="dash-hero-pulse" />
+            Dashboard · Live
           </div>
-          <div style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
-            color: "var(--ink-2)", textTransform: "uppercase",
-          }}>AI Copilot</div>
-          <span style={{
-            display: "inline-flex", alignItems: "center", gap: 4,
-            padding: "3px 8px", borderRadius: 99,
-            background: "var(--mint-soft)", color: "var(--mint)",
-            fontSize: 11, fontWeight: 600,
-          }}>
-            <span style={{ width: 5, height: 5, borderRadius: 99, background: "var(--mint-bright)", animation: "pulse-dot 1.6s infinite" }} />
-            Online
-          </span>
-          <span style={{
-            marginLeft: "auto", fontSize: 11, color: "var(--ink-3)",
-            display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
-          }}>
-            <span aria-hidden>🔥</span> <b style={{ color: "var(--ink)" }}>3-week streak</b>
-          </span>
-        </div>
-
-        <h1 style={{
-          margin: 0, fontFamily: "var(--font-heading)", fontWeight: 400,
-          fontSize: 60, lineHeight: 1.08, letterSpacing: "0.01em", color: "var(--ink)",
-        }}>
-          Good {greeting()}, {firstName}.<br />
-          <span style={{ opacity: phase ? 1 : 0, transition: "opacity .5s" }}>
-            Let's finish <i style={{ color: "var(--accent)", fontStyle: "italic" }}>"{focusTitle}"</i>.
-          </span>
-        </h1>
-
-        <div style={{
-          marginTop: 28, padding: "12px 16px", borderRadius: 12,
-          background: "var(--bg-elev)",
-          border: "1px solid var(--line)",
-          maxWidth: 640,
-          display: "flex", gap: 10, alignItems: "flex-start",
-          position: "relative", zIndex: 1,
-        }}>
-          <span style={{ fontSize: 14, marginTop: 1 }} aria-hidden>💭</span>
-          <div key={thought} style={{
-            fontSize: 14, color: "var(--ink-2)", lineHeight: 1.5,
-            animation: "fadeUp .45s ease",
-          }}>
-            {COPILOT_THOUGHTS[thought]}
-          </div>
-        </div>
-
-        <div style={{ marginTop: 22, display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button onClick={onPickUp} style={{
-            padding: "14px 22px", borderRadius: 12, border: "none",
-            background: "var(--accent)", color: "#ffffff", fontWeight: 600, fontSize: 14,
-            display: "inline-flex", alignItems: "center", gap: 10, cursor: "pointer",
-            boxShadow: "var(--sh-cta)",
-          }}>
-            <Icon name="sparkles" size={16} /> Pick up where I left off
-            <span style={{
-              background: "rgba(255,255,255,0.18)", padding: "2px 8px", borderRadius: 6, fontSize: 11,
-            }}>~6 min · Step {stepNum}/5</span>
-          </button>
-          <button onClick={onNewVideo} style={{
-            padding: "14px 18px", borderRadius: 12, background: "var(--bg-elev)", color: "var(--ink)",
-            fontWeight: 600, fontSize: 14, border: "1px solid var(--line-strong)",
-            display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer",
-          }}>
-            <Icon name="plus" size={16} /> Start a new video
-          </button>
-          <button style={{
-            padding: "14px 18px", borderRadius: 12, background: "transparent",
-            color: "var(--ink-2)", fontWeight: 500, fontSize: 14, border: "none",
-            display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer",
-          }}>
-            <Icon name="search" size={14} /> Ask copilot anything
-          </button>
-        </div>
-
-        <div style={{
-          marginTop: 32, display: "flex", gap: 32,
-          paddingTop: 20, borderTop: "1px solid var(--line)",
-          flexWrap: "wrap",
-        }}>
-          {STATS.map(s => (
-            <Stat key={s.label} {...s} />
-          ))}
-          <span style={{ flex: 1, minWidth: 80 }} />
-          {stepLeft > 0 && stepNum > 0 && (
-            <span style={{ fontSize: 11, color: "var(--ink-3)", alignSelf: "flex-end" }}>
-              {stepLeft} step{stepLeft === 1 ? "" : "s"} until publish
+          <h1 className="dash-hero-title">
+            Good {greeting()},{" "}
+            <em>{firstName}</em>
+            <span className="dash-hero-wave" aria-hidden>
+              <svg width="120" height="14" viewBox="0 0 120 14" fill="none">
+                <path d="M2 8 Q 12 1, 22 8 T 42 8 T 62 8 T 82 8 T 118 8" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+              </svg>
             </span>
-          )}
+          </h1>
+          <p className="dash-hero-sub">
+            {hasInFlight
+              ? "Pick up where you left off — or peek at your channel's momentum."
+              : "Start your next video, or check on your channel's momentum below."}
+          </p>
+
+          <div className="dash-hero-cta">
+            {hasInFlight && (
+              <button onClick={onResume} className="btn accent lg" style={{ borderRadius: 12 }}>
+                <Icon name="play" size={14} /> Continue editing
+              </button>
+            )}
+            <button onClick={onNewVideo} className="btn lg" style={{ borderRadius: 12 }}>
+              <Icon name="plus" size={14} /> New video
+            </button>
+          </div>
+        </div>
+
+        <div className="dash-hero-art" aria-hidden>
+          <HeroArtwork />
         </div>
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, delta, pos }: { label: string; value: string; delta: string; pos: boolean }) {
+function HeroArtwork() {
   return (
-    <div>
-      <div style={{
-        fontSize: 10, fontWeight: 600, letterSpacing: "0.14em",
-        color: "var(--ink-3)", textTransform: "uppercase",
-      }}>{label}</div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-        <span style={{ fontFamily: "var(--font-sans)", fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--ink)" }}>
-          {value}
-        </span>
-        <span style={{
-          fontSize: 11, fontWeight: 600,
-          color: pos ? "var(--accent-ink)" : "var(--danger-ink)",
-        }}>{delta}</span>
-      </div>
-    </div>
+    <svg width="100%" height="100%" viewBox="0 0 320 220" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="hero-bar" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="var(--accent)" stopOpacity="0.25" />
+          <stop offset="1" stopColor="var(--accent)" stopOpacity="0.95" />
+        </linearGradient>
+        <linearGradient id="hero-trend" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="var(--accent)" stopOpacity="0.4" />
+          <stop offset="1" stopColor="var(--accent)" stopOpacity="1" />
+        </linearGradient>
+      </defs>
+
+      {/* Concentric rings */}
+      <circle cx="170" cy="110" r="92" fill="none" stroke="var(--accent)" strokeOpacity="0.10" strokeWidth="1.5" />
+      <circle cx="170" cy="110" r="68" fill="none" stroke="var(--accent)" strokeOpacity="0.18" strokeWidth="1.5" strokeDasharray="3 5" />
+
+      {/* Bar chart */}
+      <g className="hero-bars">
+        <rect x="100" y="138" width="16" height="40" rx="5" fill="url(#hero-bar)" />
+        <rect x="122" y="118" width="16" height="60" rx="5" fill="url(#hero-bar)" />
+        <rect x="144" y="96"  width="16" height="82" rx="5" fill="url(#hero-bar)" />
+        <rect x="166" y="78"  width="16" height="100" rx="5" fill="url(#hero-bar)" />
+        <rect x="188" y="62"  width="16" height="116" rx="5" fill="url(#hero-bar)" />
+        <rect x="210" y="48"  width="16" height="130" rx="5" fill="url(#hero-bar)" />
+      </g>
+
+      {/* Trend arrow */}
+      <path d="M 88 130 Q 130 80, 200 50 T 240 30" stroke="url(#hero-trend)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <circle cx="240" cy="30" r="6" fill="var(--accent)" stroke="#fff" strokeWidth="2.5" />
+
+      {/* Sparkle icons */}
+      <g className="hero-spark hero-spark-1">
+        <path d="M 50 56 L 50 68 M 44 62 L 56 62" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" />
+      </g>
+      <g className="hero-spark hero-spark-2">
+        <path d="M 270 150 L 270 162 M 264 156 L 276 156" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" />
+      </g>
+      <circle cx="40" cy="148" r="3.5" fill="var(--accent)" opacity="0.65" className="hero-dot hero-dot-1" />
+      <circle cx="290" cy="80" r="4.5" fill="var(--accent)" opacity="0.5" className="hero-dot hero-dot-2" />
+      <circle cx="68" cy="190" r="2.5" fill="var(--accent)" opacity="0.7" className="hero-dot hero-dot-3" />
+      <circle cx="298" cy="180" r="3" fill="var(--accent)" opacity="0.55" className="hero-dot hero-dot-1" />
+
+      {/* Play button accent */}
+      <g transform="translate(20, 28)">
+        <circle cx="0" cy="0" r="20" fill="var(--accent)" />
+        <path d="M -6 -8 L -6 8 L 9 0 Z" fill="#fff" />
+      </g>
+    </svg>
   );
 }
 
-/* ====== Resume rail ====== */
+/* ====== Continue on Video ====== */
 
-function ResumeBlock({ inFlight, onResume, onSeeAll }: {
-  inFlight: Project[]; onResume: (p: Project) => void; onSeeAll: () => void;
+function ContinueVideoCard({ project, onResume, onNewVideo }: {
+  project: Project | null;
+  onResume: (p: Project) => void;
+  onNewVideo: () => void;
 }) {
-  const top = inFlight.slice(0, 2);
-  const total = inFlight.length;
-  return (
-    <div style={{
-      background: "var(--bg-elev)", borderRadius: 20, border: "1px solid var(--line)", overflow: "hidden",
-    }}>
-      <div style={{
-        padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
-        borderBottom: "1px solid var(--line)",
-      }}>
+  if (!project) {
+    return (
+      <div className="continue-card continue-empty">
+        <div className="continue-empty-art" aria-hidden>
+          <span className="continue-empty-glyph">
+            <Icon name="film" size={28} />
+          </span>
+          <span className="continue-empty-spark continue-empty-spark-1" />
+          <span className="continue-empty-spark continue-empty-spark-2" />
+          <span className="continue-empty-spark continue-empty-spark-3" />
+        </div>
         <div>
-          <div style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
-            color: "var(--ink-3)", textTransform: "uppercase",
-          }}>In flight · {total} active</div>
-          <div style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontStyle: "italic", marginTop: 2 }}>
-            Resume a project
-          </div>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>Continue on video</div>
+          <div className="continue-empty-title">No drafts in flight yet</div>
+          <p className="continue-empty-sub">
+            Start your next video — go from idea to thumbnail in a single pipeline.
+          </p>
         </div>
-        {total > 2 && (
-          <button onClick={onSeeAll} style={{
-            fontSize: 12, fontWeight: 600, color: "var(--coral)", background: "none", border: "none",
-            display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer",
-          }}>
-            See all {total} <Icon name="arrowRight" size={14} />
-          </button>
-        )}
+        <button onClick={onNewVideo} className="btn primary" style={{ borderRadius: 10 }}>
+          <Icon name="plus" size={14} /> Start a new video
+        </button>
       </div>
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        {top.length === 0 && (
-          <div style={{ padding: 20, color: "var(--ink-3)", fontSize: 13 }}>
-            No drafts yet. Hit “Start a new video” to begin.
-          </div>
-        )}
-        {top.map((p, i) => (
-          <MiniProjectRow key={p.id} project={p} palette={PALETTE[i % PALETTE.length]} onClick={() => onResume(p)} />
-        ))}
-      </div>
-    </div>
-  );
-}
+    );
+  }
 
-function MiniProjectRow({ project, palette, onClick }: {
-  project: Project; palette: typeof PALETTE[number]; onClick: () => void;
-}) {
-  const c = COLOR_MAP[palette];
-  const title = projectTitle(project);
   const step = projectProgress(project);
   const ready = step >= 5;
-  const glyph = title.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase().slice(0, 2) || "··";
+  const title = projectTitle(project);
+  const pct = Math.min(100, Math.round((step / 5) * 100));
+  const updated = new Date(project.updated_at);
+  const updatedAgo = timeAgo(updated);
+  const glyph = (title.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("") || "··")
+    .toUpperCase().slice(0, 2);
+  const minsLeft = Math.max(1, Math.round((1 - pct / 100) * 14));
+
   return (
-    <button onClick={onClick} style={{
-      padding: "14px 20px", display: "flex", alignItems: "center", gap: 14,
-      borderTop: "1px solid var(--line)", textAlign: "left",
-      background: "transparent", border: "none", cursor: "pointer",
-      transition: "background .12s",
-      fontFamily: "inherit",
-    }}
-      onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-soft)")}
-      onMouseLeave={e => (e.currentTarget.style.background = "")}
-    >
-      <div style={{
-        width: 40, height: 52, flex: "0 0 40px", borderRadius: 8,
-        background: c.bg, color: c.ink,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: "var(--font-serif)", fontSize: 16, fontStyle: "italic",
-      }}>{glyph}</div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: 14, fontWeight: 600, color: "var(--ink)",
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-        }}>{title}</div>
-        <div style={{ display: "flex", gap: 4, marginTop: 6, alignItems: "center" }}>
+    <button onClick={() => onResume(project)} className="continue-card">
+      {/* Decorative thumbnail panel */}
+      <div className="continue-thumb" aria-hidden>
+        <div className="continue-thumb-grid" />
+        <div className="continue-thumb-orb" />
+        <span className="continue-thumb-glyph">{glyph}</span>
+
+        {/* Animated play button */}
+        <span className="continue-play">
+          <span className="continue-play-ring" />
+          <span className="continue-play-ring" />
+          <Icon name="play" size={20} />
+        </span>
+
+        {/* Top-left status pill */}
+        <span className={`continue-thumb-pill ${ready ? "ready" : ""}`}>
+          <span className="continue-thumb-pulse" />
+          {ready ? "Ready" : `Step ${step}/5`}
+        </span>
+
+        {/* Bottom-right runtime */}
+        <span className="continue-thumb-time">~{minsLeft} min</span>
+      </div>
+
+      {/* Info panel */}
+      <div className="continue-info">
+        <div className="continue-eyebrow">
+          <Icon name="film" size={11} /> Continue on video
+        </div>
+        <div className="continue-title">{title}</div>
+        <div className="continue-meta">
+          <Icon name="clock" size={12} /> Edited {updatedAgo}
+        </div>
+
+        {/* Pipeline rail */}
+        <div className="continue-pipeline">
           {PIPELINE_STEPS.map((s, i) => {
             const done = i < step;
             const cur = i === step && !ready;
+            const stateClass = done ? "done" : cur ? "cur" : "future";
             return (
-              <div key={s.id} style={{
-                width: 24, height: 3, borderRadius: 2,
-                background: done ? c.bg : "var(--line)",
-                opacity: cur ? 0.5 : 1,
-                animation: cur ? "pulse-dot 1.4s infinite" : "none",
-              }} />
+              <div key={s.id} className={`continue-node ${stateClass}`}>
+                <div className="continue-node-circle">
+                  {done ? <Icon name="check" size={11} /> : <Icon name={s.icon} size={11} />}
+                </div>
+                <span className="continue-node-label">{s.name}</span>
+                {i < PIPELINE_STEPS.length - 1 && (
+                  <span className={`continue-link ${i < step - 1 || (i < step) ? "done" : ""}`} />
+                )}
+              </div>
             );
           })}
-          <span style={{ fontSize: 11, color: "var(--ink-3)", marginLeft: 8 }}>
-            {ready ? "Ready · publish" : `Step ${step}/5`}
+        </div>
+
+        {/* Bottom row: progress + CTA */}
+        <div className="continue-bottom">
+          <div className="continue-progress">
+            <div className="continue-progress-track">
+              <span className="continue-progress-fill" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="continue-progress-pct">{pct}%</span>
+          </div>
+          <span className="continue-cta">
+            {ready ? "Publish" : "Resume"} <Icon name="arrowRight" size={13} />
           </span>
         </div>
       </div>
-      <span style={{
-        color: c.bg, fontWeight: 600, fontSize: 13,
-        display: "inline-flex", alignItems: "center", gap: 4,
-      }}>
-        {ready ? "Publish" : "Resume"} <Icon name="arrowRight" size={14} />
-      </span>
     </button>
   );
 }
 
-/* ====== Trending spotlight ====== */
+/* ====== Streak (compact, secondary) ====== */
 
+const DOW = ["M", "T", "W", "T", "F", "S", "S"] as const;
 
+function StreakSection() {
+  const last7 = useMemo(() => buildStreakDays(7), []);
+  const currentStreak = useMemo(() => computeCurrentStreak(buildStreakDays(28)), []);
+  const activeThisWeek = last7.filter(Boolean).length;
 
-/* ====== Channel analytics snapshot ====== */
+  // Ring progress: streak / 30-day goal
+  const RING_GOAL = 30;
+  const ringPct = Math.min(1, currentStreak / RING_GOAL);
+  const RING_R = 26;
+  const RING_C = 2 * Math.PI * RING_R;
+  const ringDash = `${(ringPct * RING_C).toFixed(1)} ${RING_C.toFixed(1)}`;
+  const toMilestone = Math.max(0, RING_GOAL - currentStreak);
+
+  return (
+    <div className="streak-card">
+      <div className="streak-deco" aria-hidden />
+      <div className="streak-glow" aria-hidden />
+
+      <div className="streak-head">
+        <div className="streak-head-text">
+          <div className="eyebrow" style={{ marginBottom: 6 }}>
+            <span className="streak-live-dot" /> Streak
+          </div>
+          <div className="streak-count">
+            <span className="streak-num">{currentStreak}</span>
+            <span className="streak-suffix">{currentStreak === 1 ? "day" : "days"}</span>
+          </div>
+          <div className="streak-this-week">
+            <span className="streak-this-week-num">{activeThisWeek}</span>
+            <span className="streak-this-week-total">/7 this week</span>
+          </div>
+        </div>
+
+        {/* Animated ring around flame */}
+        <div className="streak-ring-wrap" aria-hidden>
+          <svg className="streak-ring" viewBox="0 0 64 64">
+            <defs>
+              <linearGradient id="streak-grad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#ffb37a" />
+                <stop offset="1" stopColor="#f7651e" />
+              </linearGradient>
+            </defs>
+            <circle cx="32" cy="32" r={RING_R} fill="none" stroke="var(--bg-soft)" strokeWidth="5" />
+            <circle
+              cx="32" cy="32" r={RING_R}
+              fill="none"
+              stroke="url(#streak-grad)"
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeDasharray={ringDash}
+              transform="rotate(-90 32 32)"
+              className="streak-ring-progress"
+            />
+          </svg>
+          <span className="streak-flame">
+            <Icon name="flame" size={18} />
+          </span>
+        </div>
+      </div>
+
+      {/* Mini 7-day timeline */}
+      <div className="streak-row">
+        {last7.map((on, i) => (
+          <div key={i} className="streak-day" title={dayLabel(i, last7.length)}>
+            <div className={`streak-dot ${on ? "on" : ""}`}>
+              {on && <Icon name="check" size={10} />}
+            </div>
+            <span className="streak-dow">{DOW[i]}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="streak-foot">
+        <span className="streak-milestone">
+          <Icon name="star" size={11} />
+          {toMilestone === 0 ? "Goal hit!" : `${toMilestone} ${toMilestone === 1 ? "day" : "days"} to ${RING_GOAL}-day badge`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function buildStreakDays(n: number): boolean[] {
+  // Mock: deterministic-but-varied pattern with current streak ending today.
+  const out: boolean[] = [];
+  for (let i = 0; i < n; i++) {
+    const dayFromEnd = n - 1 - i;
+    if (dayFromEnd < 12) out.push(true);             // current 12-day streak
+    else if (dayFromEnd < 14) out.push(false);       // 2-day gap
+    else if (dayFromEnd < 22) out.push(true);        // prior streak
+    else out.push(i % 3 !== 0);                       // earlier mixed activity
+  }
+  return out;
+}
+
+function computeCurrentStreak(days: boolean[]): number {
+  let count = 0;
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (days[i]) count++;
+    else break;
+  }
+  return count;
+}
+
+function dayLabel(i: number, total: number): string {
+  const daysAgo = total - 1 - i;
+  if (daysAgo === 0) return "Today";
+  if (daysAgo === 1) return "Yesterday";
+  return `${daysAgo} days ago`;
+}
+
+function timeAgo(date: Date): string {
+  const diffMs = Date.now() - date.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1)  return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7)  return `${days}d ago`;
+  const wks = Math.floor(days / 7);
+  return `${wks}w ago`;
+}
+
+/* ====== Channel analytics (with graph) ====== */
 
 function ChannelAnalyticsSection({ onOpen }: { onOpen: () => void }) {
   const { data: channels = [], isLoading: channelsLoading } = useChannels();
@@ -423,182 +473,322 @@ function ChannelAnalyticsSection({ onOpen }: { onOpen: () => void }) {
   return <ChannelStatsSnapshot channel={firstChannel} stats={stats} onOpen={onOpen} />;
 }
 
+type MetricId = "views" | "subs" | "engagement";
+
+const METRICS: { id: MetricId; label: string; icon: string }[] = [
+  { id: "views",       label: "Views",       icon: "eye" },
+  { id: "subs",        label: "Subscribers", icon: "users" },
+  { id: "engagement",  label: "Engagement",  icon: "heart" },
+];
+
+const RANGES: { id: "7D" | "28D" | "90D"; points: number; label: string }[] = [
+  { id: "7D",  points: 14, label: "7D" },
+  { id: "28D", points: 28, label: "28D" },
+  { id: "90D", points: 60, label: "90D" },
+];
+
 function ChannelStatsSnapshot({ channel, stats, onOpen }: {
   channel: SavedChannel; stats: ChannelStats; onOpen: () => void;
 }) {
   const initial = (stats.channel_name || "?").charAt(0).toUpperCase();
-  const sparkPoints = 14;
-  const sparkData = useMemo(
-    () => generateSparkline(stats.recent_views_sum || stats.total_views || 0, sparkPoints, channel.id),
-    [stats.recent_views_sum, stats.total_views, channel.id],
+  const [metric, setMetric] = useState<MetricId>("views");
+  const [rangeId, setRangeId] = useState<"7D" | "28D" | "90D">("28D");
+  const range = RANGES.find(r => r.id === rangeId)!;
+
+  const metricInfo = useMemo<{ title: string; value: number; delta: string; seed: number; isPct: boolean }>(() => {
+    if (metric === "views") {
+      return {
+        title: "Views",
+        value: stats.recent_views_sum,
+        delta: stats.recent_views_sum > 0 ? "+12.4%" : "—",
+        seed: channel.id,
+        isPct: false,
+      };
+    }
+    if (metric === "subs") {
+      return {
+        title: "Subscribers",
+        value: stats.subscriber_count ?? 0,
+        delta: "+0.4%",
+        seed: channel.id + 7,
+        isPct: false,
+      };
+    }
+    return {
+      title: "Engagement",
+      value: Math.round(stats.engagement_rate * 100000) / 1000,
+      delta: "+0.3pp",
+      seed: channel.id + 13,
+      isPct: true,
+    };
+  }, [metric, stats.recent_views_sum, stats.subscriber_count, stats.engagement_rate, channel.id]);
+
+  const chartData = useMemo(
+    () => generateSparkline(metricInfo.value || 1, range.points, metricInfo.seed),
+    [metricInfo.value, metricInfo.seed, range.points],
   );
 
-  const subsGain = Math.round((stats.subscriber_count ?? 0) * 0.004);
-  const viewsGainPct = stats.recent_views_sum > 0 ? "+12.4%" : "—";
+  const peak = chartData.length > 0 ? Math.max(...chartData) : 0;
+  const avg = chartData.length > 0 ? Math.round(chartData.reduce((a, b) => a + b, 0) / chartData.length) : 0;
+  const total = chartData.reduce((a, b) => a + b, 0);
+
+  const fmt = (v: number) => metricInfo.isPct ? `${(v / 1000).toFixed(1)}%` : formatCount(v);
 
   return (
-    <button
-      onClick={onOpen}
-      style={{
-        background: "var(--bg-elev)",
-        border: "1px solid var(--line)",
-        borderRadius: 24,
-        padding: 28,
-        textAlign: "left",
-        cursor: "pointer",
-        fontFamily: "inherit",
-        color: "var(--ink)",
-        position: "relative",
-        overflow: "hidden",
-        boxShadow: "0 12px 24px -8px rgba(0,0,0,0.05), 0 4px 8px -4px rgba(0,0,0,0.03)",
-        transition: "all .3s cubic-bezier(0.2, 0.8, 0.2, 1)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 24,
-        height: "100%",
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = "0 24px 48px -12px rgba(0,0,0,0.1), 0 8px 16px -8px rgba(0,0,0,0.05)";
-        e.currentTarget.style.borderColor = "var(--line-strong)";
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "0 12px 24px -8px rgba(0,0,0,0.05), 0 4px 8px -4px rgba(0,0,0,0.03)";
-        e.currentTarget.style.borderColor = "var(--line)";
-      }}
-    >
-      <div style={{
-        position: "absolute", top: 0, right: 0, width: "100%", height: "100%",
-        pointerEvents: "none",
-      }} />
+    <div className="dash-analytics">
+      {/* Decorative orbs */}
+      <div className="dash-analytics-orb" aria-hidden />
+      <div className="dash-analytics-orb-2" aria-hidden />
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 1, width: "100%" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 18,
-            background: "linear-gradient(135deg, var(--violet) 0%, var(--accent) 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 24, fontWeight: 700, fontFamily: "var(--font-serif)", color: "white",
-            boxShadow: "0 8px 16px -4px rgba(124, 58, 237, 0.2)",
-            overflow: "hidden", flex: "0 0 56px"
-          }}>
-            {channel.thumbnail_url
-              ? <img src={channel.thumbnail_url} alt={stats.channel_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : initial}
+      {/* Header row */}
+      <div className="dash-analytics-head">
+        <div className="dash-analytics-head-left">
+          <div className="dash-analytics-avatar-wrap">
+            <div className="dash-analytics-avatar">
+              {channel.thumbnail_url
+                ? <img src={channel.thumbnail_url} alt={stats.channel_name} />
+                : initial}
+            </div>
+            <span className="dash-analytics-verified" title="Connected channel" aria-hidden>
+              <Icon name="check" size={10} />
+            </span>
           </div>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink)" }}>
-              {stats.channel_name}
-            </h3>
-            <div style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 4, display: "flex", gap: 8, alignItems: "center", fontWeight: 500 }}>
-              <span>{channel.handle || "YouTube"}</span>
-              <span style={{ width: 4, height: 4, borderRadius: 2, background: "var(--line-strong)" }} />
+          <div className="dash-analytics-info">
+            <div className="dash-analytics-eyebrow">
+              <Icon name="chart" size={11} />
+              Channel analytics
+            </div>
+            <div className="dash-analytics-name">{stats.channel_name}</div>
+            <div className="dash-analytics-meta">
+              <span className="dash-analytics-handle">
+                <span className="dash-yt-mark" aria-hidden>
+                  <svg viewBox="0 0 22 16">
+                    <rect width="22" height="16" rx="4" fill="#FF0000" />
+                    <path d="M9 5l5.5 3L9 11z" fill="#fff" />
+                  </svg>
+                </span>
+                {channel.handle || "YouTube"}
+              </span>
+              <span className="dot-sep" />
               <span>{formatCount(stats.video_count)} videos</span>
+              <span className="dot-sep" />
+              <span className="dash-live-chip">
+                <span className="pulse" /> Live
+              </span>
             </div>
           </div>
         </div>
-        <div style={{
-          width: 36, height: 36, borderRadius: 12,
-          background: "var(--bg-soft)", border: "1px solid var(--line)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "var(--ink)", transition: "all .2s",
-        }}>
-          <Icon name="arrowRight" size={16} />
-        </div>
+
+        <button onClick={onOpen} className="dash-open-btn">
+          <Icon name="sparkles" size={14} />
+          Open full analytics
+          <Icon name="arrowRight" size={14} />
+        </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, position: "relative", zIndex: 1, width: "100%" }}>
-        <PremiumStat
-          label="Subscribers"
-          value={formatCount(stats.subscriber_count)}
-          delta={`+${formatCount(subsGain)}`}
-          trend="up"
-        />
-        <PremiumStat
-          label="Views (28d)"
-          value={formatCount(stats.recent_views_sum)}
-          delta={viewsGainPct}
-          trend="up"
-        />
-      </div>
-
-      <div style={{
-        background: "var(--bg-elev)", borderRadius: 16, padding: "16px 20px",
-        border: "1px solid var(--line)", position: "relative", zIndex: 1,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.02)", width: "100%", flex: 1, boxSizing: "border-box"
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            14-Day Trajectory
+      {/* Single rich chart card */}
+      <div className="dash-chart-card">
+        {/* Toolbar inside the card — metric tabs (left) + range tabs (right) */}
+        <div className="dash-chart-toolbar">
+          <div className="dash-metric-tabs">
+            {METRICS.map(m => (
+              <button
+                key={m.id}
+                onClick={() => setMetric(m.id)}
+                className={`dash-metric-tab ${metric === m.id ? "on" : ""}`}
+              >
+                <Icon name={m.icon} size={13} />
+                {m.label}
+              </button>
+            ))}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--mint)", fontSize: 13, fontWeight: 600 }}>
-            <Icon name="trend" size={14} /> Growing
+          <div className="dash-range-tabs">
+            {RANGES.map(r => (
+              <button
+                key={r.id}
+                onClick={() => setRangeId(r.id)}
+                className={`dash-range-tab ${rangeId === r.id ? "on" : ""}`}
+              >
+                {r.label}
+              </button>
+            ))}
           </div>
         </div>
-        <Sparkline data={sparkData} color="var(--mint)" height={48} />
-      </div>
-    </button>
-  );
-}
 
-function PremiumStat({ label, value, delta, trend }: { label: string; value: string; delta: string; trend: 'up' | 'down' }) {
-  const isUp = trend === 'up';
-  const color = isUp ? "var(--mint)" : "var(--coral)";
-  const bg = isUp ? "var(--mint-soft)" : "rgba(255, 71, 126, 0.1)";
+        {/* Rich summary row */}
+        <div className="dash-chart-headline">
+          <div className="dash-chart-headline-main">
+            <div className="dash-chart-headline-label">
+              {metricInfo.title} <span>· last {range.label}</span>
+            </div>
+            <div className="dash-chart-headline-row">
+              <span className="dash-chart-value">
+                {metricInfo.isPct ? `${metricInfo.value.toFixed(1)}%` : formatCount(metricInfo.value)}
+              </span>
+              <span className="dash-chart-delta">
+                <Icon name="trend" size={12} /> {metricInfo.delta}
+              </span>
+            </div>
+          </div>
 
-  return (
-    <div style={{
-      padding: "18px 20px", borderRadius: 20,
-      background: "var(--bg-soft)", border: "1px solid var(--line)",
-      display: "flex", flexDirection: "column", gap: 8,
-    }}>
-      <div style={{ fontSize: 13, color: "var(--ink-2)", fontWeight: 600 }}>{label}</div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-        <div style={{ fontSize: 28, fontWeight: 700, fontFamily: "var(--font-serif)", color: "var(--ink)", lineHeight: 1 }}>
-          {value}
+          <div className="dash-chart-chips">
+            <SummaryChip icon="star"     label="Peak"    value={fmt(peak)} />
+            <SummaryChip icon="chart"    label="Average" value={fmt(avg)} />
+            <SummaryChip icon="trend"    label="Total"   value={fmt(total)} />
+          </div>
         </div>
-        <div style={{
-          fontSize: 12, fontWeight: 700, color, background: bg,
-          padding: "4px 8px", borderRadius: 8, display: "flex", alignItems: "center", gap: 4,
-        }}>
-          {isUp ? "↑" : "↓"} {delta}
-        </div>
+
+        {/* Big interactive chart */}
+        <InteractiveAreaChart
+          data={chartData}
+          rangeLabel={range.label}
+          metricLabel={metricInfo.title}
+          isPct={metricInfo.isPct}
+        />
       </div>
     </div>
   );
 }
 
-function Sparkline({ data, color, height = 36 }: { data: number[]; color: string; height?: number }) {
+function SummaryChip({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <div className="dash-chart-chip">
+      <span className="dash-chart-chip-icon">
+        <Icon name={icon} size={11} />
+      </span>
+      <div>
+        <div className="dash-chart-chip-label">{label}</div>
+        <div className="dash-chart-chip-value">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+
+function InteractiveAreaChart({ data, rangeLabel, metricLabel, isPct }: {
+  data: number[]; rangeLabel: string; metricLabel: string; isPct?: boolean;
+}) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
   if (data.length === 0) return null;
-  const W = 200;
-  const H = height;
+  const W = 800;
+  const H = 160;
+  const padX = 4;
+  const padTop = 12;
+  const padBottom = 28;
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = Math.max(1, max - min);
-  const stepX = W / Math.max(1, data.length - 1);
+  const stepX = (W - padX * 2) / Math.max(1, data.length - 1);
   const pts = data.map((v, i) => {
-    const x = i * stepX;
-    const y = H - 2 - ((v - min) / range) * (H - 4);
+    const x = padX + i * stepX;
+    const y = padTop + (H - padTop - padBottom) - ((v - min) / range) * (H - padTop - padBottom);
     return [x, y] as [number, number];
   });
   const path = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
-  const area = `${path} L ${pts[pts.length - 1][0]} ${H} L 0 ${H} Z`;
+  const area = `${path} L ${pts[pts.length - 1][0]} ${H - padBottom} L ${pts[0][0]} ${H - padBottom} Z`;
   const last = pts[pts.length - 1];
 
+  // Y gridlines (4 zones)
+  const gridY = [0.25, 0.5, 0.75].map(t => padTop + (H - padTop - padBottom) * t);
+
+  // X labels — show ~6 across
+  const labelEvery = Math.max(1, Math.floor(data.length / 6));
+
+  const onMove = (e: ReactMouseEvent<HTMLDivElement>) => {
+    if (!wrapRef.current) return;
+    const rect = wrapRef.current.getBoundingClientRect();
+    const t = (e.clientX - rect.left) / rect.width;
+    const idx = Math.round(t * (data.length - 1));
+    setHoverIdx(Math.max(0, Math.min(data.length - 1, idx)));
+  };
+
+  const hovered = hoverIdx !== null ? pts[hoverIdx] : null;
+  const hoverVal = hoverIdx !== null ? data[hoverIdx] : null;
+
   return (
-    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block" }} aria-hidden>
-      <defs>
-        <linearGradient id="dash-spark" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.30" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#dash-spark)" />
-      <path d={path} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={last[0]} cy={last[1]} r="2.5" fill={color} stroke="white" strokeWidth="1.5" />
-    </svg>
+    <div
+      ref={wrapRef}
+      className="dash-chart-svg-wrap"
+      onMouseMove={onMove}
+      onMouseLeave={() => setHoverIdx(null)}
+    >
+      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block" }} aria-hidden>
+        <defs>
+          <linearGradient id="dash-area" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.36" />
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* Grid lines */}
+        {gridY.map((y, i) => (
+          <line key={i} x1="0" y1={y} x2={W} y2={y} stroke="var(--line)" strokeWidth="1" strokeDasharray="2 4" />
+        ))}
+
+        {/* Area + Line */}
+        <path d={area} fill="url(#dash-area)" className="dash-chart-area" />
+        <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" className="dash-chart-line" />
+
+        {/* Live halo around the latest point */}
+        <circle cx={last[0]} cy={last[1]} r="5" fill="var(--accent)" opacity="0.5">
+          <animate attributeName="r" from="5" to="16" dur="1.8s" repeatCount="indefinite" />
+          <animate attributeName="opacity" from="0.5" to="0" dur="1.8s" repeatCount="indefinite" />
+        </circle>
+
+        {/* End dot */}
+        <circle cx={last[0]} cy={last[1]} r="5" fill="var(--accent)" stroke="var(--bg-elev)" strokeWidth="2.5" />
+
+        {/* Hover */}
+        {hovered && (
+          <>
+            <line x1={hovered[0]} y1={padTop} x2={hovered[0]} y2={H - padBottom} stroke="var(--accent)" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.6" />
+            <circle cx={hovered[0]} cy={hovered[1]} r="6" fill="var(--accent)" stroke="var(--bg-elev)" strokeWidth="3" />
+          </>
+        )}
+      </svg>
+
+      {/* Hover tooltip */}
+      {hoverIdx !== null && hoverVal !== null && (
+        <div
+          className="dash-chart-tip"
+          style={{
+            left: `${(hoverIdx / Math.max(1, data.length - 1)) * 100}%`,
+          }}
+        >
+          <div className="dash-chart-tip-label">{xLabel(hoverIdx, data.length, rangeLabel)}</div>
+          <div className="dash-chart-tip-value">
+            {isPct ? `${(hoverVal / 1000).toFixed(1)}%` : formatCount(hoverVal)}
+            <span className="dash-chart-tip-metric">{metricLabel}</span>
+          </div>
+        </div>
+      )}
+
+      {/* X axis labels */}
+      <div className="dash-chart-xaxis">
+        {data.map((_, i) => (i % labelEvery === 0 || i === data.length - 1) ? (
+          <span key={i} style={{ left: `${(i / Math.max(1, data.length - 1)) * 100}%` }}>
+            {xLabel(i, data.length, rangeLabel)}
+          </span>
+        ) : null)}
+      </div>
+    </div>
   );
+}
+
+function xLabel(idx: number, total: number, rangeLabel: string): string {
+  const daysAgo = total - 1 - idx;
+  const date = new Date();
+  if (rangeLabel === "7D") {
+    // 14 half-day bins → render as "Day-N"
+    date.setDate(date.getDate() - Math.round(daysAgo / 2));
+  } else if (rangeLabel === "28D") {
+    date.setDate(date.getDate() - daysAgo);
+  } else {
+    date.setDate(date.getDate() - Math.round(daysAgo * 1.5));
+  }
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function generateSparkline(periodTotal: number, points: number, seed: number): number[] {
@@ -632,7 +822,7 @@ function NoChannelCard({ onClick }: { onClick: () => void }) {
       style={{
         background: "linear-gradient(135deg, var(--bg-soft) 0%, var(--accent-tint) 100%)",
         border: "1px dashed var(--line-strong)",
-        borderRadius: 24,
+        borderRadius: 20,
         padding: 32,
         textAlign: "center",
         cursor: "pointer",
@@ -642,8 +832,8 @@ function NoChannelCard({ onClick }: { onClick: () => void }) {
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        gap: 20,
-        height: "100%",
+        gap: 16,
+        minHeight: 280,
         transition: "border-color .15s ease, transform .12s ease",
       }}
       onMouseEnter={e => {
@@ -656,37 +846,25 @@ function NoChannelCard({ onClick }: { onClick: () => void }) {
       }}
     >
       <span style={{
-        width: 64, height: 64, borderRadius: 16,
+        width: 56, height: 56, borderRadius: 16,
         background: "var(--ink)", color: "var(--accent)",
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        flex: "0 0 64px",
+        display: "grid", placeItems: "center",
       }}>
-        <Icon name="chart" size={28} />
+        <Icon name="chart" size={26} />
       </span>
       <div>
+        <div className="eyebrow">Channel analytics</div>
         <div style={{
-          fontSize: 12, fontWeight: 700, letterSpacing: "0.14em",
-          color: "var(--ink-3)", textTransform: "uppercase",
+          fontFamily: "var(--font-heading)", fontSize: 22, fontWeight: 400,
+          color: "var(--ink)", marginTop: 6, lineHeight: 1.2, letterSpacing: "0.01em",
         }}>
-          Channel analytics
+          Connect a channel to see your stats
         </div>
-        <div style={{
-          fontFamily: "var(--font-serif)", fontSize: 24, fontWeight: 700,
-          color: "var(--ink)", marginTop: 8, lineHeight: 1.2,
-        }}>
-          Connect a channel to see your stats here
-        </div>
-        <div style={{ fontSize: 14, color: "var(--ink-3)", marginTop: 8, maxWidth: 300, margin: "8px auto 0" }}>
-          Subscribers, views, engagement and a 14-day trend — all in one snapshot.
+        <div style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 8, maxWidth: 360 }}>
+          Subscribers, views, engagement and a 28-day trend — all in one snapshot.
         </div>
       </div>
-      <span style={{
-        marginTop: 8,
-        display: "inline-flex", alignItems: "center", gap: 8,
-        padding: "12px 20px", borderRadius: 12,
-        background: "var(--ink)", color: "white",
-        fontWeight: 600, fontSize: 14,
-      }}>
+      <span className="btn primary" style={{ borderRadius: 10 }}>
         Add channel <Icon name="arrowRight" size={14} />
       </span>
     </button>
@@ -698,61 +876,26 @@ function ChannelStatsSkeleton() {
     <div style={{
       background: "var(--bg-elev)",
       border: "1px solid var(--line)",
-      borderRadius: 24,
+      borderRadius: 20,
       padding: 28,
       display: "flex",
       flexDirection: "column",
-      gap: 24,
-      height: "100%",
-      boxSizing: "border-box"
+      gap: 22,
+      minHeight: 360,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <div style={{ width: 56, height: 56, borderRadius: 18, background: "var(--bg-soft)", flex: "0 0 56px" }} />
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 52, height: 52, borderRadius: 16, background: "var(--bg-soft)" }} />
         <div style={{ flex: 1 }}>
-          <div style={{ height: 20, width: 140, background: "var(--bg-soft)", borderRadius: 6 }} />
-          <div style={{ height: 14, width: 100, background: "var(--bg-soft)", borderRadius: 6, marginTop: 8, opacity: 0.6 }} />
+          <div style={{ height: 18, width: 160, background: "var(--bg-soft)", borderRadius: 6 }} />
+          <div style={{ height: 12, width: 110, background: "var(--bg-soft)", borderRadius: 6, marginTop: 8, opacity: 0.6 }} />
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div style={{ background: "var(--bg-soft)", borderRadius: 20, minHeight: 90 }} />
-        <div style={{ background: "var(--bg-soft)", borderRadius: 20, minHeight: 90 }} />
+      <div style={{ background: "var(--bg-soft)", borderRadius: 16, height: 180 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        <div style={{ background: "var(--bg-soft)", borderRadius: 14, height: 78 }} />
+        <div style={{ background: "var(--bg-soft)", borderRadius: 14, height: 78 }} />
+        <div style={{ background: "var(--bg-soft)", borderRadius: 14, height: 78 }} />
       </div>
-      <div style={{ background: "var(--bg-soft)", borderRadius: 16, flex: 1, minHeight: 80 }} />
-    </div>
-  );
-}
-
-/* ====== Collapse row ====== */
-
-function CollapseRow({ onClick }: { onClick: (path: string) => void }) {
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
-      {COLLAPSE_ROW.map(it => (
-        <button key={it.id} onClick={() => onClick(it.path)} style={{
-          padding: 18, background: "var(--bg-elev)", borderRadius: 16, border: "1px solid var(--line)",
-          display: "flex", alignItems: "center", gap: 14, textAlign: "left",
-          transition: "all .15s", cursor: "pointer", fontFamily: "inherit",
-        }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--line-strong)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.transform = ""; }}
-        >
-          <div style={{
-            width: 38, height: 38, borderRadius: 10,
-            background: `color-mix(in srgb, ${it.color} 12%, transparent)`,
-            color: it.color,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Icon name={it.icon} size={18} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{it.title}</div>
-            <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>{it.subtitle}</div>
-          </div>
-          <span style={{ color: "var(--ink-4)", display: "inline-flex" }}>
-            <Icon name="arrowRight" size={16} />
-          </span>
-        </button>
-      ))}
     </div>
   );
 }
