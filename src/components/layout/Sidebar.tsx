@@ -1,5 +1,5 @@
 // Sidebar — narrow icon rail with hover flyouts + ⌘K command palette.
-// 6 grouped buttons (Create / Improve / Research / Plan / Publish / Utilities) +
+// One grouped button (Create) + standalone tools (Trending / Stats / Calendar / Bio) +
 // Home + Search + Projects + Avatar.
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -21,6 +21,14 @@ interface NavGroup {
   color: string;
   tools: NavTool[];
 }
+interface NavSolo {
+  code: string;
+  name: string;
+  shortLabel: string;
+  path: string;
+  icon: string;
+  color: string;
+}
 
 const NAV_GROUPS: NavGroup[] = [
   {
@@ -35,42 +43,13 @@ const NAV_GROUPS: NavGroup[] = [
       { code: "T13", name: "Video Generator", path: "/video",      icon: "film"      },
     ],
   },
-  {
-    id: "improve", label: "Improve", blurb: "Polish & adapt", color: "var(--violet)",
-    tools: [
-      { code: "T12", name: "Review Script", path: "/review",    icon: "sparkles" },
-      { code: "T14", name: "Repurpose",     path: "/repurpose", icon: "split"    },
-    ],
-  },
-  {
-    id: "research", label: "Research", blurb: "Spot what's working", color: "var(--mint)",
-    tools: [
-      { code: "T7", name: "Trending Finder", path: "/trending", icon: "trend" },
-      { code: "T8", name: "Channel Stats",   path: "/stats",    icon: "chart" },
-    ],
-  },
-  {
-    id: "plan", label: "Plan", blurb: "Schedule your week", color: "var(--amber)",
-    tools: [
-      { code: "T10", name: "Content Calendar", path: "/calendar", icon: "calendar" },
-    ],
-  },
-  {
-    id: "publish", label: "Publish", blurb: "Take it live", color: "var(--accent)",
-    tools: [
-      { code: "T15", name: "Link in Bio", path: "/linkinbio", icon: "link" },
-      { code: "T16", name: "My Shop",     path: "/shop",      icon: "bag"  },
-    ],
-  },
-  {
-    id: "utilities", label: "Utilities", blurb: "Helpers & admin", color: "var(--ink-4)",
-    tools: [
-      { code: "T17", name: "Thumbnail Downloader", path: "/thumbnail-downloader", icon: "download" },
-      { code: "T18", name: "Subtitles Downloader", path: "/subtitles-downloader", icon: "download" },
-      { code: "T19", name: "Copyright Checker",    path: "/copyright",            icon: "shield"   },
-      { code: "T9",  name: "Prompt Admin",         path: "/admin",                icon: "cog", adminOnly: true },
-    ],
-  },
+];
+
+const NAV_SOLO: NavSolo[] = [
+  { code: "T7",  name: "Trending Finder",  shortLabel: "Trending", path: "/trending",  icon: "trend",    color: "var(--mint)"   },
+  { code: "T8",  name: "Channel Stats",    shortLabel: "Stats",    path: "/stats",     icon: "chart",    color: "var(--mint)"   },
+  { code: "T10", name: "Content Calendar", shortLabel: "Calendar", path: "/calendar",  icon: "calendar", color: "var(--amber)"  },
+  { code: "T15", name: "Link in Bio",      shortLabel: "Bio",      path: "/linkinbio", icon: "link",     color: "var(--accent)" },
 ];
 
 interface SidebarProps {
@@ -151,7 +130,7 @@ export default function Sidebar({ onOpenProjects, projectsOpen = false, projects
 
       <Divider />
 
-      {/* Groups */}
+      {/* Groups + standalone tools */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
         {visibleGroups.map(g => (
           <GroupButton
@@ -162,6 +141,14 @@ export default function Sidebar({ onOpenProjects, projectsOpen = false, projects
             onOpen={() => setHoverGroup(g.id)}
             onClose={() => setHoverGroup(null)}
             onPick={(path) => { navigate(path); setHoverGroup(null); }}
+          />
+        ))}
+        {NAV_SOLO.map(s => (
+          <SoloButton
+            key={s.code}
+            solo={s}
+            active={location.pathname === s.path}
+            onClick={() => { navigate(s.path); setHoverGroup(null); }}
           />
         ))}
       </div>
@@ -216,6 +203,7 @@ export default function Sidebar({ onOpenProjects, projectsOpen = false, projects
       {showCmd && (
         <CommandPalette
           groups={visibleGroups}
+          solos={NAV_SOLO}
           onClose={() => setShowCmd(false)}
           onPick={(path) => { setShowCmd(false); navigate(path); }}
         />
@@ -352,13 +340,50 @@ function GroupButton({ group, currentPath, isOpen, onOpen, onClose, onPick }: {
   );
 }
 
-function CommandPalette({ groups, onClose, onPick }: {
-  groups: NavGroup[]; onClose: () => void; onPick: (path: string) => void;
+function SoloButton({ solo, active, onClick }: {
+  solo: NavSolo; active: boolean; onClick: () => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <button
+        onClick={onClick}
+        title={solo.name}
+        style={{
+          width: 44, height: 44, borderRadius: 12, border: "none",
+          background: active ? solo.color : "transparent",
+          color: active ? "white" : "rgba(255,255,255,0.85)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          position: "relative", transition: "background .12s", cursor: "pointer",
+        }}
+        onMouseEnter={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+        onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+      >
+        <Icon name={solo.icon} size={18} />
+        <span style={{
+          position: "absolute", bottom: 4, right: 4,
+          width: 5, height: 5, borderRadius: 99,
+          background: active ? "white" : solo.color,
+          opacity: active ? 0.85 : 0.9,
+        }} />
+      </button>
+      <div style={{
+        fontSize: 9, marginTop: 2, fontWeight: 600,
+        color: "rgba(255,255,255,0.45)", letterSpacing: "0.06em", textTransform: "uppercase",
+      }}>{solo.shortLabel}</div>
+    </div>
+  );
+}
+
+function CommandPalette({ groups, solos, onClose, onPick }: {
+  groups: NavGroup[]; solos: NavSolo[]; onClose: () => void; onPick: (path: string) => void;
 }) {
   const [q, setQ] = useState("");
   const all = useMemo(
-    () => groups.flatMap(g => g.tools.map(t => ({ ...t, group: g.label, color: g.color }))),
-    [groups]
+    () => [
+      ...groups.flatMap(g => g.tools.map(t => ({ ...t, group: g.label, color: g.color }))),
+      ...solos.map(s => ({ code: s.code, name: s.name, path: s.path, icon: s.icon, group: s.shortLabel, color: s.color })),
+    ],
+    [groups, solos]
   );
   const filtered = q
     ? all.filter(t => t.name.toLowerCase().includes(q.toLowerCase()) || t.code.toLowerCase().includes(q.toLowerCase()))

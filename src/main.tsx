@@ -40,16 +40,10 @@ import ThumbnailLab from './pages/ThumbnailLab'
 import PublishPage from './pages/PublishPage'
 import Voiceover from './pages/todo_Voiceover'
 import VideoGenerator from './pages/todo_VideoGenerator'
-import ReviewScript from './pages/todo_ReviewScript'
-import Repurpose from './pages/todo_Repurpose'
 import TrendingFinder from './pages/TrendingFinder'
 import ChannelStats from './pages/ChannelStats'
 import ContentCalendar from './pages/ContentCalendar'
 import LinkInBio from './pages/todo_LinkInBio'
-import MyShop from './pages/todo_MyShop'
-import ThumbnailDownloader from './pages/ThumbnailDownloader'
-import SubtitlesDownloader from './pages/SubtitlesDownloader'
-import CopyrightChecker from './pages/todo_CopyrightChecker'
 import AdminPanel from './pages/AdminPanel'
 
 // Admin
@@ -110,25 +104,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="/voiceover" element={<Shell><Voiceover /></Shell>} />
               <Route path="/video"     element={<Shell><VideoGenerator /></Shell>} />
 
-              {/* Improve — static (T12, T14) */}
-              <Route path="/review"    element={<Shell><ReviewScript /></Shell>} />
-              <Route path="/repurpose" element={<Shell><Repurpose /></Shell>} />
-
-              {/* Research — static (T7, T8) */}
-              <Route path="/trending" element={<Shell><TrendingFinder /></Shell>} />
-              <Route path="/stats"    element={<Shell><ChannelStats /></Shell>} />
-
-              {/* Plan — static (T10) */}
-              <Route path="/calendar" element={<Shell><ContentCalendar /></Shell>} />
-
-              {/* Publish — static (T15, T16) */}
+              {/* Standalone tools (T7, T8, T10, T15) */}
+              <Route path="/trending"  element={<Shell><TrendingFinder /></Shell>} />
+              <Route path="/stats"     element={<Shell><ChannelStats /></Shell>} />
+              <Route path="/calendar"  element={<Shell><ContentCalendar /></Shell>} />
               <Route path="/linkinbio" element={<Shell><LinkInBio /></Shell>} />
-              <Route path="/shop"      element={<Shell><MyShop /></Shell>} />
-
-              {/* Utilities — static (T17, T18, T19) */}
-              <Route path="/thumbnail-downloader"  element={<Shell><ThumbnailDownloader /></Shell>} />
-              <Route path="/subtitles-downloader"  element={<Shell><SubtitlesDownloader /></Shell>} />
-              <Route path="/copyright"             element={<Shell><CopyrightChecker /></Shell>} />
 
               {/* Admin (T9) — admin-only */}
               <Route

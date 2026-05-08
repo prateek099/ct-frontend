@@ -223,11 +223,9 @@ const TOOLS: Tool[] = [
   { cat: "Create",   h: "Thumbnail Lab",          p: "Drafts, A/B variants, CTR scoring",          thumb: TH_THUMBLAB },
   { cat: "Create",   h: "AI Voiceover",           p: "Studio VO in your trained voice",            thumb: TH_VO },
   { cat: "Create",   h: "Video Generator",        p: "B-roll, transitions, subtitle pass",         thumb: TH_VIDGEN },
-  { cat: "Improve",  h: "Review My Script",       p: "Retention notes on a draft",                 thumb: TH_REVIEW },
-  { cat: "Research", h: "Trending Finder",        p: "What's heating up in your niche",            thumb: TH_TREND },
-  { cat: "Research", h: "Channel Stats",          p: "Performance, growth, audience",              thumb: TH_STATS },
-  { cat: "Publish",  h: "Link in Bio",            p: "Branded link page, video-aware",             thumb: TH_BIO },
-  { cat: "Publish",  h: "My Shop",                p: "Products tied to your videos",               thumb: TH_SHOP },
+  { cat: "Tool",     h: "Trending Finder",        p: "What's heating up in your niche",            thumb: TH_TREND },
+  { cat: "Tool",     h: "Channel Stats",          p: "Performance, growth, audience",              thumb: TH_STATS },
+  { cat: "Tool",     h: "Link in Bio",            p: "Branded link page, video-aware",             thumb: TH_BIO },
   { cat: "Soon",     h: "Multi-camera Sync",      p: "Auto-align takes, pick best shot", dark: true, thumb: TH_MCS },
 ];
 
@@ -330,8 +328,8 @@ export default function HomePage() {
         </div>
 
         {/* Scroll cue — leads to the tools section */}
-        <a href="#tools" className="hero-scroll-cue" aria-label="See the 13 tools">
-          <span className="hero-scroll-label">13 tools</span>
+        <a href="#tools" className="hero-scroll-cue" aria-label="See the 12 tools">
+          <span className="hero-scroll-label">12 tools</span>
           <span className="hero-scroll-arrow">{CHEVRON_DOWN}</span>
         </a>
       </header>
@@ -352,7 +350,7 @@ export default function HomePage() {
       <section id="tools" style={{ paddingTop: 64, paddingBottom: 64 }}>
         <div className="wrap">
           <div className="sec-head">
-            <span className="eyebrow"><span className="accent">13</span> tools, one workspace</span>
+            <span className="eyebrow"><span className="accent">12</span> tools, one workspace</span>
             <h2>Every tool, <span className="serif accent">already here.</span></h2>
             <p>Pre-trained on your channel. Pre-wired to your pipeline.</p>
           </div>

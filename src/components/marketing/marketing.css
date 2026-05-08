@@ -224,9 +224,7 @@
 .cos-page .tool-card h4 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.005em; color: var(--ink); }
 .cos-page .tool-card p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
 .cos-page .tool-card.thumb-create   .thumb { background: linear-gradient(135deg, #F25C3D 0%, #D44E32 100%); }
-.cos-page .tool-card.thumb-improve  .thumb { background: linear-gradient(135deg, #1F3D2E 0%, #2A5240 100%); }
-.cos-page .tool-card.thumb-research .thumb { background: linear-gradient(135deg, #2E5C72 0%, #1F4358 100%); }
-.cos-page .tool-card.thumb-publish  .thumb { background: linear-gradient(135deg, #C8893E 0%, #A36F2A 100%); }
+.cos-page .tool-card.thumb-tool     .thumb { background: linear-gradient(135deg, #2E5C72 0%, #1F4358 100%); }
 .cos-page .tool-card.thumb-soon     .thumb { background: linear-gradient(135deg, #3B3631 0%, #232020 100%); }
 .cos-page .tool-card.tool-card-dark { background: var(--night); border-color: var(--night); }
 .cos-page .tool-card.tool-card-dark h4 { color: var(--ink-on-night); }
