@@ -72,10 +72,6 @@ export default function ReviewPanel({ hasScript }: Props) {
             <span className="row" style={{ gap: 8 }}><Icon name="mic" size={14} /> AI voiceover</span>
             <Icon name="arrowRight" size={14} />
           </Link>
-          <Link to="/review" className="row between" style={{ padding: 10, border: '1px solid var(--line)', borderRadius: 10 }}>
-            <span className="row" style={{ gap: 8 }}><Icon name="sparkles" size={14} /> Deep script review</span>
-            <Icon name="arrowRight" size={14} />
-          </Link>
         </div>
       </div>
     </div>
