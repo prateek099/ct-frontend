@@ -6,8 +6,14 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext ts,tsx",
-    "test": "vitest"
+    "lint:fix": "eslint src --ext ts,tsx --fix",
+    "lint:strict": "eslint src --ext ts,tsx --max-warnings 0",
+    "test": "vitest",
+    "test:ci": "vitest run --passWithNoTests",
+    "verify": "npm run typecheck && npm run lint && npm run test:ci",
+    "predeploy": "npm run typecheck && npm run test:ci"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.4",
