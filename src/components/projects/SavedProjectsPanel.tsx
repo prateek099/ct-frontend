@@ -49,8 +49,22 @@ function projectGlyph(title: string): string {
   return title.split(" ").slice(0, 2).map(w => w[0] ?? "").join("").toUpperCase().slice(0, 2) || "··";
 }
 
+/** Map project progress to the pipeline route the user should resume at. */
+const STEP_ROUTES = ["/idea", "/script", "/title", "/description", "/thumbnail"] as const;
+function getResumeRoute(p: Project): string {
+  const progress = projectProgress(p);
+  if (progress >= STEP_ROUTES.length) return STEP_ROUTES[STEP_ROUTES.length - 1];
+  return STEP_ROUTES[progress];
+}
+
+/** Parse a datetime string from the API as UTC, even if the timezone suffix is missing. */
+function parseUTC(dateStr: string): Date {
+  if (/Z|[+-]\d{2}:\d{2}$/.test(dateStr)) return new Date(dateStr);
+  return new Date(dateStr + "Z");
+}
+
 function relativeUpdated(iso: string): string {
-  const d = new Date(iso);
+  const d = parseUTC(iso);
   const ms = Date.now() - d.getTime();
   const min = Math.round(ms / 60000);
   if (min < 60) return `${min}m ago`;
@@ -104,7 +118,7 @@ export default function SavedProjectsPanel({ open, onClose, focusedProjectId }: 
     loadProject(p);
     onClose();
     if (ready) navigate(`/publish/${p.id}`);
-    else navigate("/idea");
+    else navigate(getResumeRoute(p));
   };
 
   if (!open) return null;
