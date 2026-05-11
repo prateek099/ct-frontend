@@ -135,20 +135,7 @@ const TH_VIDGEN = (
   </svg>
 );
 
-const TH_REVIEW = (
-  <svg {...TH_PROPS}>
-    <rect x="50" y="10" width="92" height="68" rx="6" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.7)" strokeWidth="1.2" />
-    <line x1="60" y1="22" x2="118" y2="22" stroke="white" strokeWidth="1.6" strokeLinecap="round" opacity=".85" />
-    <line x1="60" y1="34" x2="132" y2="34" stroke="white" strokeWidth="1.6" strokeLinecap="round" opacity=".55" />
-    <line x1="60" y1="46" x2="110" y2="46" stroke="white" strokeWidth="1.6" strokeLinecap="round" opacity=".5" />
-    <line x1="60" y1="58" x2="124" y2="58" stroke="white" strokeWidth="1.6" strokeLinecap="round" opacity=".35" />
-    <rect x="60" y="32" width="44" height="4" fill="var(--accent)" opacity=".55" />
-    <g transform="translate(150, 26)">
-      <circle r="11" fill="var(--accent)" />
-      <path d="M-5 0 L-1 4 L6 -4" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </g>
-  </svg>
-);
+
 
 const TH_TREND = (
   <svg {...TH_PROPS}>
@@ -186,17 +173,7 @@ const TH_BIO = (
   </svg>
 );
 
-const TH_SHOP = (
-  <svg {...TH_PROPS}>
-    <path d="M68 28 H132 L136 76 H64 L68 28 Z" fill="rgba(255,255,255,.18)" stroke="white" strokeWidth="1.6" />
-    <path d="M82 30 V20 a18 18 0 0 1 36 0 V30" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-    <g transform="translate(146, 34)">
-      <path d="M0 0 L26 0 L36 12 L26 24 L0 24 Z" fill="white" />
-      <circle cx="6.5" cy="12" r="2.6" fill="rgba(31,24,21,.9)" />
-      <text x="14" y="16" fontFamily="Poppins, ui-sans-serif, system-ui, -apple-system, sans-serif" fontSize="9" fontWeight="700" fill="rgba(31,24,21,.9)">$24</text>
-    </g>
-  </svg>
-);
+
 
 const TH_MCS = (
   <svg {...TH_PROPS}>
