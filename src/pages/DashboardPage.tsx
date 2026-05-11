@@ -36,6 +36,14 @@ function projectTitle(p: Project): string {
   return p.title || p.idea_json?.selectedIdea?.title || p.idea_json?.ideas?.[0]?.title || "Untitled draft";
 }
 
+/** Map project progress to the pipeline route the user should resume at. */
+const STEP_ROUTES = ["/idea", "/script", "/title", "/description", "/thumbnail"] as const;
+function getResumeRoute(p: Project): string {
+  const progress = projectProgress(p);
+  if (progress >= STEP_ROUTES.length) return STEP_ROUTES[STEP_ROUTES.length - 1];
+  return STEP_ROUTES[progress];
+}
+
 function greeting() {
   const h = new Date().getHours();
   return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
@@ -59,7 +67,7 @@ export default function DashboardPage() {
 
   const handleResume = (p: Project) => {
     loadProject(p);
-    navigate("/idea");
+    navigate(getResumeRoute(p));
   };
 
   const firstName = (user?.name ?? "Creator").split(" ")[0];
@@ -253,7 +261,7 @@ function ContinueVideoCard({ project, onResume, onNewVideo }: {
   const ready = step >= 5;
   const title = projectTitle(project);
   const pct = Math.min(100, Math.round((step / 5) * 100));
-  const updated = new Date(project.updated_at);
+  const updated = parseUTC(project.updated_at);
   const updatedAgo = timeAgo(updated);
   const glyph = (title.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("") || "··")
     .toUpperCase().slice(0, 2);
@@ -444,6 +452,14 @@ function dayLabel(i: number, total: number): string {
   if (daysAgo === 0) return "Today";
   if (daysAgo === 1) return "Yesterday";
   return `${daysAgo} days ago`;
+}
+
+/** Parse a datetime string from the API as UTC, even if the timezone suffix is missing. */
+function parseUTC(dateStr: string): Date {
+  // If the string already has timezone info (Z, +, or -HH:MM after the time), parse as-is.
+  // Otherwise append 'Z' so JavaScript interprets it as UTC, not local time.
+  if (/Z|[+-]\d{2}:\d{2}$/.test(dateStr)) return new Date(dateStr);
+  return new Date(dateStr + "Z");
 }
 
 function timeAgo(date: Date): string {
