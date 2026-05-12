@@ -58,6 +58,7 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel'))
 // Admin
 const UsersPage = lazy(() => import('./pages/UsersPage'))
 const AdminClientErrors = lazy(() => import('./pages/AdminClientErrors'))
+const AdminAuthEvents = lazy(() => import('./pages/AdminAuthEvents'))
 
 // Install async/global error handlers before the app mounts so a crash
 // during initial render is still captured.
@@ -141,6 +142,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                       element={
                         <AdminRoute>
                           <AppShell><AdminClientErrors /></AppShell>
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/auth-events"
+                      element={
+                        <AdminRoute>
+                          <AppShell><AdminAuthEvents /></AppShell>
                         </AdminRoute>
                       }
                     />

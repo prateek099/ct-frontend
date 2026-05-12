@@ -54,8 +54,9 @@ const NAV_SOLO: NavSolo[] = [
 ];
 
 const NAV_ADMIN: NavSolo[] = [
-  { code: "T9",  name: "Prompt Admin",    shortLabel: "Prompts", path: "/admin",                icon: "cog",  color: "var(--amber)", adminOnly: true },
-  { code: "ER",  name: "Client Errors",   shortLabel: "Errors",  path: "/admin/client-errors",  icon: "bell", color: "var(--coral)", adminOnly: true },
+  { code: "T9",  name: "Prompt Admin",    shortLabel: "Prompts", path: "/admin",                icon: "cog",    color: "var(--amber)", adminOnly: true },
+  { code: "ER",  name: "Client Errors",   shortLabel: "Errors",  path: "/admin/client-errors",  icon: "bell",   color: "var(--coral)", adminOnly: true },
+  { code: "AE",  name: "Auth Events",     shortLabel: "Auth",    path: "/admin/auth-events",    icon: "shield", color: "var(--mint)",  adminOnly: true },
 ];
 
 interface SidebarProps {
