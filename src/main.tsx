@@ -14,6 +14,7 @@ import RouteFallback from './components/shared/RouteFallback'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AdminRoute from './components/auth/AdminRoute'
 import AppShell from './components/layout/AppShell'
+import AdminShell from './components/admin/AdminShell'
 import { installGlobalErrorHandlers } from './lib/installGlobalErrorHandlers'
 
 // Eagerly imported pages — first-paint critical / fallback / auth entry
@@ -59,6 +60,7 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel'))
 const UsersPage = lazy(() => import('./pages/UsersPage'))
 const AdminClientErrors = lazy(() => import('./pages/AdminClientErrors'))
 const AdminAuthEvents = lazy(() => import('./pages/AdminAuthEvents'))
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 
 // Install async/global error handlers before the app mounts so a crash
 // during initial render is still captured.
@@ -128,12 +130,20 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                     <Route path="/calendar"  element={<Shell><ContentCalendar /></Shell>} />
                     <Route path="/linkinbio" element={<Shell><LinkInBio /></Shell>} />
 
-                    {/* Admin (T9) — admin-only */}
+                    {/* Admin — dedicated AdminShell, admin-only */}
                     <Route
                       path="/admin"
                       element={
                         <AdminRoute>
-                          <AppShell><AdminPanel /></AppShell>
+                          <AdminShell><AdminDashboardPage /></AdminShell>
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/prompts"
+                      element={
+                        <AdminRoute>
+                          <AdminShell><AdminPanel /></AdminShell>
                         </AdminRoute>
                       }
                     />
@@ -141,7 +151,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                       path="/admin/client-errors"
                       element={
                         <AdminRoute>
-                          <AppShell><AdminClientErrors /></AppShell>
+                          <AdminShell><AdminClientErrors /></AdminShell>
                         </AdminRoute>
                       }
                     />
@@ -149,7 +159,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                       path="/admin/auth-events"
                       element={
                         <AdminRoute>
-                          <AppShell><AdminAuthEvents /></AppShell>
+                          <AdminShell><AdminAuthEvents /></AdminShell>
                         </AdminRoute>
                       }
                     />
