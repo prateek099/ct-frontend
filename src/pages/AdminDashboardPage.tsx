@@ -19,6 +19,22 @@ const SECTIONS: Section[] = [
     accent: "var(--amber)",
   },
   {
+    title: "Users",
+    path: "/admin/users",
+    icon: "users",
+    blurb:
+      "Registered users — names, emails, admin status, registration dates.",
+    accent: "var(--accent)",
+  },
+  {
+    title: "LLM usage",
+    path: "/admin/llm-usage",
+    icon: "chart",
+    blurb:
+      "Token spend per user and per endpoint over the last 1/7/30/90 days. Cache hits and rough cost estimates included.",
+    accent: "var(--mint)",
+  },
+  {
     title: "Auth events",
     path: "/admin/auth-events",
     icon: "shield",
@@ -33,6 +49,14 @@ const SECTIONS: Section[] = [
     blurb:
       "Crashes captured by the frontend ErrorBoundary and the global unhandledrejection handler.",
     accent: "var(--coral)",
+  },
+  {
+    title: "System",
+    path: "/admin/system",
+    icon: "sliders",
+    blurb:
+      "Runtime config snapshot — env, JWT TTLs, OpenAI / YouTube / SMTP integrations, CORS origins, database connectivity.",
+    accent: "var(--text-subtle)",
   },
 ];
 
