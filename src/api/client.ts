@@ -6,16 +6,16 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 const client = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
+  // The browser attaches the httpOnly access_token / refresh_token cookies
+  // that the backend sets on login/refresh. Required for cross-origin in
+  // prod (ct-frontend-*.onrender.com → ct-backend-*.onrender.com).
+  withCredentials: true,
 });
 
 const IS_DEV = import.meta.env.DEV;
 
-// ── Request interceptor — attach access token + log ──────────────────────────
+// ── Request interceptor — log only in dev ────────────────────────────────────
 client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = Cookies.get("access_token");
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
   if (IS_DEV) {
     console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
   }
@@ -24,11 +24,18 @@ client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 // ── Response interceptor — auto-refresh on 401 ───────────────────────────────
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (v: string) => void; reject: (e: unknown) => void }> = [];
+let failedQueue: Array<{ resolve: () => void; reject: (e: unknown) => void }> = [];
 
-function processQueue(error: unknown, token: string | null = null) {
-  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token!)));
+function processQueue(error: unknown) {
+  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve()));
   failedQueue = [];
+}
+
+function clearDisplayCookies() {
+  // The httpOnly access/refresh cookies can only be cleared server-side
+  // (see /auth/logout). These are the JS-readable display cookies.
+  Cookies.remove("login_type");
+  Cookies.remove("user_name");
 }
 
 client.interceptors.response.use(
@@ -57,44 +64,22 @@ client.interceptors.response.use(
     ) {
       if (isRefreshing) {
         // Queue concurrent requests while refresh is in flight
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then((token) => {
-          original.headers.Authorization = `Bearer ${token}`;
-          return client(original);
-        });
+        }).then(() => client(original));
       }
 
       original._retry = true;
       isRefreshing = true;
 
-      const refreshToken = Cookies.get("refresh_token");
-      if (!refreshToken) {
-        processQueue(error);
-        isRefreshing = false;
-        Cookies.remove("access_token");
-        Cookies.remove("refresh_token");
-        Cookies.remove("login_type");
-        Cookies.remove("user_name");
-        window.location.href = "/login";
-        return Promise.reject(error);
-      }
-
       try {
-        const { data } = await client.post("/auth/refresh", {
-          refresh_token: refreshToken,
-        });
-        Cookies.set("access_token", data.access_token, { expires: 1 / 48 });
-        Cookies.set("refresh_token", data.refresh_token, { expires: 7 });
-        processQueue(null, data.access_token);
-        original.headers.Authorization = `Bearer ${data.access_token}`;
+        // No body — the server reads the refresh token from the httpOnly cookie.
+        await client.post("/auth/refresh");
+        processQueue(null);
         return client(original);
       } catch (refreshError) {
         processQueue(refreshError);
-        Cookies.remove("access_token");
-        Cookies.remove("refresh_token");
-        Cookies.remove("login_type");
-        Cookies.remove("user_name");
+        clearDisplayCookies();
         window.location.href = "/login";
         return Promise.reject(refreshError);
       } finally {

@@ -5,6 +5,16 @@ import type { AuthUser, ForgotPasswordRequest, LoginRequest, RegisterRequest, Re
 
 export const AUTH_ME_KEY = ["auth", "me"];
 
+/**
+ * The access/refresh tokens live in httpOnly cookies the backend sets on
+ * /auth/login. JS can't read them, so we use the non-sensitive `user_name`
+ * cookie (set on every successful login) as the "is logged in" presence
+ * signal — avoids firing /auth/me on every marketing-page load.
+ */
+function hasSessionSignal(): boolean {
+  return !!Cookies.get("user_name");
+}
+
 export function useMe() {
   return useQuery<AuthUser>({
     queryKey: AUTH_ME_KEY,
@@ -15,7 +25,7 @@ export function useMe() {
     retry: false,
     // Skip /auth/me entirely for demo users — they have no DB record
     enabled:
-      !!Cookies.get("access_token") &&
+      hasSessionSignal() &&
       Cookies.get("login_type") !== "demo",
   });
 }
@@ -28,8 +38,8 @@ export function useLogin() {
       return data;
     },
     onSuccess: (data) => {
-      Cookies.set("access_token", data.access_token, { expires: 1 / 48 });
-      Cookies.set("refresh_token", data.refresh_token, { expires: 7 });
+      // Backend sets httpOnly access_token / refresh_token cookies — we only
+      // remember the display name so the UI can render before /auth/me lands.
       if (data.name) Cookies.set("user_name", data.name, { expires: 7 });
       queryClient.invalidateQueries({ queryKey: AUTH_ME_KEY });
     },
@@ -44,8 +54,6 @@ export function useWorkflowLogin() {
       return data;
     },
     onSuccess: (data) => {
-      Cookies.set("access_token", data.access_token, { expires: 1 / 48 });
-      Cookies.set("refresh_token", data.refresh_token, { expires: 7 });
       Cookies.set("login_type", "demo", { expires: 7 });
       if (data.name) Cookies.set("user_name", data.name, { expires: 7 });
       queryClient.invalidateQueries({ queryKey: AUTH_ME_KEY });
@@ -81,8 +89,6 @@ export function useGoogleLogin() {
       return data;
     },
     onSuccess: (data) => {
-      Cookies.set("access_token", data.access_token, { expires: 1 / 48 });
-      Cookies.set("refresh_token", data.refresh_token, { expires: 7 });
       if (data.name) Cookies.set("user_name", data.name, { expires: 7 });
       queryClient.invalidateQueries({ queryKey: AUTH_ME_KEY });
     },
@@ -91,9 +97,15 @@ export function useGoogleLogin() {
 
 export function useLogout() {
   const queryClient = useQueryClient();
-  return () => {
-    Cookies.remove("access_token");
-    Cookies.remove("refresh_token");
+  return async () => {
+    // Best-effort: clear server-side httpOnly cookies. If this errors (e.g.
+    // backend unreachable) we still tear down the client state and redirect
+    // — the user has asked to leave, don't strand them on an error screen.
+    try {
+      await client.post("/auth/logout");
+    } catch {
+      // Swallow — the redirect below is the important part.
+    }
     Cookies.remove("login_type");
     Cookies.remove("user_name");
     queryClient.clear();
