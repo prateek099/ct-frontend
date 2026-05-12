@@ -28,6 +28,7 @@ interface NavSolo {
   path: string;
   icon: string;
   color: string;
+  adminOnly?: boolean;
 }
 
 const NAV_GROUPS: NavGroup[] = [
@@ -52,6 +53,11 @@ const NAV_SOLO: NavSolo[] = [
   { code: "T15", name: "Link in Bio",      shortLabel: "Bio",      path: "/linkinbio", icon: "link",     color: "var(--accent)" },
 ];
 
+const NAV_ADMIN: NavSolo[] = [
+  { code: "T9",  name: "Prompt Admin",    shortLabel: "Prompts", path: "/admin",                icon: "cog",  color: "var(--amber)", adminOnly: true },
+  { code: "ER",  name: "Client Errors",   shortLabel: "Errors",  path: "/admin/client-errors",  icon: "bell", color: "var(--coral)", adminOnly: true },
+];
+
 interface SidebarProps {
   onOpenProjects?: () => void;
   projectsOpen?: boolean;
@@ -68,6 +74,10 @@ export default function Sidebar({ onOpenProjects, projectsOpen = false, projects
 
   const visibleGroups = useMemo(
     () => NAV_GROUPS.map(g => ({ ...g, tools: g.tools.filter(t => !t.adminOnly || user?.is_admin) })),
+    [user?.is_admin]
+  );
+  const visibleAdmin = useMemo(
+    () => (user?.is_admin ? NAV_ADMIN : []),
     [user?.is_admin]
   );
 
@@ -151,6 +161,15 @@ export default function Sidebar({ onOpenProjects, projectsOpen = false, projects
             onClick={() => { navigate(s.path); setHoverGroup(null); }}
           />
         ))}
+        {visibleAdmin.length > 0 && <Divider />}
+        {visibleAdmin.map(s => (
+          <SoloButton
+            key={s.code}
+            solo={s}
+            active={location.pathname === s.path}
+            onClick={() => { navigate(s.path); setHoverGroup(null); }}
+          />
+        ))}
       </div>
 
       <div style={{ flex: 1 }} />
@@ -203,7 +222,7 @@ export default function Sidebar({ onOpenProjects, projectsOpen = false, projects
       {showCmd && (
         <CommandPalette
           groups={visibleGroups}
-          solos={NAV_SOLO}
+          solos={[...NAV_SOLO, ...visibleAdmin]}
           onClose={() => setShowCmd(false)}
           onPick={(path) => { setShowCmd(false); navigate(path); }}
         />
