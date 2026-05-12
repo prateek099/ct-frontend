@@ -8,13 +8,17 @@ const client = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+const IS_DEV = import.meta.env.DEV;
+
 // ── Request interceptor — attach access token + log ──────────────────────────
 client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = Cookies.get("access_token");
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+  if (IS_DEV) {
+    console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+  }
   return config;
 });
 
@@ -29,11 +33,15 @@ function processQueue(error: unknown, token: string | null = null) {
 
 client.interceptors.response.use(
   (response) => {
-    console.log(`[API] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.baseURL}${response.config.url}`);
+    if (IS_DEV) {
+      console.log(`[API] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.baseURL}${response.config.url}`);
+    }
     return response;
   },
   async (error: AxiosError) => {
-    console.error(`[API] ERROR ${error.response?.status ?? "network"} ${error.config?.method?.toUpperCase()} ${error.config?.baseURL}${error.config?.url}`, error.response?.data);
+    if (IS_DEV) {
+      console.error(`[API] ERROR ${error.response?.status ?? "network"} ${error.config?.method?.toUpperCase()} ${error.config?.baseURL}${error.config?.url}`, error.response?.data);
+    }
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // Only attempt refresh for 401 on non-auth endpoints.

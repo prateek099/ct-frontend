@@ -9,9 +9,11 @@ import { AuthProvider } from './context/AuthContext'
 import { WorkflowProvider } from './context/WorkflowContext'
 import { ThemeProvider } from './context/ThemeContext'
 import ThemeToggle from './components/shared/ThemeToggle'
+import ErrorBoundary from './components/shared/ErrorBoundary'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AdminRoute from './components/auth/AdminRoute'
 import AppShell from './components/layout/AppShell'
+import { installGlobalErrorHandlers } from './lib/installGlobalErrorHandlers'
 
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
@@ -48,6 +50,14 @@ import AdminPanel from './pages/AdminPanel'
 
 // Admin
 import UsersPage from './pages/UsersPage'
+import AdminClientErrors from './pages/AdminClientErrors'
+
+// 404
+import NotFoundPage from './pages/NotFoundPage'
+
+// Install async/global error handlers before the app mounts so a crash
+// during initial render is still captured.
+installGlobalErrorHandlers()
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,12 +75,13 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <WorkflowProvider>
-              <Routes>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <WorkflowProvider>
+                <Routes>
               {/* Public */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signin" element={<Navigate to="/login" replace />} />
@@ -119,6 +130,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                   </AdminRoute>
                 }
               />
+              <Route
+                path="/admin/client-errors"
+                element={
+                  <AdminRoute>
+                    <AppShell><AdminClientErrors /></AppShell>
+                  </AdminRoute>
+                }
+              />
 
               {/* Users */}
               <Route path="/users" element={<Shell><UsersPage /></Shell>} />
@@ -129,14 +148,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="/title-suggestor"      element={<Navigate to="/title" replace />} />
               <Route path="/seo-description"      element={<Navigate to="/description" replace />} />
 
-              {/* Fallback — unknown URLs land on the marketing homepage */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/* Fallback — unknown URLs render the 404 page so real misses don't masquerade as a homepage visit */}
+              <Route path="*" element={<NotFoundPage />} />
               </Routes>
               <ThemeToggle />
-            </WorkflowProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </ThemeProvider>
-    </QueryClientProvider>
+              </WorkflowProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 )
