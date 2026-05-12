@@ -26,22 +26,23 @@ export default function GoogleCallback() {
 
     if (!hasCalled.current) {
       hasCalled.current = true;
-      
-      // Use native fetch instead of useMutation so the promise resolves and redirects
-      // even if React StrictMode unmounts the original component instance.
+
+      // Direct client.post instead of useMutation so the promise resolves and
+      // redirects even if React StrictMode unmounts the original component
+      // instance. Backend sets httpOnly access_token / refresh_token cookies;
+      // we only persist user_name for display.
       import('../api/client').then(({ default: client }) => {
         client.post('/auth/google', { code })
           .then((res) => {
             const data = res.data;
             import('js-cookie').then(({ default: Cookies }) => {
-              Cookies.set("access_token", data.access_token, { expires: 1 / 48 });
-              Cookies.set("refresh_token", data.refresh_token, { expires: 7 });
               if (data.name) Cookies.set("user_name", data.name, { expires: 7 });
-              // Force a hard reload to the dashboard so auth context properly refreshes.
+              // Hard reload so AuthContext / useMe re-read with the fresh
+              // cookie state.
               window.location.replace('/dashboard');
             });
           })
-          .catch((err: any) => {
+          .catch((err: { response?: { data?: { detail?: string } } }) => {
             setError(err.response?.data?.detail || 'Failed to authenticate with Google. Please try again.');
           });
       });
