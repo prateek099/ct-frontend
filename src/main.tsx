@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
 
 import { AuthProvider } from './context/AuthContext'
+import { AdminAuthProvider } from './context/AdminAuthContext'
 import { WorkflowProvider } from './context/WorkflowContext'
 import { ThemeProvider } from './context/ThemeContext'
 import ThemeToggle from './components/shared/ThemeToggle'
@@ -63,6 +64,7 @@ const AdminAuthEvents = lazy(() => import('./pages/AdminAuthEvents'))
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 const AdminSystemPage = lazy(() => import('./pages/AdminSystemPage'))
 const AdminLLMUsagePage = lazy(() => import('./pages/AdminLLMUsagePage'))
+const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'))
 
 // Install async/global error handlers before the app mounts so a crash
 // during initial render is still captured.
@@ -89,6 +91,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <ThemeProvider>
           <BrowserRouter>
             <AuthProvider>
+              <AdminAuthProvider>
               <WorkflowProvider>
                 {/* Single outer Suspense — fine for now, fallback is consistent across routes. */}
                 <Suspense fallback={<RouteFallback />}>
@@ -131,6 +134,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                     <Route path="/stats"     element={<Shell><ChannelStats /></Shell>} />
                     <Route path="/calendar"  element={<Shell><ContentCalendar /></Shell>} />
                     <Route path="/linkinbio" element={<Shell><LinkInBio /></Shell>} />
+
+                    {/* Admin login — standalone, no shell, no AdminRoute (gate is meaningless before login) */}
+                    <Route path="/admin/login" element={<AdminLoginPage />} />
 
                     {/* Admin — dedicated AdminShell, admin-only */}
                     <Route
@@ -205,6 +211,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 </Suspense>
                 <ThemeToggle />
               </WorkflowProvider>
+              </AdminAuthProvider>
             </AuthProvider>
           </BrowserRouter>
         </ThemeProvider>
