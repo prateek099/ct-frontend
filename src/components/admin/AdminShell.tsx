@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Icon from "../shared/Icon";
-import { useAuth } from "../../context/AuthContext";
+import { useAdminAuth } from "../../context/AdminAuthContext";
 
 /**
  * AdminShell — layout chrome for /admin/* routes.
@@ -33,11 +33,13 @@ export const ADMIN_NAV: AdminNavItem[] = [
 ];
 
 export default function AdminShell({ children }: { children: ReactNode }) {
-  const { user, logout } = useAuth();
+  const { admin, logout } = useAdminAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const initials = (user?.name ?? "A")
+  const displayName = admin?.name ?? "Admin";
+  const displayEmail = admin?.email ?? "";
+  const initials = displayName
     .split(" ")
     .map((s) => s[0])
     .join("")
@@ -167,7 +169,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           }}
         >
           <span
-            title={user?.email ?? ""}
+            title={displayEmail}
             style={{
               width: 30,
               height: 30,
@@ -184,6 +186,21 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           >
             {initials}
           </span>
+          {displayEmail && (
+            <span
+              style={{
+                fontSize: 11,
+                color: "rgba(255,255,255,0.55)",
+                fontFamily: "var(--font-mono, monospace)",
+                maxWidth: 180,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {displayEmail}
+            </span>
+          )}
           <button
             onClick={logout}
             title="Sign out"

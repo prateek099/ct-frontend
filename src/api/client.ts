@@ -38,6 +38,18 @@ function clearDisplayCookies() {
   Cookies.remove("user_name");
 }
 
+function clearAdminDisplayCookies() {
+  Cookies.remove("admin_session");
+}
+
+function isAdminApiUrl(url: string): boolean {
+  // Prateek: /admin/* endpoints (including /admin/auth/* which we skip for
+  // refresh) are admin-realm requests. The user 401-refresh path is wrong
+  // for these — admin sessions live behind admin_*_token cookies and the
+  // user /auth/refresh endpoint doesn't know about them.
+  return url.startsWith("/admin/") || url.startsWith("admin/");
+}
+
 client.interceptors.response.use(
   (response) => {
     if (IS_DEV) {
@@ -72,15 +84,23 @@ client.interceptors.response.use(
       original._retry = true;
       isRefreshing = true;
 
+      // Admin and user sessions live behind separate refresh endpoints and
+      // separate cookies — branch on the request's namespace.
+      const isAdmin = isAdminApiUrl(url);
+
       try {
-        // No body — the server reads the refresh token from the httpOnly cookie.
-        await client.post("/auth/refresh");
+        await client.post(isAdmin ? "/admin/auth/refresh" : "/auth/refresh");
         processQueue(null);
         return client(original);
       } catch (refreshError) {
         processQueue(refreshError);
-        clearDisplayCookies();
-        window.location.href = "/login";
+        if (isAdmin) {
+          clearAdminDisplayCookies();
+          window.location.href = "/admin/login";
+        } else {
+          clearDisplayCookies();
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
