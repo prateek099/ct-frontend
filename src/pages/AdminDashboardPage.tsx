@@ -35,6 +35,14 @@ const SECTIONS: Section[] = [
     accent: "var(--mint)",
   },
   {
+    title: "LLM cache",
+    path: "/admin/llm-cache",
+    icon: "save",
+    blurb:
+      "Content-addressable cache of OpenAI responses. Browse, search, inspect prompts + responses, purge stale entries.",
+    accent: "var(--accent)",
+  },
+  {
     title: "Auth events",
     path: "/admin/auth-events",
     icon: "shield",
