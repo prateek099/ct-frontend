@@ -27,6 +27,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { label: "Prompts", path: "/admin/prompts", icon: "cog", description: "System & user prompt overrides per AI tool" },
   { label: "Users", path: "/admin/users", icon: "users", description: "Registered users" },
   { label: "LLM usage", path: "/admin/llm-usage", icon: "chart", description: "Token spend per user / endpoint" },
+  { label: "LLM cache", path: "/admin/llm-cache", icon: "save", description: "Cached OpenAI responses (content-addressable)" },
   { label: "Auth events", path: "/admin/auth-events", icon: "shield", description: "Login / refresh / password reset audit log" },
   { label: "Client errors", path: "/admin/client-errors", icon: "bell", description: "Frontend crashes captured in-app" },
   { label: "System", path: "/admin/system", icon: "sliders", description: "Runtime config + connectivity snapshot" },

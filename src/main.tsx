@@ -65,6 +65,7 @@ const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 const AdminSystemPage = lazy(() => import('./pages/AdminSystemPage'))
 const AdminLLMUsagePage = lazy(() => import('./pages/AdminLLMUsagePage'))
 const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'))
+const AdminLLMCachePage = lazy(() => import('./pages/AdminLLMCachePage'))
 
 // Install async/global error handlers before the app mounts so a crash
 // during initial render is still captured.
@@ -192,6 +193,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                       element={
                         <AdminRoute>
                           <AdminShell><AdminSystemPage /></AdminShell>
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/llm-cache"
+                      element={
+                        <AdminRoute>
+                          <AdminShell><AdminLLMCachePage /></AdminShell>
                         </AdminRoute>
                       }
                     />
