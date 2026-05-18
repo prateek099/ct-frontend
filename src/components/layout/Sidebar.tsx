@@ -31,17 +31,23 @@ interface NavSolo {
   adminOnly?: boolean;
 }
 
+// Prateek: the group "home" is the Create chooser page (/create) which lets the user
+// pick between the guided Pipeline and Standalone tools. Clicking the rail icon
+// goes there; hovering still reveals the per-tool flyout for quick jumps.
+const CREATE_HOME = "/create";
+
 const NAV_GROUPS: NavGroup[] = [
   {
-    id: "create", label: "Create", blurb: "Build the next video", color: "var(--coral)",
+    id: "create", label: "Create", blurb: "Pipeline or standalone tools", color: "var(--coral)",
     tools: [
-      { code: "T1",  name: "Video Ideas",     path: "/idea",       icon: "lightbulb" },
-      { code: "T2",  name: "Script Writer",   path: "/script",     icon: "pencil"    },
-      { code: "T3",  name: "Title Generator", path: "/title",      icon: "tag"       },
-      { code: "T4",  name: "Description",     path: "/description", icon: "align"     },
-      { code: "T5",  name: "Thumbnail Lab",   path: "/thumbnail",  icon: "image"     },
-      { code: "T11", name: "AI Voiceover",    path: "/voiceover",  icon: "mic"       },
-      { code: "T13", name: "Video Generator", path: "/video",      icon: "film"      },
+      { code: "CT",  name: "Create — overview", path: CREATE_HOME,   icon: "sparkles"  },
+      { code: "T1",  name: "Video Ideas",       path: "/idea",       icon: "lightbulb" },
+      { code: "T2",  name: "Script Writer",     path: "/script",     icon: "pencil"    },
+      { code: "T3",  name: "Title Generator",   path: "/title",      icon: "tag"       },
+      { code: "T4",  name: "Description",       path: "/description", icon: "align"    },
+      { code: "T5",  name: "Thumbnail Lab",     path: "/thumbnail",  icon: "image"     },
+      { code: "T11", name: "AI Voiceover",      path: "/voiceover",  icon: "mic"       },
+      { code: "T13", name: "Video Generator",   path: "/video",      icon: "film"      },
     ],
   },
 ];

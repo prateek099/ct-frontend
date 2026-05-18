@@ -12,8 +12,11 @@ import { getApiErrorMessage } from '../types/api'
 import BackgroundGenerationBanner from '../components/pipeline/BackgroundGenerationBanner'
 import NoIdeaSelectedCard from '../components/pipeline/NoIdeaSelectedCard'
 import ContextBanner from '../components/pipeline/ContextBanner'
+import StandaloneActions from '../components/pipeline/StandaloneActions'
+import StandaloneTopicCard from '../components/pipeline/StandaloneTopicCard'
 import ReviewPanel from './script/ReviewPanel'
 import type { VideoIdea } from '../types/workflow'
+import { useStandaloneMode } from '../lib/useStandaloneMode'
 
 const FLAVORS = ['educational', 'entertaining', 'storytelling', 'documentary', 'review'] as const
 type Flavor = typeof FLAVORS[number] | 'auto'
@@ -57,10 +60,17 @@ interface Steering {
 export default function ScriptGenerator() {
   const {
     selectedIdea, generatedScript, channelData,
-    setGeneratedScript,
+    setGeneratedScript, setSelectedIdea,
     resetFromScript, scriptPending,
     startScript, stopScript,
+    currentProjectId,
+    setStandaloneTool,
   } = useWorkflow()
+  const isStandalone = useStandaloneMode()
+
+  useEffect(() => {
+    setStandaloneTool(isStandalone ? 'script' : null)
+  }, [isStandalone, setStandaloneTool])
 
   const generateScript = useGenerateScript()
   const isGenerating = scriptPending || generateScript.isPending
@@ -197,28 +207,37 @@ export default function ScriptGenerator() {
   return (
     <div className="stack-24">
       <PageHeader
-        eyebrow="Step 2 of 5 · Writing"
+        eyebrow={isStandalone ? 'Standalone · Writing' : 'Step 2 of 5 · Writing'}
         code="T2"
         icon="pencil"
         title={<>Script <em>writer</em></>}
         subtitle="One script at a time, tuned to your idea. Regenerate to steer flavor, tone, length, or structure."
         actions={
-          <>
-            <Link to="/idea" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
-            <Link
-              to="/title"
-              className={'btn primary' + (!generatedScript ? ' disabled' : '')}
-              style={!generatedScript ? { opacity: 0.4, pointerEvents: 'none' } : {}}
-            >
-              Next: Title <Icon name="arrowRight" size={14} />
-            </Link>
-          </>
+          isStandalone ? (
+            <StandaloneActions currentProjectId={currentProjectId} publishDisabled={!generatedScript} />
+          ) : (
+            <>
+              <Link to="/idea" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
+              <Link
+                to="/title"
+                className={'btn primary' + (!generatedScript ? ' disabled' : '')}
+                style={!generatedScript ? { opacity: 0.4, pointerEvents: 'none' } : {}}
+              >
+                Next: Title <Icon name="arrowRight" size={14} />
+              </Link>
+            </>
+          )
         }
       />
 
-      <PipelineStepper active={2} />
+      {!isStandalone && <PipelineStepper active={2} />}
 
-      {!selectedIdea && <NoIdeaSelectedCard message="No idea selected — go back and pick one first." />}
+      {!selectedIdea && !isStandalone && (
+        <NoIdeaSelectedCard message="No idea selected — go back and pick one first." />
+      )}
+      {!selectedIdea && isStandalone && (
+        <StandaloneTopicCard forLabel="writing" onSubmit={setSelectedIdea} />
+      )}
 
       {selectedIdea && scriptPending && !generateScript.isPending && (
         <BackgroundGenerationBanner
@@ -389,7 +408,7 @@ export default function ScriptGenerator() {
             )}
           </div>
 
-          <ReviewPanel hasScript={!!generatedScript} />
+          <ReviewPanel hasScript={!!generatedScript} hideHandoff={isStandalone} />
         </section>
       )}
 

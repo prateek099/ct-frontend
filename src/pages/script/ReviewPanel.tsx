@@ -11,9 +11,11 @@ const CHECKLIST = [
 
 interface Props {
   hasScript: boolean
+  /** Hide the "Pipeline handoff" card when the script is being used standalone. */
+  hideHandoff?: boolean
 }
 
-export default function ReviewPanel({ hasScript }: Props) {
+export default function ReviewPanel({ hasScript, hideHandoff }: Props) {
   return (
     <div className="col" style={{ gap: 16 }}>
       <div className="card">
@@ -61,19 +63,21 @@ export default function ReviewPanel({ hasScript }: Props) {
         </div>
       )}
 
-      <div className="card">
-        <div className="card-title"><h3 className="h2">Pipeline handoff</h3></div>
-        <div className="col" style={{ gap: 8 }}>
-          <Link to="/title" className="row between" style={{ padding: 10, border: '1px solid var(--line)', borderRadius: 10 }}>
-            <span className="row" style={{ gap: 8 }}><Icon name="tag" size={14} /> Generate titles</span>
-            <Icon name="arrowRight" size={14} />
-          </Link>
-          <Link to="/voiceover" className="row between" style={{ padding: 10, border: '1px solid var(--line)', borderRadius: 10 }}>
-            <span className="row" style={{ gap: 8 }}><Icon name="mic" size={14} /> AI voiceover</span>
-            <Icon name="arrowRight" size={14} />
-          </Link>
+      {!hideHandoff && (
+        <div className="card">
+          <div className="card-title"><h3 className="h2">Pipeline handoff</h3></div>
+          <div className="col" style={{ gap: 8 }}>
+            <Link to="/title" className="row between" style={{ padding: 10, border: '1px solid var(--line)', borderRadius: 10 }}>
+              <span className="row" style={{ gap: 8 }}><Icon name="tag" size={14} /> Generate titles</span>
+              <Icon name="arrowRight" size={14} />
+            </Link>
+            <Link to="/voiceover" className="row between" style={{ padding: 10, border: '1px solid var(--line)', borderRadius: 10 }}>
+              <span className="row" style={{ gap: 8 }}><Icon name="mic" size={14} /> AI voiceover</span>
+              <Icon name="arrowRight" size={14} />
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

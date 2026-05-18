@@ -10,6 +10,9 @@ import { getApiErrorMessage } from '../types/api'
 import BackgroundGenerationBanner from '../components/pipeline/BackgroundGenerationBanner'
 import NoIdeaSelectedCard from '../components/pipeline/NoIdeaSelectedCard'
 import ContextBanner from '../components/pipeline/ContextBanner'
+import StandaloneActions from '../components/pipeline/StandaloneActions'
+import StandaloneTopicCard from '../components/pipeline/StandaloneTopicCard'
+import { useStandaloneMode } from '../lib/useStandaloneMode'
 
 const SEO_METRICS = [
   { label: 'Keyword density',    v: 82 },
@@ -23,7 +26,14 @@ export default function SeoDescription() {
     selectedIdea, generatedScript, channelData, selectedTitle,
     seoDescription, resetFromTitles, seoPending,
     startSeo, stopSeo,
+    setSelectedIdea, currentProjectId,
+    setStandaloneTool,
   } = useWorkflow()
+  const isStandalone = useStandaloneMode()
+
+  useEffect(() => {
+    setStandaloneTool(isStandalone ? 'description' : null)
+  }, [isStandalone, setStandaloneTool])
 
   const [editableDesc, setEditableDesc] = useState(seoDescription?.description || '')
   const [editableTags, setEditableTags] = useState(seoDescription?.tags || '')
@@ -66,27 +76,39 @@ export default function SeoDescription() {
   return (
     <div className="stack-24">
       <PageHeader
-        eyebrow="Step 4 of 6 · Packaging"
+        eyebrow={isStandalone ? 'Standalone · Packaging' : 'Step 4 of 6 · Packaging'}
         code="T4"
         icon="align"
         title={<>Description <em>&amp;</em> hashtags</>}
         subtitle="A description YouTube's algorithm can read, with timestamps pulled from your script automatically."
         actions={
-          <>
-            <Link to="/title" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
-            <button className="btn" onClick={() => navigator.clipboard?.writeText(editableDesc)} disabled={!editableDesc}>
-              <Icon name="copy" size={14} /> Copy
-            </button>
-            <Link to="/thumbnail" className="btn primary">
-              Next: Thumbnail <Icon name="arrowRight" size={14} />
-            </Link>
-          </>
+          isStandalone ? (
+            <>
+              <button className="btn" onClick={() => navigator.clipboard?.writeText(editableDesc)} disabled={!editableDesc}>
+                <Icon name="copy" size={14} /> Copy
+              </button>
+              <StandaloneActions currentProjectId={currentProjectId} publishDisabled={!editableDesc} />
+            </>
+          ) : (
+            <>
+              <Link to="/title" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
+              <button className="btn" onClick={() => navigator.clipboard?.writeText(editableDesc)} disabled={!editableDesc}>
+                <Icon name="copy" size={14} /> Copy
+              </button>
+              <Link to="/thumbnail" className="btn primary">
+                Next: Thumbnail <Icon name="arrowRight" size={14} />
+              </Link>
+            </>
+          )
         }
       />
 
-      <PipelineStepper active={4} />
+      {!isStandalone && <PipelineStepper active={4} />}
 
-      {!selectedIdea && <NoIdeaSelectedCard />}
+      {!selectedIdea && !isStandalone && <NoIdeaSelectedCard />}
+      {!selectedIdea && isStandalone && (
+        <StandaloneTopicCard forLabel="description" onSubmit={setSelectedIdea} />
+      )}
 
       {selectedIdea && seoPending && !generateSeo.isPending && (
         <BackgroundGenerationBanner
@@ -248,16 +270,18 @@ export default function SeoDescription() {
                   </div>
                 </div>
 
-                <div className="card" style={{ border: '2px solid var(--mint)', background: 'var(--mint-soft)', textAlign: 'center', padding: 24 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--mint)', display: 'grid', placeItems: 'center', margin: '0 auto 12px', color: 'white' }}>
-                    <Icon name="check" size={20} />
+                {!isStandalone && (
+                  <div className="card" style={{ border: '2px solid var(--mint)', background: 'var(--mint-soft)', textAlign: 'center', padding: 24 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--mint)', display: 'grid', placeItems: 'center', margin: '0 auto 12px', color: 'white' }}>
+                      <Icon name="check" size={20} />
+                    </div>
+                    <div style={{ fontWeight: 700, color: 'var(--mint)', marginBottom: 4 }}>Pipeline complete!</div>
+                    <div className="small muted">You have everything to publish. Next: Thumbnail.</div>
+                    <Link to="/thumbnail" className="btn" style={{ marginTop: 12, width: '100%', justifyContent: 'center' }}>
+                      <Icon name="image" size={14} /> Thumbnail Lab
+                    </Link>
                   </div>
-                  <div style={{ fontWeight: 700, color: 'var(--mint)', marginBottom: 4 }}>Pipeline complete!</div>
-                  <div className="small muted">You have everything to publish. Next: Thumbnail.</div>
-                  <Link to="/thumbnail" className="btn" style={{ marginTop: 12, width: '100%', justifyContent: 'center' }}>
-                    <Icon name="image" size={14} /> Thumbnail Lab
-                  </Link>
-                </div>
+                )}
               </>
             )}
           </div>

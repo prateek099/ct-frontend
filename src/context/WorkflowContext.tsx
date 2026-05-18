@@ -7,7 +7,7 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react";
 import { useMutationState } from "@tanstack/react-query";
 import type { ChannelData, VideoIdea, GeneratedScript, TitleItem, SeoData } from "../types/workflow";
-import type { Project } from "../types/project";
+import type { Project, ProjectCreate, ProjectIdeaJson, ProjectUpdate, StandaloneTool } from "../types/project";
 import { MUTATION_KEYS } from "../api/useWorkflow";
 import { useCreateProject, useUpdateProject } from "../api/useProjects";
 
@@ -54,6 +54,10 @@ interface WorkflowContextValue {
   // Project persistence
   currentProjectId: number | null;
   loadProject: (p: Project) => void;
+  // Standalone mode — when a tool is opened via /create's Standalone tab, the
+  // pipeline page sets this so persisted projects are flagged accordingly.
+  standaloneTool: StandaloneTool | null;
+  setStandaloneTool: (tool: StandaloneTool | null) => void;
 }
 
 const WorkflowContext = createContext<WorkflowContextValue | null>(null);
@@ -74,14 +78,88 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 
   // ── Project persistence ────────────────────────────────────────────────
   // Prateek: Single project row holds the full idea→script→title→seo chain.
-  // Created lazily on the first successful idea generation; subsequent pipeline
-  // successes PATCH the same row. loadProject() rehydrates context for resume.
+  // Created lazily on the first successful save; subsequent successes PATCH
+  // the same row. loadProject() rehydrates context for resume.
   const [currentProjectId, setCurrentProjectId] = useState<number | null>(null);
   const currentProjectIdRef = useRef<number | null>(null);
   currentProjectIdRef.current = currentProjectId;
 
+  // Standalone mode flag — set by pipeline pages when they detect ?mode=standalone.
+  // Used to (a) decide whether to stamp idea_json.mode='standalone' onto created
+  // projects and (b) allow non-idea tools to lazily create projects on first save.
+  const [standaloneTool, setStandaloneTool] = useState<StandaloneTool | null>(null);
+  const standaloneToolRef = useRef<StandaloneTool | null>(null);
+  standaloneToolRef.current = standaloneTool;
+
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();
+
+  // stampStandalone — when a standalone tool is active, every write to
+  // idea_json must keep mode + tool set, otherwise a follow-up PATCH would
+  // overwrite the field and silently lose the standalone marker. Apply this
+  // to ALL outgoing idea_json payloads, not just the initial create.
+  const stampStandalone = useCallback(
+    <T extends Pick<ProjectCreate, "idea_json">>(payload: T): T => {
+      const tool = standaloneToolRef.current;
+      if (!tool) return payload;
+      const base: ProjectIdeaJson = payload.idea_json ?? {};
+      return { ...payload, idea_json: { ...base, mode: "standalone", tool } };
+    },
+    [],
+  );
+
+  // patchProject — small wrapper that stamps idea_json on every PATCH so the
+  // standalone marker isn't wiped by a partial update.
+  const patchProject = useCallback(
+    (payload: ProjectUpdate & { id: number }) => {
+      if ("idea_json" in payload) {
+        updateProjectMutation.mutate(stampStandalone(payload));
+      } else {
+        updateProjectMutation.mutate(payload);
+      }
+    },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stampStandalone],
+  );
+
+  // ensureProjectId — guarantee a project row exists, creating one with the
+  // given initial payload (and standalone metadata) if currentProjectId is null.
+  // Returns the id synchronously when the project already exists; otherwise
+  // starts the create and returns null. Subsequent calls while the create is
+  // in flight enqueue their payload as PATCH operations that will replay
+  // against the new project id as soon as the create resolves — this prevents
+  // duplicate project rows when (e.g.) setSelectedIdea and a script success
+  // fire back-to-back.
+  const createInFlight = useRef(false);
+  const pendingUpdates = useRef<ProjectUpdate[]>([]);
+  const ensureProjectId = useCallback((init: ProjectCreate): number | null => {
+    if (currentProjectIdRef.current != null) return currentProjectIdRef.current;
+    if (createInFlight.current) {
+      pendingUpdates.current.push(init);
+      return null;
+    }
+    createInFlight.current = true;
+    createProjectMutation.mutate(
+      stampStandalone(init),
+      {
+        onSuccess: (p) => {
+          setCurrentProjectId(p.id);
+          createInFlight.current = false;
+          const queued = pendingUpdates.current;
+          pendingUpdates.current = [];
+          for (const upd of queued) {
+            patchProject({ id: p.id, ...upd });
+          }
+        },
+        onError: () => {
+          createInFlight.current = false;
+          pendingUpdates.current = [];
+        },
+      },
+    );
+    return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Prateek: keep references to latest channel + selected items so we can
   // include them in autosave payloads without stale-closure issues.
@@ -134,21 +212,14 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       setIdeasPending(false);
       ideasCtrl.current = null;
       // Prateek: autosave — create project on first idea batch, else PATCH.
-      const ideaJson = {
+      const ideaJson: ProjectIdeaJson = {
         channel: channelDataRef.current,
         ideas: latestIdeas.data,
         selectedIdea: selectedIdeaRef.current,
       };
-      if (currentProjectIdRef.current == null) {
-        createProjectMutation.mutate(
-          { idea_json: ideaJson },
-          { onSuccess: (p) => setCurrentProjectId(p.id) },
-        );
-      } else {
-        updateProjectMutation.mutate({
-          id: currentProjectIdRef.current,
-          idea_json: ideaJson,
-        });
+      const id = ensureProjectId({ idea_json: ideaJson });
+      if (id != null) {
+        patchProject({ id, idea_json: ideaJson });
       }
     } else if (latestIdeas.status === "error") {
       setIdeasPending(false);
@@ -164,9 +235,14 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       setGeneratedScript(latestScript.data);
       setScriptPending(false);
       scriptCtrl.current = null;
-      if (currentProjectIdRef.current != null) {
-        updateProjectMutation.mutate({
-          id: currentProjectIdRef.current,
+      const id = ensureProjectId({
+        title: latestScript.data.title,
+        idea_json: { selectedIdea: selectedIdeaRef.current },
+        script_json: { script: latestScript.data },
+      });
+      if (id != null) {
+        patchProject({
+          id,
           script_json: { script: latestScript.data },
           title: latestScript.data.title,
         });
@@ -185,14 +261,16 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       setSuggestedTitles(latestTitles.data);
       setTitlesPending(false);
       titlesCtrl.current = null;
-      if (currentProjectIdRef.current != null) {
-        updateProjectMutation.mutate({
-          id: currentProjectIdRef.current,
-          title_json: {
-            suggestedTitles: latestTitles.data,
-            selectedTitle: selectedTitleRef.current,
-          },
-        });
+      const titlePayload = {
+        suggestedTitles: latestTitles.data,
+        selectedTitle: selectedTitleRef.current,
+      };
+      const id = ensureProjectId({
+        idea_json: { selectedIdea: selectedIdeaRef.current },
+        title_json: titlePayload,
+      });
+      if (id != null) {
+        patchProject({ id, title_json: titlePayload });
       }
     } else if (latestTitles.status === "error") {
       setTitlesPending(false);
@@ -208,11 +286,12 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       setSeoDescription(latestSeo.data);
       setSeoPending(false);
       seoCtrl.current = null;
-      if (currentProjectIdRef.current != null) {
-        updateProjectMutation.mutate({
-          id: currentProjectIdRef.current,
-          seo_json: { seo: latestSeo.data },
-        });
+      const id = ensureProjectId({
+        idea_json: { selectedIdea: selectedIdeaRef.current },
+        seo_json: { seo: latestSeo.data },
+      });
+      if (id != null) {
+        patchProject({ id, seo_json: { seo: latestSeo.data } });
       }
     } else if (latestSeo.status === "error") {
       setSeoPending(false);
@@ -278,45 +357,51 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     setSelectedTitle(null);
     setSeoDescription(null);
     setCurrentProjectId(null);
+    setStandaloneTool(null);
   }, []);
 
   // Prateek: Wrapped setters that autosave the selection into idea_json/title_json.
   // "Pick an idea" and "pick a title" are pipeline decisions — persist them
   // alongside the generated lists so resume restores the full workflow.
+  // In standalone mode these also lazily create a project so the user can later
+  // resume / publish the work.
   const setSelectedIdeaAndSave = useCallback((idea: VideoIdea | null) => {
     setSelectedIdea(idea);
-    if (currentProjectIdRef.current != null) {
-      updateProjectMutation.mutate({
-        id: currentProjectIdRef.current,
-        idea_json: {
-          channel: channelDataRef.current,
-          ideas: ideas,
-          selectedIdea: idea,
-        },
-      });
+    const ideaJson: ProjectIdeaJson = {
+      channel: channelDataRef.current,
+      ideas,
+      selectedIdea: idea,
+    };
+    const id = ensureProjectId({ idea_json: ideaJson });
+    if (id != null) {
+      patchProject({ id, idea_json: ideaJson });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ideas]);
 
   const setSelectedTitleAndSave = useCallback((t: TitleItem | null) => {
     setSelectedTitle(t);
-    if (currentProjectIdRef.current != null) {
-      updateProjectMutation.mutate({
-        id: currentProjectIdRef.current,
-        title_json: { suggestedTitles, selectedTitle: t },
-      });
+    const titleJson = { suggestedTitles, selectedTitle: t };
+    const id = ensureProjectId({
+      idea_json: { selectedIdea: selectedIdeaRef.current },
+      title_json: titleJson,
+    });
+    if (id != null) {
+      patchProject({ id, title_json: titleJson });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggestedTitles]);
 
   const setGeneratedScriptAndSave = useCallback((script: GeneratedScript | null) => {
     setGeneratedScript(script);
-    if (currentProjectIdRef.current != null && script != null) {
-      updateProjectMutation.mutate({
-        id: currentProjectIdRef.current,
-        script_json: { script },
-        title: script.title,
-      });
+    if (script == null) return;
+    const id = ensureProjectId({
+      title: script.title,
+      idea_json: { selectedIdea: selectedIdeaRef.current },
+      script_json: { script },
+    });
+    if (id != null) {
+      patchProject({ id, script_json: { script }, title: script.title });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -331,6 +416,9 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     setSuggestedTitles(p.title_json?.suggestedTitles ?? []);
     setSelectedTitle(p.title_json?.selectedTitle ?? null);
     setSeoDescription(p.seo_json?.seo ?? null);
+    // Restore the standalone marker so subsequent saves keep the project flagged.
+    const restoredTool = p.idea_json?.tool;
+    setStandaloneTool(p.idea_json?.mode === "standalone" && restoredTool ? restoredTool : null);
   }, []);
 
   const resetFromIdeas = useCallback(() => {
@@ -367,6 +455,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         stopIdeas, stopScript, stopTitles, stopSeo,
         resetAll, resetFromIdeas, resetFromScript, resetFromTitles,
         currentProjectId, loadProject,
+        standaloneTool, setStandaloneTool,
       }}
     >
       {children}

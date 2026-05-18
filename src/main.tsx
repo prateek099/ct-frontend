@@ -31,6 +31,7 @@ const GoogleCallback = lazy(() => import('./pages/GoogleCallback'))
 
 // Workspace entry
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const CreatePage = lazy(() => import('./pages/CreatePage'))
 
 // Marketing — public, standalone pages (lazy: most visitors land on `/` and convert; the rest are secondary)
 const ProductsPage = lazy(() => import('./pages/marketing/ProductsPage'))
@@ -117,6 +118,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
                     {/* Dashboard (protected) */}
                     <Route path="/dashboard" element={<Shell><DashboardPage /></Shell>} />
+
+                    {/* Create — pipeline vs standalone chooser */}
+                    <Route path="/create" element={<Shell><CreatePage /></Shell>} />
 
                     {/* Pipeline — live API (T1–T4) */}
                     <Route path="/idea"        element={<Shell><VideoIdeaGenerator /></Shell>} />
