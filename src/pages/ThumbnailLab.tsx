@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import Icon from '../components/shared/Icon'
 import { useWorkflow } from '../context/WorkflowContext'
-import { useUpdateProject } from '../api/useProjects'
+import { useCreateProject, useUpdateProject } from '../api/useProjects'
+import { useStandaloneMode } from '../lib/useStandaloneMode'
 
 const TEMPLATES = [
   { id: 'tmpl-1', color: 'coral',  label: 'Bold Text',    text: 'THE TRUTH ABOUT' },
@@ -46,8 +47,14 @@ export default function ThumbnailLab() {
   const [saving, setSaving]     = useState(false)
 
   const navigate = useNavigate()
-  const { currentProjectId, selectedIdea } = useWorkflow()
+  const { currentProjectId, selectedIdea, setStandaloneTool } = useWorkflow()
   const updateProject = useUpdateProject()
+  const createProject = useCreateProject()
+  const isStandalone = useStandaloneMode()
+
+  useEffect(() => {
+    setStandaloneTool(isStandalone ? 'thumbnail' : null)
+  }, [isStandalone, setStandaloneTool])
 
   const selectedTemplate = TEMPLATES.find(t => t.id === selected)
 
@@ -61,6 +68,18 @@ export default function ThumbnailLab() {
         { id: currentProjectId, thumbnail_json: thumbnailJson, status: 'saved', title },
         { onSuccess: () => navigate('/dashboard'), onError: () => setSaving(false) },
       )
+    } else if (isStandalone) {
+      // No project yet — create one and stamp it as a standalone thumbnail.
+      setSaving(true)
+      createProject.mutate(
+        {
+          title,
+          status: 'saved',
+          thumbnail_json: thumbnailJson,
+          idea_json: { mode: 'standalone', tool: 'thumbnail' },
+        },
+        { onSuccess: () => navigate('/dashboard'), onError: () => setSaving(false) },
+      )
     } else {
       navigate('/dashboard')
     }
@@ -69,7 +88,7 @@ export default function ThumbnailLab() {
   return (
     <div className="stack-24">
       <PageHeader
-        eyebrow="Step 5 of 5 · Design"
+        eyebrow={isStandalone ? 'Standalone · Design' : 'Step 5 of 5 · Design'}
         code="T5"
         icon="image"
         title={<>Thumbnail <em>lab</em></>}
@@ -78,9 +97,9 @@ export default function ThumbnailLab() {
           <>
             <button
               className="btn"
-              onClick={() => navigate('/description')}
+              onClick={() => navigate(isStandalone ? '/create' : '/description')}
             >
-              <Icon name="arrowLeft" size={14} /> Back
+              <Icon name="arrowLeft" size={14} /> {isStandalone ? 'Back to Create' : 'Back'}
             </button>
             {currentProjectId != null && (
               <button

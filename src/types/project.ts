@@ -5,11 +5,19 @@ export type ProjectStatus = "draft" | "saved" | "published" | "archived";
 // The JSON blobs in a Project are versioned-at-write snapshots of what the
 // workflow generated. We keep them structurally wide so older projects still
 // load cleanly if the workflow shape evolves.
+/** Which standalone tool produced this project, if any. */
+export type StandaloneTool = "idea" | "script" | "title" | "description" | "thumbnail";
+export type ProjectMode = "pipeline" | "standalone";
+
 export interface ProjectIdeaJson {
   channel?: ChannelData | null;
   prompt?: string;
   ideas?: VideoIdea[];
   selectedIdea?: VideoIdea | null;
+  /** When set to "standalone", the project was created from a single-tool flow. */
+  mode?: ProjectMode;
+  /** Which standalone tool created the project (only when mode === "standalone"). */
+  tool?: StandaloneTool;
 }
 
 export interface ProjectScriptJson {

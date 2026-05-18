@@ -2677,6 +2677,84 @@ button, input, textarea, select { font: inherit; color: inherit; }
   max-width: 420px;
 }
 
+/* ======== Continue — Standalone variant ======== */
+.continue-standalone {
+  cursor: default;
+}
+.continue-standalone:hover { transform: none; }
+.continue-standalone .continue-thumb-standalone {
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink-2) 100%);
+}
+.continue-standalone-glyph {
+  position: relative;
+  z-index: 2;
+  width: 84px; height: 84px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--accent);
+  display: grid; place-items: center;
+  box-shadow: 0 18px 40px -16px rgba(37,99,235,0.55);
+}
+.continue-standalone-dot {
+  width: 8px; height: 8px; border-radius: 99px;
+  background: var(--ink-4);
+  display: inline-block;
+}
+.continue-standalone-dot.ready {
+  background: var(--success);
+  box-shadow: 0 0 0 4px rgba(21,128,61,0.12);
+}
+
+/* Single-tool progress bar */
+.continue-standalone-bar-wrap {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.continue-standalone-bar-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px;
+}
+.continue-standalone-bar-label {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-weight: 600; color: var(--ink-2);
+}
+.continue-standalone-bar-pct {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.continue-standalone-bar {
+  position: relative;
+  width: 100%; height: 8px;
+  background: var(--bg-sunken);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.continue-standalone-bar-fill {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--ink-4), var(--ink-3));
+  border-radius: 99px;
+  transition: width .3s ease;
+}
+.continue-standalone-bar-fill.ready {
+  background: linear-gradient(90deg, var(--accent) 0%, var(--success) 100%);
+  box-shadow: 0 0 0 1px rgba(21,128,61,0.18) inset;
+}
+.continue-standalone-bar-foot {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.continue-standalone-actions {
+  margin-top: 14px;
+  display: flex; gap: 8px;
+}
+
 /* ======== Dashboard — Streak (compact) ======== */
 .streak-card {
   position: relative;

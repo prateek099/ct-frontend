@@ -1,5 +1,5 @@
 // Step 3 — title generation. Reads selectedIdea + generatedScript; writes suggestedTitles via mutation.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PipelineStepper from '../components/pipeline/PipelineStepper'
 import PageHeader from '../components/layout/PageHeader'
@@ -9,8 +9,11 @@ import { useGenerateTitles } from '../api/useWorkflow'
 import { getApiErrorMessage } from '../types/api'
 import BackgroundGenerationBanner from '../components/pipeline/BackgroundGenerationBanner'
 import NoIdeaSelectedCard from '../components/pipeline/NoIdeaSelectedCard'
+import StandaloneActions from '../components/pipeline/StandaloneActions'
+import StandaloneTopicCard from '../components/pipeline/StandaloneTopicCard'
 import { useABTests, useCreateABTest } from '../api/useABTests'
 import type { TitleItem } from '../types/workflow'
+import { useStandaloneMode } from '../lib/useStandaloneMode'
 
 const ANGLE_COLORS: Record<string, string> = {
   curiosity: 'violet', fear: 'accent', aspiration: 'mint',
@@ -21,11 +24,17 @@ const ANGLE_COLORS: Record<string, string> = {
 export default function TitleSuggestor() {
   const {
     selectedIdea, generatedScript, channelData,
-    suggestedTitles, selectedTitle, setSelectedTitle,
+    suggestedTitles, selectedTitle, setSelectedTitle, setSelectedIdea,
     resetFromTitles, titlesPending,
     startTitles, stopTitles,
     currentProjectId,
+    setStandaloneTool,
   } = useWorkflow()
+  const isStandalone = useStandaloneMode()
+
+  useEffect(() => {
+    setStandaloneTool(isStandalone ? 'title' : null)
+  }, [isStandalone, setStandaloneTool])
 
   const [steer, setSteer] = useState('')
   const generateTitles = useGenerateTitles()
@@ -99,28 +108,35 @@ export default function TitleSuggestor() {
   return (
     <div className="stack-24">
       <PageHeader
-        eyebrow="Step 3 of 6 · Packaging"
+        eyebrow={isStandalone ? 'Standalone · Packaging' : 'Step 3 of 6 · Packaging'}
         code="T3"
         icon="tag"
         title={<>Title <em>generator</em></>}
         subtitle="Write a title that earns the click. CTR predictions use your channel's history + YouTube trends."
         actions={
-          <>
-            <Link to="/script" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
-            <Link
-              to="/description"
-              className={'btn primary' + (!selectedTitle ? ' disabled' : '')}
-              style={!selectedTitle ? { opacity: 0.4, pointerEvents: 'none' } : {}}
-            >
-              Next: Description <Icon name="arrowRight" size={14} />
-            </Link>
-          </>
+          isStandalone ? (
+            <StandaloneActions currentProjectId={currentProjectId} publishDisabled={!selectedTitle} />
+          ) : (
+            <>
+              <Link to="/script" className="btn"><Icon name="arrowLeft" size={14} /> Back</Link>
+              <Link
+                to="/description"
+                className={'btn primary' + (!selectedTitle ? ' disabled' : '')}
+                style={!selectedTitle ? { opacity: 0.4, pointerEvents: 'none' } : {}}
+              >
+                Next: Description <Icon name="arrowRight" size={14} />
+              </Link>
+            </>
+          )
         }
       />
 
-      <PipelineStepper active={3} />
+      {!isStandalone && <PipelineStepper active={3} />}
 
-      {!selectedIdea && <NoIdeaSelectedCard />}
+      {!selectedIdea && !isStandalone && <NoIdeaSelectedCard />}
+      {!selectedIdea && isStandalone && (
+        <StandaloneTopicCard forLabel="titles" onSubmit={setSelectedIdea} />
+      )}
 
       {selectedIdea && titlesPending && !generateTitles.isPending && (
         <BackgroundGenerationBanner
@@ -235,7 +251,7 @@ export default function TitleSuggestor() {
                   })}
                 </div>
 
-                {selectedTitle && (
+                {selectedTitle && !isStandalone && (
                   <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
                     <Link to="/description" className="btn primary" style={{ width: '100%', justifyContent: 'center' }}>
                       Continue with this title <Icon name="arrowRight" size={14} />

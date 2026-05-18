@@ -1,5 +1,5 @@
 // Step 1 — video idea generation. Writes channelData + ideas + selectedIdea into the workflow.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PipelineStepper from '../components/pipeline/PipelineStepper'
 import PageHeader from '../components/layout/PageHeader'
@@ -15,7 +15,9 @@ import type { SavedChannel } from '../types/channel'
 import type { ChannelData, VideoIdea } from '../types/workflow'
 import { getApiErrorMessage } from '../types/api'
 import BackgroundGenerationBanner from '../components/pipeline/BackgroundGenerationBanner'
+import StandaloneActions from '../components/pipeline/StandaloneActions'
 import IdeaSidebar from './idea/IdeaSidebar'
+import { useStandaloneMode } from '../lib/useStandaloneMode'
 
 const TONES = ['Casual', 'Professional', 'Funny', 'Dramatic', 'Urgent']
 const DEFAULT_COUNT = 5
@@ -31,9 +33,16 @@ export default function VideoIdeaGenerator() {
     ideas, selectedIdea, setSelectedIdea,
     resetFromIdeas, ideasPending,
     startIdeas, stopIdeas,
+    currentProjectId,
+    setStandaloneTool,
   } = useWorkflow()
 
   const navigate = useNavigate()
+  const isStandalone = useStandaloneMode()
+
+  useEffect(() => {
+    setStandaloneTool(isStandalone ? 'idea' : null)
+  }, [isStandalone, setStandaloneTool])
 
   // Single unified input — URL / @handle / niche text
   const [input, setInput] = useState('')
@@ -146,7 +155,9 @@ export default function VideoIdeaGenerator() {
 
   const pickIdea = (idea: VideoIdea) => {
     setSelectedIdea(idea)
-    navigate('/script')
+    // In standalone mode the user only wanted ideas — stay on the page so they
+    // can save the pick to their idea bank, then publish/leave when ready.
+    if (!isStandalone) navigate('/script')
   }
 
   const isGenerating = ideasPending || generateIdeas.isPending
@@ -154,7 +165,7 @@ export default function VideoIdeaGenerator() {
   return (
     <div className="stack-24">
       <PageHeader
-        eyebrow="Step 1 of 5 · Ideation"
+        eyebrow={isStandalone ? 'Standalone · Ideation' : 'Step 1 of 5 · Ideation'}
         code="T1"
         icon="lightbulb"
         title={<>Video <em>Ideas</em></>}
@@ -169,18 +180,25 @@ export default function VideoIdeaGenerator() {
               <Icon name={savedFlash ? 'check' : 'save'} size={14} />
               {savedFlash ? 'Saved' : saveIdea.isPending ? 'Saving…' : 'Save to idea bank'}
             </button>
-            <Link
-              to="/script"
-              className={'btn primary' + (!selectedIdea ? ' disabled' : '')}
-              style={!selectedIdea ? { opacity: 0.4, pointerEvents: 'none' } : {}}
-            >
-              <Icon name="arrowRight" size={14} /> Next: Script
-            </Link>
+            {isStandalone ? (
+              <StandaloneActions
+                currentProjectId={currentProjectId}
+                publishDisabled={!selectedIdea}
+              />
+            ) : (
+              <Link
+                to="/script"
+                className={'btn primary' + (!selectedIdea ? ' disabled' : '')}
+                style={!selectedIdea ? { opacity: 0.4, pointerEvents: 'none' } : {}}
+              >
+                <Icon name="arrowRight" size={14} /> Next: Script
+              </Link>
+            )}
           </>
         }
       />
 
-      <PipelineStepper active={1} />
+      {!isStandalone && <PipelineStepper active={1} />}
 
       {ideasPending && !generateIdeas.isPending && (
         <BackgroundGenerationBanner
@@ -388,7 +406,9 @@ export default function VideoIdeaGenerator() {
                               className={'btn sm ' + (picked ? 'accent' : '')}
                               onClick={() => pickIdea(idea)}
                             >
-                              {picked ? <>Picked <Icon name="check" size={12} /></> : '→ Script'}
+                              {picked
+                                ? <>Picked <Icon name="check" size={12} /></>
+                                : isStandalone ? 'Pick' : '→ Script'}
                             </button>
                           </div>
                         </div>

@@ -5,6 +5,7 @@ import Icon from "../shared/Icon";
 import { useProjects } from "../../api/useProjects";
 import { useWorkflow } from "../../context/WorkflowContext";
 import type { Project } from "../../types/project";
+import { getProjectMode, getProjectTool, getStandaloneResumeRoute, isStandaloneReady, STANDALONE_TOOLS } from "../../lib/projectMode";
 
 type Filter = "all" | "in-progress" | "ready";
 
@@ -52,6 +53,7 @@ function projectGlyph(title: string): string {
 /** Map project progress to the pipeline route the user should resume at. */
 const STEP_ROUTES = ["/idea", "/script", "/title", "/description", "/thumbnail"] as const;
 function getResumeRoute(p: Project): string {
+  if (getProjectMode(p) === "standalone") return getStandaloneResumeRoute(p);
   const progress = projectProgress(p);
   if (progress >= STEP_ROUTES.length) return STEP_ROUTES[STEP_ROUTES.length - 1];
   return STEP_ROUTES[progress];
@@ -92,8 +94,10 @@ export default function SavedProjectsPanel({ open, onClose, focusedProjectId }: 
   }, [open, onClose]);
 
   const decorated = useMemo(() => {
+    const readyFor = (p: Project) =>
+      getProjectMode(p) === "standalone" ? isStandaloneReady(p) : projectProgress(p) >= 5;
     const all = [
-      ...drafts.map(p => ({ p, ready: projectProgress(p) >= 5 })),
+      ...drafts.map(p => ({ p, ready: readyFor(p) })),
       ...published.map(p => ({ p, ready: true as const })),
     ];
     return all.map((row, i) => ({
@@ -215,7 +219,7 @@ export default function SavedProjectsPanel({ open, onClose, focusedProjectId }: 
           padding: 16, borderTop: "1px solid var(--line)", background: "var(--bg-soft)",
         }}>
           <button
-            onClick={() => { onClose(); navigate("/idea"); }}
+            onClick={() => { onClose(); navigate("/create"); }}
             style={{
               width: "100%", padding: "12px 16px", borderRadius: "var(--r-md)", border: "none",
               background: "var(--ink)", color: "var(--bg)",
@@ -263,6 +267,9 @@ function ProjectCard({ project, ready, palette, focused, onOpen }: {
   const step = projectProgress(project);
   const glyph = projectGlyph(title);
   const updated = relativeUpdated(project.updated_at);
+  const isStandaloneP = getProjectMode(project) === "standalone";
+  const tool = getProjectTool(project);
+  const toolMeta = tool ? STANDALONE_TOOLS[tool] : null;
 
   return (
     <div
@@ -293,10 +300,13 @@ function ProjectCard({ project, ready, palette, focused, onOpen }: {
           width: 56, height: 72, borderRadius: 10, flex: "0 0 56px",
           background: c.bg, color: c.ink,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontFamily: "var(--font-serif)", fontSize: 22, fontWeight: 400, fontStyle: "italic",
+          fontFamily: isStandaloneP ? "inherit" : "var(--font-serif)",
+          fontSize: isStandaloneP ? 26 : 22, fontWeight: 400, fontStyle: isStandaloneP ? "normal" : "italic",
           position: "relative", overflow: "hidden",
         }}>
-          {glyph}
+          {isStandaloneP && toolMeta
+            ? <Icon name={toolMeta.icon} size={24} />
+            : glyph}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
@@ -313,40 +323,105 @@ function ProjectCard({ project, ready, palette, focused, onOpen }: {
                 width: 6, height: 6, borderRadius: 99,
                 background: ready ? "var(--mint-bright)" : "var(--amber)",
               }} />
-              {ready ? "Ready to publish" : `Step ${step}/5`}
+              {isStandaloneP
+                ? (ready ? "Ready to publish" : "In progress")
+                : (ready ? "Ready to publish" : `Step ${step}/5`)}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Pipeline mini bar */}
-      <div style={{ display: "flex", gap: 4, marginTop: 12 }}>
-        {PIPELINE_STEPS.map((s, i) => {
-          const done = i < step;
-          const cur = i === step && !ready;
-          return (
-            <div key={s.id} style={{
-              flex: 1, height: 4, borderRadius: 2,
-              background: done ? c.bg : "var(--line)",
-              position: "relative",
+      {isStandaloneP ? (
+        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+          {/* Tool chip */}
+          <div style={{
+            padding: "6px 10px",
+            borderRadius: 8,
+            background: "var(--bg-soft)",
+            border: "1px solid var(--line)",
+            display: "flex", alignItems: "center", gap: 8,
+            fontSize: 11.5, color: "var(--ink-2)",
+          }}>
+            <span style={{
+              width: 22, height: 22, borderRadius: 6,
+              background: c.bg, color: c.ink,
+              display: "grid", placeItems: "center", flexShrink: 0,
             }}>
-              {cur && (
-                <div style={{
-                  position: "absolute", inset: 0, borderRadius: 2,
-                  background: c.bg, opacity: 0.4,
-                  animation: "pulse-dot 1.4s infinite",
-                }} />
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div style={{
-        display: "flex", justifyContent: "space-between",
-        marginTop: 6, fontSize: 10, color: "var(--ink-3)", fontWeight: 500,
-      }}>
-        {PIPELINE_STEPS.map(s => <span key={s.id}>{s.name}</span>)}
-      </div>
+              {toolMeta ? <Icon name={toolMeta.icon} size={12} /> : <Icon name="sparkles" size={12} />}
+            </span>
+            <span style={{ fontWeight: 600 }}>Standalone</span>
+            <span style={{ color: "var(--ink-3)" }}>· {toolMeta?.name ?? "Tool"}</span>
+            <span style={{
+              marginLeft: "auto",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              fontWeight: 700,
+              color: ready ? "var(--success)" : "var(--ink-3)",
+            }}>
+              {ready ? "100%" : "—"}
+            </span>
+          </div>
+
+          {/* Single-tool progress bar (full when ready) */}
+          <div style={{
+            position: "relative",
+            height: 6,
+            borderRadius: 99,
+            background: "var(--bg-sunken)",
+            overflow: "hidden",
+          }}>
+            <span style={{
+              display: "block",
+              height: "100%",
+              width: ready ? "100%" : "35%",
+              borderRadius: 99,
+              background: ready
+                ? "linear-gradient(90deg, var(--accent) 0%, var(--success) 100%)"
+                : `linear-gradient(90deg, ${c.bg}, ${c.bg})`,
+              opacity: ready ? 1 : 0.65,
+              transition: "width .3s ease",
+            }} />
+          </div>
+          <div style={{
+            display: "flex", justifyContent: "space-between",
+            fontSize: 10, color: "var(--ink-3)", fontWeight: 500,
+          }}>
+            <span>{toolMeta?.name ?? "Tool"}</span>
+            <span>{ready ? "1 / 1 done" : "1 step · finish to publish"}</span>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Pipeline mini bar */}
+          <div style={{ display: "flex", gap: 4, marginTop: 12 }}>
+            {PIPELINE_STEPS.map((s, i) => {
+              const done = i < step;
+              const cur = i === step && !ready;
+              return (
+                <div key={s.id} style={{
+                  flex: 1, height: 4, borderRadius: 2,
+                  background: done ? c.bg : "var(--line)",
+                  position: "relative",
+                }}>
+                  {cur && (
+                    <div style={{
+                      position: "absolute", inset: 0, borderRadius: 2,
+                      background: c.bg, opacity: 0.4,
+                      animation: "pulse-dot 1.4s infinite",
+                    }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{
+            display: "flex", justifyContent: "space-between",
+            marginTop: 6, fontSize: 10, color: "var(--ink-3)", fontWeight: 500,
+          }}>
+            {PIPELINE_STEPS.map(s => <span key={s.id}>{s.name}</span>)}
+          </div>
+        </>
+      )}
 
       <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
         <button
