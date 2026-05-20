@@ -1,7 +1,11 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
+// Prateek: default to "/api/v1" — same-origin call relative to whatever host
+// the FE was loaded from. Nginx (prod) proxies /api/ to the BE; Vite dev
+// server proxies it via vite.config.ts. Override with VITE_API_URL only when
+// pointing at a different backend (e.g. local dev against a remote BE).
+const BASE_URL = import.meta.env.VITE_API_URL ?? "/api/v1";
 
 const client = axios.create({
   baseURL: BASE_URL,
